@@ -1,12 +1,14 @@
 import { readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 
-const files = spawnSync(
-  'rg',
-  ['--files', '--hidden', '-g', '!node_modules/**', '-g', '!**/dist/**', '-g', '!**/.next/**'],
-  { encoding: 'utf8' },
-);
-if (files.status !== 0) throw new Error(files.stderr || 'rg --files failed');
+const files = spawnSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], {
+  encoding: 'utf8',
+  maxBuffer: 16 * 1024 * 1024,
+});
+if (files.error) throw new Error(`git ls-files could not start: ${files.error.message}`);
+if (files.status !== 0) {
+  throw new Error(files.stderr.trim() || `git ls-files failed with exit code ${files.status}`);
+}
 const patterns = [
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/u,
   /\bAKIA[0-9A-Z]{16}\b/u,
@@ -14,7 +16,7 @@ const patterns = [
   /\b(?:ghp|github_pat)_[A-Za-z0-9_]{20,}\b/u,
 ];
 const findings = [];
-for (const file of files.stdout.split(/\r?\n/u).filter(Boolean)) {
+for (const file of files.stdout.split('\0').filter(Boolean)) {
   if (file === 'pnpm-lock.yaml' || file.startsWith('artifacts/')) continue;
   let content;
   try {

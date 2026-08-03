@@ -20,9 +20,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: corepack enable
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -38,13 +38,13 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Enable Corepack
         run: corepack enable
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -60,10 +60,10 @@ jobs:
     timeout-minutes: 35
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - run: corepack enable
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -126,21 +126,21 @@ jobs:
       security-events: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@v4.37.4
         with:
           languages: javascript-typescript
       - name: Analyze
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@v4.37.4
 
   dependency-audit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: corepack enable
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -152,7 +152,7 @@ jobs:
       - name: Capture production license inventory
         run: pnpm licenses list --prod --json > artifacts/licenses.json
       - name: Upload supply-chain artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: promptlens-supply-chain
           path: artifacts/
@@ -164,8 +164,8 @@ jobs:
       matrix:
         target: [api, worker, web]
     steps:
-      - uses: actions/checkout@v6
-      - uses: docker/setup-buildx-action@v3
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
       - name: Build ${{ matrix.target }} image
         uses: docker/build-push-action@v7
         with:
@@ -175,9 +175,27 @@ jobs:
           tags: promptlens/${{ matrix.target }}:ci
           cache-from: type=gha,scope=${{ matrix.target }}
           cache-to: type=gha,mode=max,scope=${{ matrix.target }}
-      - name: Scan ${{ matrix.target }} image
+      - name: Report all ${{ matrix.target }} vulnerabilities
+        id: grype-report
+        uses: anchore/scan-action@v7
+        with:
+          image: promptlens/${{ matrix.target }}:ci
+          fail-build: false
+          severity-cutoff: high
+          output-format: sarif
+          output-file: grype-${{ matrix.target }}.sarif
+      - name: Enforce actionable ${{ matrix.target }} vulnerability threshold
         uses: anchore/scan-action@v7
         with:
           image: promptlens/${{ matrix.target }}:ci
           fail-build: true
           severity-cutoff: high
+          only-fixed: true
+          output-format: table
+      - name: Upload ${{ matrix.target }} vulnerability report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: grype-${{ matrix.target }}-sarif
+          path: grype-${{ matrix.target }}.sarif
+          if-no-files-found: warn

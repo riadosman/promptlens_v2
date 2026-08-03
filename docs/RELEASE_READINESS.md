@@ -34,7 +34,7 @@ A public v1.0 tag still requires the repository-hosted CI gates, protected-tag a
 
 Before relying on the repository-hosted CI result, maintainers must configure the repository itself:
 
-- Enable CodeQL/Code Scanning under **Settings → Code security and analysis**. The workflow can produce a SARIF report, but GitHub rejects the upload when Code Scanning is disabled.
+- Enable CodeQL/Code Scanning under **Settings → Code security and analysis**, then set the repository variable `CODEQL_ENABLED=true`. The workflow intentionally skips the hosted CodeQL job until both are configured.
 - Protect `main` and release tags with required CI checks and at least one review.
 - Grant the workflow `security-events: write` only to the CodeQL job; keep the top-level workflow permission set least-privileged.
 - Configure artifact attestations/provenance and signing identities before publishing a release image.

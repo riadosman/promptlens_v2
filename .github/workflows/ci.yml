@@ -117,11 +117,9 @@ jobs:
         run: docker compose -p promptlens-platform --env-file .env -f infra/compose/compose.full.yaml down
 
   codeql:
+    if: ${{ vars.CODEQL_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # CodeQL upload availability depends on repository-level GitHub settings.
-    # Keep this security report non-blocking until Code Scanning is enabled.
-    continue-on-error: true
     permissions:
       contents: read
       actions: read
@@ -135,18 +133,6 @@ jobs:
           languages: javascript-typescript
       - name: Analyze
         uses: github/codeql-action/analyze@v4
-        with:
-          # Some repositories do not have GitHub Code Scanning enabled yet.
-          # Keep the analysis running and retain SARIF as a CI artifact instead
-          # of failing the entire pipeline during the optional upload step.
-          upload: false
-      - name: Upload CodeQL SARIF artifact
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: codeql-sarif
-          path: results/**/*.sarif
-          if-no-files-found: warn
 
   dependency-audit:
     runs-on: ubuntu-latest

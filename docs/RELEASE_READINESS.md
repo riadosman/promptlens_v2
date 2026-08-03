@@ -29,3 +29,13 @@ This record captures the latest local release-candidate verification. CI remains
 ## External release controls
 
 A public v1.0 tag still requires the repository-hosted CI gates, protected-tag approval, signed artifacts/provenance, supported-OS clean-machine runs, and an independent penetration test. These controls cannot be replaced by a local development-environment result.
+
+### GitHub repository prerequisites
+
+Before relying on the repository-hosted CI result, maintainers must configure the repository itself:
+
+- Enable CodeQL/Code Scanning under **Settings → Code security and analysis**. The workflow can produce a SARIF report, but GitHub rejects the upload when Code Scanning is disabled.
+- Protect `main` and release tags with required CI checks and at least one review.
+- Grant the workflow `security-events: write` only to the CodeQL job; keep the top-level workflow permission set least-privileged.
+- Configure artifact attestations/provenance and signing identities before publishing a release image.
+- Confirm that the repository plan/visibility supports the enabled CodeQL configuration; a local green run cannot prove the hosted upload gate.

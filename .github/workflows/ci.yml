@@ -152,7 +152,7 @@ jobs:
       - name: Capture production license inventory
         run: pnpm licenses list --prod --json > artifacts/licenses.json
       - name: Upload supply-chain artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: promptlens-supply-chain
           path: artifacts/

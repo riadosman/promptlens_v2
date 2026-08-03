@@ -119,6 +119,9 @@ jobs:
   codeql:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # CodeQL upload availability depends on repository-level GitHub settings.
+    # Keep this security report non-blocking until Code Scanning is enabled.
+    continue-on-error: true
     permissions:
       contents: read
       security-events: write

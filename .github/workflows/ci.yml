@@ -28,6 +28,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @promptlens/connector-sdk test
+      - name: Build shared connector SDK before dependent connectors
+        run: pnpm --filter @promptlens/connector-sdk build
       - run: pnpm --filter @promptlens/connector-claude-code build
       - run: pnpm --filter @promptlens/connector-codex build
 

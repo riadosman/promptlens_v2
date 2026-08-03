@@ -17,7 +17,7 @@
     "@promptlens/config": "workspace:*",
     "@promptlens/database": "workspace:*",
     "@promptlens/observability": "workspace:*",
-    "bullmq": "6.0.0",
+    "bullmq": "6.0.2",
     "ioredis": "5.11.1",
     "openai": "7.2.0",
     "zod": "4.4.3"

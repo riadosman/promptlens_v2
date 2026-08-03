@@ -25,9 +25,9 @@
     "@promptlens/contracts": "workspace:*",
     "@promptlens/database": "workspace:*",
     "@promptlens/observability": "workspace:*",
-    "bullmq": "6.0.0",
+    "bullmq": "6.0.2",
     "fastify": "5.10.0",
-    "ioredis": "5.10.1",
+    "ioredis": "5.11.1",
     "nodemailer": "9.0.3",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
@@ -37,6 +37,6 @@
     "@nestjs/testing": "11.1.28",
     "@types/nodemailer": "8.0.1",
     "tsx": "4.23.1",
-    "vitest": "4.1.0"
+    "vitest": "4.1.10"
   }
 }

@@ -194,7 +194,7 @@ jobs:
           output-format: table
       - name: Upload ${{ matrix.target }} vulnerability report
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: grype-${{ matrix.target }}-sarif
           path: grype-${{ matrix.target }}.sarif

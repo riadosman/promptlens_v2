@@ -8,7 +8,7 @@ Bu belge, PromptLens'i temiz bir bilgisayarda kurup çalıştırmak için adım 
 | -------------- | -------------------------- | ---------------------------- |
 | Windows        | 10/11 + PowerShell         | promptlens.ps1 kullanılır    |
 | macOS/Linux    | Güncel 64-bit              | ./promptlens kullanılır      |
-| Node.js        | 22.14.x (>=22.14.0 <23)    | Connector derlemek için      |
+| Node.js        | 22.23.x (>=22.14.0 <23)    | Connector derlemek için      |
 | pnpm           | 10.14.x                    | Corepack ile etkinleştirilir |
 | Docker Desktop | Docker Engine + Compose v2 | Docker açık olmalıdır        |
 | Git            | 2.40+                      | Repository için              |

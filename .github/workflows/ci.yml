@@ -175,9 +175,27 @@ jobs:
           tags: promptlens/${{ matrix.target }}:ci
           cache-from: type=gha,scope=${{ matrix.target }}
           cache-to: type=gha,mode=max,scope=${{ matrix.target }}
-      - name: Scan ${{ matrix.target }} image
+      - name: Report all ${{ matrix.target }} vulnerabilities
+        id: grype-report
+        uses: anchore/scan-action@v7
+        with:
+          image: promptlens/${{ matrix.target }}:ci
+          fail-build: false
+          severity-cutoff: high
+          output-format: sarif
+          output-file: grype-${{ matrix.target }}.sarif
+      - name: Enforce actionable ${{ matrix.target }} vulnerability threshold
         uses: anchore/scan-action@v7
         with:
           image: promptlens/${{ matrix.target }}:ci
           fail-build: true
           severity-cutoff: high
+          only-fixed: true
+          output-format: table
+      - name: Upload ${{ matrix.target }} vulnerability report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: grype-${{ matrix.target }}-sarif
+          path: grype-${{ matrix.target }}.sarif
+          if-no-files-found: warn

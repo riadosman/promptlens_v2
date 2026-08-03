@@ -38,6 +38,44 @@ function compose(...args) {
   );
 }
 
+const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+async function waitForFinalPostgres(container, attempts = 60) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      // The official image briefly starts a temporary PostgreSQL server while
+      // initializing the data directory. PID 1 becomes `postgres` only after
+      // that temporary server has stopped and the final server has started.
+      const initProcess = docker('exec', container, 'cat', '/proc/1/comm');
+      if (initProcess === 'postgres') {
+        const result = docker(
+          'exec',
+          container,
+          'psql',
+          '-U',
+          'postgres',
+          '-d',
+          'postgres',
+          '-Atqc',
+          'SELECT 1',
+        );
+        if (result === '1') return;
+      }
+    } catch {
+      // Initialization is still in progress. Retry until the bounded timeout.
+    }
+    await sleep(1_000);
+  }
+
+  let logs = '';
+  try {
+    logs = docker('logs', container);
+  } catch {
+    logs = 'Container logs were unavailable.';
+  }
+  throw new Error(`The isolated restore PostgreSQL container did not become ready.\n${logs}`);
+}
+
 const countQuery = `SELECT json_build_object(
   'tenants', (SELECT count(*) FROM tenants),
   'memberships', (SELECT count(*) FROM memberships),
@@ -73,17 +111,7 @@ try {
     'POSTGRES_PASSWORD=restore-drill-only',
     'postgres:17.6-alpine',
   );
-  let ready = false;
-  for (let attempt = 0; attempt < 60; attempt += 1) {
-    try {
-      docker('exec', drillContainer, 'pg_isready', '-U', 'postgres');
-      ready = true;
-      break;
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, 1_000));
-    }
-  }
-  assert.ok(ready, 'The isolated restore PostgreSQL container did not become ready.');
+  await waitForFinalPostgres(drillContainer);
 
   docker('cp', localDump, `${drillContainer}:${containerDump}`);
   docker(

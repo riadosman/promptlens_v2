@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.7
-FROM node:22.14.0-bookworm-slim AS toolchain
+ARG NODE_VERSION=22.23.0
+FROM node:${NODE_VERSION}-trixie-slim AS toolchain
 WORKDIR /workspace
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
@@ -30,10 +31,15 @@ RUN pnpm --filter @promptlens/api deploy --prod --legacy /prod/api \
   && pnpm --filter @promptlens/worker deploy --prod --legacy /prod/worker \
   && pnpm --filter @promptlens/web deploy --prod --legacy /prod/web
 
-FROM node:22.14.0-bookworm-slim AS runtime
+FROM node:${NODE_VERSION}-trixie-slim AS runtime
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+  && apt-get upgrade -y \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/* \
+  && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+  && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+    /usr/local/bin/pnpm /usr/local/bin/pnpx /usr/local/bin/yarn /usr/local/bin/yarnpkg
 ENV NODE_ENV=production
 USER node
 

@@ -124,6 +124,7 @@ jobs:
     continue-on-error: true
     permissions:
       contents: read
+      actions: read
       security-events: write
     steps:
       - name: Check out repository

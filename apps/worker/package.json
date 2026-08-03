@@ -18,8 +18,8 @@
     "@promptlens/database": "workspace:*",
     "@promptlens/observability": "workspace:*",
     "bullmq": "6.0.2",
-    "ioredis": "5.11.1",
-    "openai": "7.2.0",
+    "ioredis": "6.0.0",
+    "openai": "7.3.0",
     "zod": "4.4.3"
   },
   "devDependencies": {

@@ -36,7 +36,7 @@ jobs:
           for archive in artifacts/*.tgz; do
             cosign sign-blob --yes --bundle "${archive}.sigstore.json" "${archive}"
           done
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: promptlens-${{ github.ref_name }}-connectors
           path: artifacts/
@@ -83,7 +83,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm sbom
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: promptlens-${{ github.ref_name }}-spdx
           path: artifacts/promptlens.spdx.json

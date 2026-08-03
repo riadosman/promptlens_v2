@@ -1,0 +1,11 @@
+{
+  "id": "promptlens.claude-code",
+  "name": "PromptLens for Claude Code",
+  "platform": "claude-code",
+  "protocolVersion": "1.0",
+  "permissions": ["prompt:write", "project:read", "connector:health"],
+  "capture": {
+    "type": "official-hook",
+    "event": "UserPromptSubmit"
+  }
+}

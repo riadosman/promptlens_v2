@@ -1,0 +1,52 @@
+{
+  "name": "promptlens",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Open-source prompt intelligence and project management platform",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.14.0",
+  "engines": {
+    "node": ">=22.14.0 <23",
+    "pnpm": ">=10.14.0 <11"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "clean": "turbo run clean && node scripts/clean.mjs",
+    "dev": "turbo run dev --parallel",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "validate": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "acceptance": "node scripts/acceptance.mjs",
+    "e2e": "playwright test",
+    "sbom": "node scripts/generate-sbom.mjs",
+    "security:secrets": "node scripts/security-scan.mjs",
+    "restore:drill": "node scripts/restore-drill.mjs",
+    "security:rls": "pnpm --filter @promptlens/database rls:audit",
+    "infra:up": "docker compose -p promptlensv-dev -f infra/compose/compose.yaml up -d --wait",
+    "infra:down": "docker compose -p promptlensv-dev -f infra/compose/compose.yaml down",
+    "infra:logs": "docker compose -p promptlensv-dev -f infra/compose/compose.yaml logs -f"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.62.1",
+    "@types/node": "26.1.2",
+    "eslint": "10.8.0",
+    "prettier": "3.9.6",
+    "turbo": "2.10.7",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.65.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion": "5.0.8",
+      "find-my-way": "9.7.0",
+      "js-yaml": "5.2.2",
+      "postcss": "8.5.25",
+      "sharp": "0.35.3"
+    }
+  }
+}

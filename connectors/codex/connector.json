@@ -1,0 +1,8 @@
+{
+  "id": "promptlens.codex",
+  "name": "PromptLens for Codex",
+  "platform": "codex",
+  "protocolVersion": "1.0",
+  "permissions": ["prompt:write", "project:read", "connector:health"],
+  "capture": { "type": "official-hook", "event": "UserPromptSubmit" }
+}

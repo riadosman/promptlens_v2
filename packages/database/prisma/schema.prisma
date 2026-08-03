@@ -1,0 +1,405 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum ConnectorStatus {
+  PENDING
+  ACTIVE
+  REVOKED
+}
+
+enum DeviceAuthorizationStatus {
+  PENDING
+  APPROVED
+  DENIED
+  CONSUMED
+  EXPIRED
+}
+
+enum AnalysisStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum PromptVersionKind {
+  ORIGINAL
+  IMPROVED
+  USER_EDIT
+}
+
+enum AuthTokenPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model User {
+  id                   String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                String                @unique @db.VarChar(320)
+  displayName          String                @map("display_name") @db.VarChar(120)
+  passwordHash         String                @map("password_hash")
+  status               UserStatus            @default(ACTIVE)
+  isInstanceAdmin      Boolean               @default(false) @map("is_instance_admin")
+  emailVerifiedAt      DateTime?             @map("email_verified_at") @db.Timestamptz(3)
+  createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  memberships          Membership[]
+  sessions             Session[]
+  prompts              Prompt[]
+  deviceAuthorizations DeviceAuthorization[]
+  authTokens           AuthToken[]
+
+  @@map("users")
+}
+
+model SupportGrant {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  requestedById String    @map("requested_by_id") @db.Uuid
+  approvedById  String?   @map("approved_by_id") @db.Uuid
+  reason        String    @db.VarChar(500)
+  expiresAt     DateTime? @map("expires_at") @db.Timestamptz(3)
+  revokedAt     DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([requestedById, expiresAt])
+  @@map("support_grants")
+}
+
+model AuthToken {
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  tokenHash String           @unique @map("token_hash") @db.Char(64)
+  purpose   AuthTokenPurpose
+  expiresAt DateTime         @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime?        @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, expiresAt])
+  @@map("auth_tokens")
+}
+
+model Tenant {
+  id                   String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String                  @db.VarChar(120)
+  slug                 String                  @unique @db.VarChar(80)
+  createdAt            DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime                @updatedAt @map("updated_at") @db.Timestamptz(3)
+  retentionDays        Int                     @default(365) @map("retention_days")
+  aiProvider           String                  @default("fake") @map("ai_provider") @db.VarChar(40)
+  aiModel              String                  @default("deterministic-v1") @map("ai_model") @db.VarChar(160)
+  aiMonthlyTokenBudget Int                     @default(1000000) @map("ai_monthly_token_budget")
+  deletionScheduledAt  DateTime?               @map("deletion_scheduled_at") @db.Timestamptz(3)
+  memberships          Membership[]
+  sessions             Session[]
+  projects             Project[]
+  connectors           ConnectorInstallation[]
+  prompts              Prompt[]
+  tags                 Tag[]
+  analyses             Analysis[]
+  usage                UsageRecord[]
+  auditEvents          AuditEvent[]
+  outbox               OutboxEvent[]
+  deviceAuthorizations DeviceAuthorization[]
+  supportGrants        SupportGrant[]
+
+  @@map("tenants")
+}
+
+model Membership {
+  tenantId  String         @map("tenant_id") @db.Uuid
+  userId    String         @map("user_id") @db.Uuid
+  role      MembershipRole @default(MEMBER)
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([tenantId, userId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+model Session {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tokenHash  String    @unique @map("token_hash") @db.Char(64)
+  userId     String    @map("user_id") @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  lastSeenAt DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(3)
+  ipHash     String?   @map("ip_hash") @db.Char(64)
+  userAgent  String?   @map("user_agent") @db.VarChar(512)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([tenantId])
+  @@map("sessions")
+}
+
+model Project {
+  id                   String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String                @map("tenant_id") @db.Uuid
+  name                 String                @db.VarChar(120)
+  description          String?               @db.VarChar(1000)
+  status               ProjectStatus         @default(ACTIVE)
+  archivedAt           DateTime?             @map("archived_at") @db.Timestamptz(3)
+  createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  tenant               Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prompts              Prompt[]
+  deviceAuthorizations DeviceAuthorization[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, status, updatedAt])
+  @@map("projects")
+}
+
+model ConnectorInstallation {
+  id                   String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String                @map("tenant_id") @db.Uuid
+  createdById          String                @map("created_by_id") @db.Uuid
+  platform             String                @db.VarChar(80)
+  protocolVersion      String                @map("protocol_version") @db.VarChar(20)
+  displayName          String                @map("display_name") @db.VarChar(120)
+  credentialHash       String?               @map("credential_hash") @db.Char(64)
+  defaultProjectId     String                @map("default_project_id") @db.Uuid
+  status               ConnectorStatus       @default(PENDING)
+  lastSeenAt           DateTime?             @map("last_seen_at") @db.Timestamptz(3)
+  revokedAt            DateTime?             @map("revoked_at") @db.Timestamptz(3)
+  createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  tenant               Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prompts              Prompt[]
+  credentials          ConnectorCredential[]
+  deviceAuthorizations DeviceAuthorization[]
+
+  @@index([tenantId, status])
+  @@map("connector_installations")
+}
+
+model DeviceAuthorization {
+  id              String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deviceCodeHash  String                    @unique @map("device_code_hash") @db.Char(64)
+  userCode        String                    @unique @map("user_code") @db.VarChar(12)
+  platform        String                    @db.VarChar(80)
+  displayName     String                    @map("display_name") @db.VarChar(120)
+  protocolVersion String                    @map("protocol_version") @db.VarChar(20)
+  codeChallenge   String?                   @map("code_challenge") @db.VarChar(128)
+  status          DeviceAuthorizationStatus @default(PENDING)
+  tenantId        String?                   @map("tenant_id") @db.Uuid
+  userId          String?                   @map("user_id") @db.Uuid
+  projectId       String?                   @map("project_id") @db.Uuid
+  installationId  String?                   @map("installation_id") @db.Uuid
+  expiresAt       DateTime                  @map("expires_at") @db.Timestamptz(3)
+  lastPolledAt    DateTime?                 @map("last_polled_at") @db.Timestamptz(3)
+  createdAt       DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  tenant          Tenant?                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user            User?                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project         Project?                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  installation    ConnectorInstallation?    @relation(fields: [installationId], references: [id], onDelete: SetNull)
+
+  @@index([status, expiresAt])
+  @@index([tenantId, userId])
+  @@map("device_authorizations")
+}
+
+model ConnectorCredential {
+  id               String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String                @map("tenant_id") @db.Uuid
+  installationId   String                @map("installation_id") @db.Uuid
+  accessTokenHash  String                @unique @map("access_token_hash") @db.Char(64)
+  refreshTokenHash String                @unique @map("refresh_token_hash") @db.Char(64)
+  familyId         String                @map("family_id") @db.Uuid
+  accessExpiresAt  DateTime              @map("access_expires_at") @db.Timestamptz(3)
+  refreshExpiresAt DateTime              @map("refresh_expires_at") @db.Timestamptz(3)
+  usedAt           DateTime?             @map("used_at") @db.Timestamptz(3)
+  revokedAt        DateTime?             @map("revoked_at") @db.Timestamptz(3)
+  replacedById     String?               @map("replaced_by_id") @db.Uuid
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  installation     ConnectorInstallation @relation(fields: [installationId], references: [id], onDelete: Cascade)
+
+  @@index([installationId, createdAt])
+  @@index([tenantId, createdAt])
+  @@index([familyId])
+  @@map("connector_credentials")
+}
+
+model Prompt {
+  id                      String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId                String                 @map("tenant_id") @db.Uuid
+  projectId               String                 @map("project_id") @db.Uuid
+  userId                  String                 @map("user_id") @db.Uuid
+  connectorInstallationId String?                @map("connector_installation_id") @db.Uuid
+  clientEventId           String?                @map("client_event_id") @db.Uuid
+  clientEventHash         String?                @map("client_event_hash") @db.Char(64)
+  content                 String
+  platform                String                 @db.VarChar(80)
+  model                   String                 @db.VarChar(160)
+  occurredAt              DateTime               @map("occurred_at") @db.Timestamptz(3)
+  timezone                String                 @db.VarChar(80)
+  metadata                Json                   @default("{}")
+  deletedAt               DateTime?              @map("deleted_at") @db.Timestamptz(3)
+  createdAt               DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  tenant                  Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project                 Project                @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  user                    User                   @relation(fields: [userId], references: [id], onDelete: Restrict)
+  connector               ConnectorInstallation? @relation(fields: [connectorInstallationId], references: [id], onDelete: SetNull)
+  versions                PromptVersion[]
+  analyses                Analysis[]
+  tags                    PromptTag[]
+
+  @@unique([connectorInstallationId, clientEventId])
+  @@index([tenantId, projectId, occurredAt(sort: Desc)])
+  @@index([tenantId, userId, occurredAt(sort: Desc)])
+  @@map("prompts")
+}
+
+model PromptVersion {
+  id        String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String            @map("tenant_id") @db.Uuid
+  promptId  String            @map("prompt_id") @db.Uuid
+  analysisId String?          @unique @map("analysis_id") @db.Uuid
+  kind      PromptVersionKind
+  content   String
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  prompt    Prompt            @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  analysis  Analysis?         @relation(fields: [analysisId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, promptId, createdAt])
+  @@map("prompt_versions")
+}
+
+model Tag {
+  id        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String      @map("tenant_id") @db.Uuid
+  name      String      @db.VarChar(60)
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prompts   PromptTag[]
+
+  @@unique([tenantId, name])
+  @@map("tags")
+}
+
+model PromptTag {
+  tenantId String @map("tenant_id") @db.Uuid
+  promptId String @map("prompt_id") @db.Uuid
+  tagId    String @map("tag_id") @db.Uuid
+  prompt   Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([promptId, tagId])
+  @@index([tenantId, tagId])
+  @@map("prompt_tags")
+}
+
+model Analysis {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String         @map("tenant_id") @db.Uuid
+  promptId      String         @map("prompt_id") @db.Uuid
+  status        AnalysisStatus @default(QUEUED)
+  rubricVersion String         @map("rubric_version") @db.VarChar(40)
+  provider      String?        @db.VarChar(80)
+  model         String?        @db.VarChar(160)
+  score         Int?
+  strengths     Json?
+  weaknesses    Json?
+  suggestions   Json?
+  errorCode     String?        @map("error_code") @db.VarChar(80)
+  startedAt     DateTime?      @map("started_at") @db.Timestamptz(3)
+  completedAt   DateTime?      @map("completed_at") @db.Timestamptz(3)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prompt        Prompt         @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  usage         UsageRecord[]
+  improvedVersion PromptVersion?
+
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, promptId, createdAt])
+  @@map("analyses")
+}
+
+model UsageRecord {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  analysisId   String?   @map("analysis_id") @db.Uuid
+  provider     String    @db.VarChar(80)
+  model        String    @db.VarChar(160)
+  inputTokens  Int       @map("input_tokens")
+  outputTokens Int       @map("output_tokens")
+  costMicros   BigInt    @default(0) @map("cost_micros")
+  latencyMs    Int       @map("latency_ms")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  analysis     Analysis? @relation(fields: [analysisId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@map("usage_records")
+}
+
+model AuditEvent {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String?  @map("tenant_id") @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  action     String   @db.VarChar(120)
+  targetType String?  @map("target_type") @db.VarChar(80)
+  targetId   String?  @map("target_id") @db.Uuid
+  result     String   @db.VarChar(20)
+  requestId  String?  @map("request_id") @db.VarChar(80)
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  tenant     Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("audit_events")
+}
+
+model OutboxEvent {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String?   @map("tenant_id") @db.Uuid
+  aggregateType String    @map("aggregate_type") @db.VarChar(80)
+  aggregateId   String    @map("aggregate_id") @db.Uuid
+  eventType     String    @map("event_type") @db.VarChar(120)
+  eventVersion  Int       @default(1) @map("event_version")
+  payload       Json
+  occurredAt    DateTime  @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  publishedAt   DateTime? @map("published_at") @db.Timestamptz(3)
+  attempts      Int       @default(0)
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([publishedAt, occurredAt])
+  @@index([tenantId, occurredAt])
+  @@map("outbox_events")
+}

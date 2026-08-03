@@ -1,0 +1,65 @@
+'use client';
+
+import { useState, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { apiRequest } from '../lib/api';
+
+export function AuthForm({ mode }: { readonly mode: 'login' | 'register' }) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setError(null);
+    const data = new FormData(event.currentTarget);
+    const payload = Object.fromEntries(data.entries());
+    try {
+      await apiRequest(`/auth/${mode}`, { method: 'POST', body: JSON.stringify(payload) });
+      const requested = new URLSearchParams(window.location.search).get('returnTo');
+      const returnTo = requested?.startsWith('/') && !requested.startsWith('//') ? requested : null;
+      router.push(returnTo ?? '/dashboard');
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : 'Authentication failed.');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <form className="auth-form" onSubmit={submit}>
+      {mode === 'register' ? (
+        <>
+          <label>
+            Your name
+            <input name="displayName" autoComplete="name" required maxLength={120} />
+          </label>
+          <label>
+            Workspace name
+            <input name="tenantName" autoComplete="organization" required maxLength={120} />
+          </label>
+        </>
+      ) : null}
+      <label>
+        Email
+        <input name="email" type="email" autoComplete="email" required maxLength={320} />
+      </label>
+      <label>
+        Password
+        <input
+          name="password"
+          type="password"
+          autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+          required
+          minLength={mode === 'register' ? 12 : 1}
+          maxLength={128}
+        />
+      </label>
+      {error ? <p className="form-error">{error}</p> : null}
+      <button type="submit" disabled={pending}>
+        {pending ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
+      </button>
+    </form>
+  );
+}

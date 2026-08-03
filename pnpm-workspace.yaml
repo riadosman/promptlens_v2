@@ -1,0 +1,9 @@
+packages:
+  - apps/*
+  - packages/*
+  - connectors/*
+
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - esbuild
+  - sharp

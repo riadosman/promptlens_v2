@@ -1,0 +1,179 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  connector-compatibility:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - run: corepack enable
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @promptlens/connector-sdk test
+      - run: pnpm --filter @promptlens/connector-claude-code build
+      - run: pnpm --filter @promptlens/connector-codex build
+
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate workspace
+        run: pnpm validate
+
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - run: corepack enable
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run clean-install acceptance flow
+        env:
+          PROMPTLENS_CONNECTORS: none
+        run: sh promptlens install
+
+      - name: Verify v1 critical path
+        run: node scripts/acceptance.mjs
+
+      - name: Verify database role and RLS isolation
+        run: pnpm security:rls
+
+      - name: Install browser runtime
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Verify browser critical path
+        run: pnpm e2e
+
+      - name: Verify ingest and search performance budgets
+        run: >-
+          docker run --rm --network host
+          -v "$PWD/tests/performance:/scripts:ro"
+          grafana/k6:0.55.0 run /scripts/smoke.js
+
+      - name: Verify dependency failure and recovery
+        run: |
+          docker compose -p promptlens-platform --env-file .env -f infra/compose/compose.full.yaml stop redis
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:4000/v1/health/ready || true)
+          test "$status" = "503"
+          docker compose -p promptlens-platform --env-file .env -f infra/compose/compose.full.yaml start redis
+          for attempt in $(seq 1 30); do
+            status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:4000/v1/health/ready || true)
+            if [ "$status" = "200" ]; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+
+      - name: Verify isolated backup and restore
+        run: node scripts/restore-drill.mjs
+
+      - name: Capture service logs on failure
+        if: failure()
+        run: docker compose -p promptlens-platform --env-file .env -f infra/compose/compose.full.yaml logs --no-color
+
+      - name: Stop acceptance stack
+        if: always()
+        run: docker compose -p promptlens-platform --env-file .env -f infra/compose/compose.full.yaml down
+
+  codeql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - run: corepack enable
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --prod --audit-level high
+      - run: pnpm security:secrets
+      - name: Generate SPDX SBOM
+        run: pnpm sbom
+      - name: Capture production license inventory
+        run: pnpm licenses list --prod --json > artifacts/licenses.json
+      - name: Upload supply-chain artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: promptlens-supply-chain
+          path: artifacts/
+
+  container-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        target: [api, worker, web]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v3
+      - name: Build ${{ matrix.target }} image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: ${{ matrix.target }}
+          load: true
+          tags: promptlens/${{ matrix.target }}:ci
+          cache-from: type=gha,scope=${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.target }}
+      - name: Scan ${{ matrix.target }} image
+        uses: anchore/scan-action@v7
+        with:
+          image: promptlens/${{ matrix.target }}:ci
+          fail-build: true
+          severity-cutoff: high

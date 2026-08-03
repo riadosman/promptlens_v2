@@ -1,0 +1,29 @@
+{
+  "name": "@promptlens/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "dev": "tsx watch src/main.ts",
+    "lint": "eslint src",
+    "start": "node dist/main.js",
+    "test": "vitest run --passWithNoTests --exclude dist/**",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.115.0",
+    "@promptlens/config": "workspace:*",
+    "@promptlens/database": "workspace:*",
+    "@promptlens/observability": "workspace:*",
+    "bullmq": "6.0.0",
+    "ioredis": "5.11.1",
+    "openai": "7.2.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "tsx": "4.23.1",
+    "vitest": "4.1.0"
+  }
+}

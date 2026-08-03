@@ -1,0 +1,33 @@
+{
+  "name": "@promptlens/database",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true});require('node:fs').rmSync('src/generated',{recursive:true,force:true})\"",
+    "db:deploy": "prisma migrate deploy",
+    "db:dev": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "db:status": "prisma migrate status",
+    "lint": "eslint src",
+    "rls:audit": "node scripts/rls-audit.mjs",
+    "test": "vitest run --exclude dist/** --passWithNoTests",
+    "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "7.9.1",
+    "@prisma/client": "7.9.1",
+    "pg": "8.22.0"
+  },
+  "devDependencies": {
+    "@types/pg": "8.20.0",
+    "dotenv": "17.4.2",
+    "prisma": "7.9.1",
+    "vitest": "4.1.0"
+  }
+}

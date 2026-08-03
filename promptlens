@@ -1,0 +1,162 @@
+#!/usr/bin/env sh
+set -eu
+
+COMMAND="${1:-install}"
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+ENV_FILE="$ROOT/.env"
+COMPOSE_FILE="$ROOT/infra/compose/compose.full.yaml"
+COMPOSE_PROJECT="promptlens-platform"
+
+command -v docker >/dev/null 2>&1 || { echo 'Docker with Compose v2 is required.' >&2; exit 1; }
+docker info >/dev/null 2>&1 || { echo 'Docker is not running.' >&2; exit 1; }
+command -v openssl >/dev/null 2>&1 || { echo 'OpenSSL is required to generate installation secrets.' >&2; exit 1; }
+
+if [ ! -f "$ENV_FILE" ]; then
+  POSTGRES_PASSWORD=$(openssl rand -hex 32)
+  POSTGRES_APP_PASSWORD=$(openssl rand -hex 32)
+  POSTGRES_WORKER_PASSWORD=$(openssl rand -hex 32)
+  SESSION_HASH_SECRET=$(openssl rand -hex 32)
+  S3_SECRET_KEY=$(openssl rand -hex 32)
+  umask 077
+  printf '%s\n' \
+    'NODE_ENV=production' \
+    'WEB_ORIGIN=http://localhost:3000' \
+    'PUBLIC_API_URL=http://localhost:4000/v1' \
+    'WEB_PORT=3000' \
+    'API_PORT=4000' \
+    'POSTGRES_PORT=55435' \
+    "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" \
+    "POSTGRES_APP_PASSWORD=$POSTGRES_APP_PASSWORD" \
+    "POSTGRES_WORKER_PASSWORD=$POSTGRES_WORKER_PASSWORD" \
+    "SESSION_HASH_SECRET=$SESSION_HASH_SECRET" \
+    'S3_ACCESS_KEY=promptlens' \
+    "S3_SECRET_KEY=$S3_SECRET_KEY" \
+    'AI_PROVIDER=fake' \
+    'AI_MODEL=gpt-5.6-luna' \
+    'OPENAI_API_KEY=' \
+    'ANTHROPIC_API_KEY=' \
+    'ANTHROPIC_MODEL=claude-sonnet-5' \
+    'AI_TENANT_MONTHLY_TOKEN_BUDGET=1000000' \
+    'AI_TENANT_REQUESTS_PER_MINUTE=60' \
+    'AI_CIRCUIT_FAILURE_THRESHOLD=5' \
+    'OTEL_EXPORTER_OTLP_ENDPOINT=' \
+    'EMAIL_VERIFICATION_REQUIRED=false' > "$ENV_FILE"
+fi
+
+if ! grep -q '^POSTGRES_APP_PASSWORD=' "$ENV_FILE"; then
+  POSTGRES_APP_PASSWORD=$(openssl rand -hex 32)
+  printf '%s\n' "POSTGRES_APP_PASSWORD=$POSTGRES_APP_PASSWORD" >> "$ENV_FILE"
+fi
+if ! grep -q '^POSTGRES_WORKER_PASSWORD=' "$ENV_FILE"; then
+  POSTGRES_WORKER_PASSWORD=$(openssl rand -hex 32)
+  printf '%s\n' "POSTGRES_WORKER_PASSWORD=$POSTGRES_WORKER_PASSWORD" >> "$ENV_FILE"
+fi
+if ! grep -q '^SESSION_HASH_SECRET=' "$ENV_FILE"; then
+  SESSION_HASH_SECRET=$(openssl rand -hex 32)
+  printf '%s\n' "SESSION_HASH_SECRET=$SESSION_HASH_SECRET" >> "$ENV_FILE"
+fi
+
+compose() { docker compose -p "$COMPOSE_PROJECT" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"; }
+
+run_pnpm() {
+  if command -v pnpm >/dev/null 2>&1; then pnpm "$@"; else corepack pnpm "$@"; fi
+}
+
+select_connectors() {
+  REQUESTED=${PROMPTLENS_CONNECTORS:-auto}
+  if [ "$REQUESTED" != auto ]; then
+    SELECTED_CONNECTORS=$(printf '%s' "$REQUESTED" | tr ',' ' ')
+    return
+  fi
+  DETECTED=''
+  command -v claude >/dev/null 2>&1 && DETECTED="$DETECTED claude-code"
+  command -v codex >/dev/null 2>&1 && DETECTED="$DETECTED codex"
+  DETECTED=$(printf '%s' "$DETECTED" | xargs)
+  if [ -n "$DETECTED" ]; then
+    SELECTED_CONNECTORS=$DETECTED
+    echo "Detected AI platform connector(s): $SELECTED_CONNECTORS"
+    return
+  fi
+  if [ -t 0 ] && [ -t 1 ] && [ -z "${CI:-}" ]; then
+    printf '%s' 'No supported AI CLI was detected. Install [1] Claude Code, [2] Codex, [3] both, or [0] skip? '
+    read -r CHOICE
+    case "$CHOICE" in
+      1) SELECTED_CONNECTORS='claude-code' ;;
+      2) SELECTED_CONNECTORS='codex' ;;
+      3) SELECTED_CONNECTORS='claude-code codex' ;;
+      0|'') SELECTED_CONNECTORS='none' ;;
+      *) echo 'Invalid connector selection.' >&2; exit 2 ;;
+    esac
+  else
+    SELECTED_CONNECTORS='none'
+  fi
+}
+
+install_connectors() {
+  select_connectors
+  case " ${PROMPTLENS_CONNECTOR_LOGIN:-auto} " in
+    ' auto '|' always '|' never ') ;;
+    *) echo 'PROMPTLENS_CONNECTOR_LOGIN must be auto, always, or never.' >&2; exit 2 ;;
+  esac
+  case " $SELECTED_CONNECTORS " in
+    *' all '*) SELECTED_CONNECTORS='claude-code codex' ;;
+  esac
+  [ "$SELECTED_CONNECTORS" = none ] && { echo 'Connector installation skipped.'; return; }
+  command -v node >/dev/null 2>&1 || { echo 'Node.js is required by the detected AI connector.' >&2; exit 1; }
+  if ! command -v pnpm >/dev/null 2>&1; then
+    command -v corepack >/dev/null 2>&1 || { echo 'Corepack or pnpm is required to install a source connector.' >&2; exit 1; }
+  fi
+  run_pnpm install --frozen-lockfile
+  CONNECTOR_API_URL=$(sed -n 's/^PUBLIC_API_URL=//p' "$ENV_FILE" | tail -n 1)
+  [ -n "$CONNECTOR_API_URL" ] || CONNECTOR_API_URL='http://localhost:4000/v1'
+  for CONNECTOR in $SELECTED_CONNECTORS; do
+    case "$CONNECTOR" in
+      claude-code) PACKAGE='@promptlens/connector-claude-code'; CLI="$ROOT/connectors/claude-code/dist/cli.js" ;;
+      codex) PACKAGE='@promptlens/connector-codex'; CLI="$ROOT/connectors/codex/dist/cli.js" ;;
+      *) echo "Unsupported connector: $CONNECTOR" >&2; exit 2 ;;
+    esac
+    run_pnpm --filter "$PACKAGE" build
+    PROMPTLENS_API_URL="$CONNECTOR_API_URL" node "$CLI" install
+    if { [ "${PROMPTLENS_CONNECTOR_LOGIN:-auto}" = always ] || { [ "${PROMPTLENS_CONNECTOR_LOGIN:-auto}" = auto ] && [ -t 0 ] && [ -t 1 ] && [ -z "${CI:-}" ]; }; }; then
+      PROMPTLENS_API_URL="$CONNECTOR_API_URL" node "$CLI" connect
+    else
+      echo "Connector installed. Authenticate later with: node $CLI connect"
+    fi
+  done
+}
+
+case "$COMMAND" in
+  install|upgrade)
+    compose --profile tools build
+    compose up -d --wait postgres redis minio
+    compose exec -T postgres sh /docker-entrypoint-initdb.d/10-app-role.sh
+    POSTGRES_PASSWORD=$(sed -n 's/^POSTGRES_PASSWORD=//p' "$ENV_FILE")
+    compose --profile tools run --rm -e "DATABASE_URL=postgresql://promptlens_owner:$POSTGRES_PASSWORD@postgres:5432/promptlens" migrate
+    compose up -d --wait
+    echo 'PromptLens is ready at http://localhost:3000'
+    [ "$COMMAND" = install ] && install_connectors
+    ;;
+  start) compose up -d --wait ;;
+  stop) compose down ;;
+  status) compose ps ;;
+  logs) compose logs -f ;;
+  doctor) compose config --quiet && echo 'Configuration is valid.' ;;
+  backup)
+    mkdir -p "$ROOT/backups"
+    STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+    CONTAINER_FILE="/tmp/promptlens-$STAMP.dump"
+    compose exec -T postgres pg_dump -U promptlens_owner -d promptlens --format=custom --file="$CONTAINER_FILE"
+    CONTAINER_ID=$(compose ps -q postgres)
+    docker cp "$CONTAINER_ID:$CONTAINER_FILE" "$ROOT/backups/promptlens-$STAMP.dump"
+    echo "Backup created: $ROOT/backups/promptlens-$STAMP.dump"
+    ;;
+  diagnostics)
+    mkdir -p "$ROOT/diagnostics"
+    STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+    TARGET="$ROOT/diagnostics/promptlens-$STAMP.txt"
+    { echo "PromptLens diagnostics $STAMP"; compose ps; compose images; } > "$TARGET"
+    echo "Diagnostics created without environment secrets: $TARGET"
+    ;;
+  connectors) install_connectors ;;
+  *) echo 'Usage: ./promptlens [install|upgrade|start|stop|status|logs|doctor|backup|diagnostics|connectors]' >&2; exit 2 ;;
+esac

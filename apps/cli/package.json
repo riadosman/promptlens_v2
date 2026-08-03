@@ -1,0 +1,21 @@
+{
+  "name": "@promptlens/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "promptlens": "dist/main.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "dev": "tsx src/main.ts",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests --exclude dist/**",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "tsx": "4.23.1",
+    "vitest": "4.1.0"
+  }
+}

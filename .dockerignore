@@ -1,0 +1,13 @@
+.data
+.git
+.github
+**/.next
+**/.turbo
+**/coverage
+**/dist
+**/node_modules
+*.log
+.env
+artifacts
+backups
+diagnostics

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-FROM node:22.14.0-bookworm-slim AS toolchain
+FROM node:26.5.1-bookworm-slim AS toolchain
 WORKDIR /workspace
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
@@ -30,7 +30,7 @@ RUN pnpm --filter @promptlens/api deploy --prod --legacy /prod/api \
   && pnpm --filter @promptlens/worker deploy --prod --legacy /prod/worker \
   && pnpm --filter @promptlens/web deploy --prod --legacy /prod/web
 
-FROM node:22.14.0-bookworm-slim AS runtime
+FROM node:26.5.1-bookworm-slim AS runtime
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*

@@ -16,6 +16,7 @@ test-results/
 
 # Runtime data
 .data/
+.superpowers/
 backups/
 diagnostics/
 artifacts/

@@ -3,7 +3,9 @@ import AxeBuilder from '@axe-core/playwright';
 
 test('owner overview prioritizes people and projects', async ({ page }) => {
   await page.goto('/dashboard/overview?mock=1');
-  await expect(page.getByRole('heading', { name: 'Where is your team getting stuck?' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Where is your team getting stuck?' }),
+  ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Project performance' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'People performance' })).toBeVisible();
 });
@@ -13,6 +15,25 @@ test('member overview stays personal', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'What should you improve next?' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'People performance' })).toHaveCount(0);
   await expect(page.getByText('Needs attention')).toBeVisible();
+});
+
+test('prompt workbench keeps filters and the selected analysis in the URL', async ({ page }) => {
+  await page.goto('/dashboard/prompts?mock=1');
+  await page.getByLabel('Filter by project').selectOption('project-content');
+  await page.getByRole('button', { name: 'Apply filters' }).click();
+  await expect(page).toHaveURL(/projectId=project-content/);
+
+  await page.getByRole('button', { name: 'Open analysis' }).first().click();
+  await expect(page).toHaveURL(/promptId=prompt-/);
+  await expect(page.getByRole('heading', { name: 'Improved prompt' })).toBeVisible();
+});
+
+test('project workbench link carries the selected project into prompts', async ({ page }) => {
+  await page.goto('/dashboard/projects?mock=1');
+  await page.getByRole('link', { name: 'Open Content team prompts' }).click();
+
+  await expect(page).toHaveURL(/\/dashboard\/prompts\?mock=1&projectId=project-content/);
+  await expect(page.getByLabel('Filter by project')).toHaveValue('project-content');
 });
 
 test('mobile navigation retains the workspace switcher', async ({ page }) => {
@@ -78,10 +99,7 @@ test('auth panel controls show a contrasting keyboard focus indicator', async ({
   await page.keyboard.press('Tab');
   await page.keyboard.press('Tab');
   await expect(page.getByLabel('Email')).toBeFocused();
-  await expect(page.getByLabel('Email')).toHaveCSS(
-    'box-shadow',
-    'rgb(23, 23, 23) 0px 0px 0px 3px',
-  );
+  await expect(page.getByLabel('Email')).toHaveCSS('box-shadow', 'rgb(23, 23, 23) 0px 0px 0px 3px');
 
   await page.keyboard.press('Tab');
   await page.keyboard.press('Tab');

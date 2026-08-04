@@ -1,13 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import type {
-  DashboardStats,
-  ProjectResponse,
-  PromptListResponse,
-} from '@promptlens/contracts';
+import type { DashboardStats, ProjectResponse, PromptListResponse } from '@promptlens/contracts';
 import { apiDownload, apiRequest } from '../lib/api';
 
 type DashboardSection = 'overview' | 'prompts' | 'projects';
@@ -107,7 +103,11 @@ const mockPrompts: MockPromptRow[] = [
       score: 87,
       strengths: ['Clear CTA', 'Professional tone', 'Concise'],
       weaknesses: ['Could specify release window'],
-      suggestions: ['Add explicit rollout date', 'Mention migration checklist', 'Keep one CTA only'],
+      suggestions: [
+        'Add explicit rollout date',
+        'Mention migration checklist',
+        'Keep one CTA only',
+      ],
       improvedPrompt:
         'Create one concise social post for a finance-team product upgrade announcement, include rollout date, risk notes, and a single clear CTA.',
     },
@@ -221,7 +221,9 @@ const mockUsers: Record<'OWNER' | 'USER', MockMode> = {
       isInstanceAdmin: false,
     },
     tenantMembers: [],
-    tenants: [mockTenants[0] ?? { role: 'MEMBER', tenant: { id: 'tenant-001', name: 'Acme Marketing' } }],
+    tenants: [
+      mockTenants[0] ?? { role: 'MEMBER', tenant: { id: 'tenant-001', name: 'Acme Marketing' } },
+    ],
   },
 };
 
@@ -237,7 +239,9 @@ const emptyStats: DashboardStats = {
 };
 
 function buildMockStats(prompts: PromptListResponse['items']): DashboardStats {
-  const completed = prompts.filter((prompt) => prompt.analysis?.status === 'COMPLETED' && prompt.analysis.score !== null);
+  const completed = prompts.filter(
+    (prompt) => prompt.analysis?.status === 'COMPLETED' && prompt.analysis.score !== null,
+  );
   const totalScore = completed.reduce((sum, prompt) => sum + (prompt.analysis?.score ?? 0), 0);
   const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1_000;
   const last7Score = prompts.filter(
@@ -257,7 +261,10 @@ function buildMockStats(prompts: PromptListResponse['items']): DashboardStats {
   ).map(([name, count]) => ({ name, count }));
   const scoreByDay = prompts
     .filter((prompt) => prompt.analysis?.status === 'COMPLETED' && prompt.analysis.score !== null)
-    .map((prompt) => ({ date: prompt.occurredAt.slice(0, 10), score: prompt.analysis?.score ?? 0 }));
+    .map((prompt) => ({
+      date: prompt.occurredAt.slice(0, 10),
+      score: prompt.analysis?.score ?? 0,
+    }));
   return {
     projects: new Set(prompts.map((prompt) => prompt.projectId)).size,
     prompts: prompts.length,
@@ -291,16 +298,23 @@ function promptListMatchesFilter(
   const score = prompt.analysis?.score;
   if (loweredQuery && !prompt.content.toLowerCase().includes(loweredQuery)) return false;
   if (options.projectFilter && prompt.projectId !== options.projectFilter) return false;
-  if (options.platformFilter && !prompt.platform.toLowerCase().includes(options.platformFilter.toLowerCase()))
+  if (
+    options.platformFilter &&
+    !prompt.platform.toLowerCase().includes(options.platformFilter.toLowerCase())
+  )
     return false;
-  if (options.modelFilter && !prompt.model.toLowerCase().includes(options.modelFilter.toLowerCase()))
+  if (
+    options.modelFilter &&
+    !prompt.model.toLowerCase().includes(options.modelFilter.toLowerCase())
+  )
     return false;
   if (options.minScoreFilter) {
     const minScore = Number(options.minScoreFilter);
     if (Number.isNaN(minScore)) return false;
     if (score === null || score === undefined || score < minScore) return false;
   }
-  if (options.tenantAdmin && options.memberFilter && prompt.ownerId !== options.memberFilter) return false;
+  if (options.tenantAdmin && options.memberFilter && prompt.ownerId !== options.memberFilter)
+    return false;
   return true;
 }
 
@@ -328,21 +342,42 @@ export function DashboardClient() {
   const [stats, setStats] = useState(emptyStats);
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [prompts, setPrompts] = useState<PromptListResponse['items']>([]);
-  const [query, setQuery] = useState('');
-  const [projectFilter, setProjectFilter] = useState('');
-  const [platformFilter, setPlatformFilter] = useState('');
-  const [modelFilter, setModelFilter] = useState('');
-  const [minScoreFilter, setMinScoreFilter] = useState('');
-  const [memberFilter, setMemberFilter] = useState('');
+  const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
+  const [projectFilter, setProjectFilter] = useState(() => searchParams.get('projectId') ?? '');
+  const [platformFilter, setPlatformFilter] = useState(() => searchParams.get('platform') ?? '');
+  const [modelFilter, setModelFilter] = useState(() => searchParams.get('model') ?? '');
+  const [minScoreFilter, setMinScoreFilter] = useState(() => searchParams.get('minScore') ?? '');
+  const [memberFilter, setMemberFilter] = useState(() => searchParams.get('userId') ?? '');
   const [tenantMembers, setTenantMembers] = useState<MemberOption[]>([]);
   const [tenants, setTenants] = useState<
     Array<{ role: string; tenant: { id: string; name: string } }>
   >([]);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<
     Array<{ id: string; userAgent: string | null; createdAt: string; current: boolean }>
   >([]);
+  const loadedSessionId = useRef<string | null>(null);
+
+  const replaceUrlParameters = useCallback(
+    (changes: Record<string, string | null>) => {
+      const parameters = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(changes)) {
+        if (value) parameters.set(key, value);
+        else parameters.delete(key);
+      }
+      router.replace(`${pathname ?? '/dashboard'}${parameters.size ? `?${parameters}` : ''}`);
+    },
+    [pathname, router, searchParams],
+  );
+
+  useEffect(() => {
+    setQuery(searchParams.get('q') ?? '');
+    setProjectFilter(searchParams.get('projectId') ?? '');
+    setMemberFilter(searchParams.get('userId') ?? '');
+    setPlatformFilter(searchParams.get('platform') ?? '');
+    setModelFilter(searchParams.get('model') ?? '');
+    setMinScoreFilter(searchParams.get('minScore') ?? '');
+  }, [searchParams]);
 
   useEffect(() => {
     if (!demoMode) {
@@ -384,7 +419,9 @@ export function DashboardClient() {
   const mockRows = useCallback(() => {
     if (!demoMode || !actor) return [];
     const isAdmin = isTenantAdmin(actor.role);
-    const scope = isAdmin ? mockPrompts : mockPrompts.filter((prompt) => prompt.ownerId === actor.userId);
+    const scope = isAdmin
+      ? mockPrompts
+      : mockPrompts.filter((prompt) => prompt.ownerId === actor.userId);
 
     return scope
       .filter((prompt) =>
@@ -438,11 +475,15 @@ export function DashboardClient() {
           apiRequest<PromptListResponse>(
             `/prompts${parameters.size ? `?${parameters.toString()}` : ''}`,
           ),
-          apiRequest<Array<{ role: string; tenant: { id: string; name: string } }>>('/auth/tenants'),
+          apiRequest<Array<{ role: string; tenant: { id: string; name: string } }>>(
+            '/auth/tenants',
+          ),
           apiRequest<
             Array<{ id: string; userAgent: string | null; createdAt: string; current: boolean }>
           >('/auth/sessions'),
-          tenantAdmin ? apiRequest<AdminMember[]>('/admin/members') : Promise.resolve([] as AdminMember[]),
+          tenantAdmin
+            ? apiRequest<AdminMember[]>('/admin/members')
+            : Promise.resolve([] as AdminMember[]),
         ]);
 
       setStats(nextStats);
@@ -467,11 +508,21 @@ export function DashboardClient() {
       setError(message);
       if (/Authentication|required|Session/i.test(message)) router.push('/login');
     }
-  }, [actor, demoMode, mockConfig.tenants, mockConfig.tenantMembers, mockRows, promptParameters, router]);
+  }, [
+    actor,
+    demoMode,
+    mockConfig.tenants,
+    mockConfig.tenantMembers,
+    mockRows,
+    promptParameters,
+    router,
+  ]);
 
   useEffect(() => {
+    if (!actor || loadedSessionId.current === actor.sessionId) return;
+    loadedSessionId.current = actor.sessionId;
     void load();
-  }, [load]);
+  }, [actor, load]);
 
   async function createProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -505,7 +556,14 @@ export function DashboardClient() {
 
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (demoMode) return;
+    replaceUrlParameters({
+      q: query,
+      projectId: projectFilter,
+      userId: memberFilter,
+      platform: platformFilter,
+      model: modelFilter,
+      minScore: minScoreFilter,
+    });
     await load();
   }
 
@@ -514,7 +572,11 @@ export function DashboardClient() {
       setProjects((current) =>
         current.map((project) =>
           project.id === projectId
-            ? { ...project, status: archived ? 'ACTIVE' : 'ARCHIVED', updatedAt: new Date().toISOString() }
+            ? {
+                ...project,
+                status: archived ? 'ACTIVE' : 'ARCHIVED',
+                updatedAt: new Date().toISOString(),
+              }
             : project,
         ),
       );
@@ -549,7 +611,13 @@ export function DashboardClient() {
       const payload =
         format === 'json'
           ? JSON.stringify({ prompts }, null, 2)
-          : ['id,project,platform,model,score,content', ...prompts.map((prompt) => `${prompt.id},"${prompt.projectName}","${prompt.platform}","${prompt.model}",${prompt.analysis?.score ?? ''},"${(prompt.content ?? '').replaceAll('"', '""')}"`)].join('\r\n');
+          : [
+              'id,project,platform,model,score,content',
+              ...prompts.map(
+                (prompt) =>
+                  `${prompt.id},"${prompt.projectName}","${prompt.platform}","${prompt.model}",${prompt.analysis?.score ?? ''},"${(prompt.content ?? '').replaceAll('"', '""')}"`,
+              ),
+            ].join('\r\n');
       const blob = new Blob([payload], {
         type: format === 'json' ? 'application/json; charset=utf-8' : 'text/csv; charset=utf-8',
       });
@@ -584,11 +652,11 @@ export function DashboardClient() {
     if (!window.confirm('Delete this prompt and hide it from all workspace views?')) return;
     if (demoMode) {
       setPrompts((current) => current.filter((item) => item.id !== promptId));
-      setSelectedPromptId((current) => (current === promptId ? null : current));
+      if (searchParams.get('promptId') === promptId) replaceUrlParameters({ promptId: null });
       return;
     }
     await apiRequest(`/prompts/${promptId}`, { method: 'DELETE' });
-    setSelectedPromptId(null);
+    replaceUrlParameters({ promptId: null });
     await load();
   }
 
@@ -598,7 +666,9 @@ export function DashboardClient() {
         setSessions([]);
         setActor(mockConfig.actor);
       } else {
-        setSessions((currentSessions) => currentSessions.filter((session) => session.id !== sessionId));
+        setSessions((currentSessions) =>
+          currentSessions.filter((session) => session.id !== sessionId),
+        );
       }
       return;
     }
@@ -609,12 +679,21 @@ export function DashboardClient() {
     else await load();
   }
 
+  const selectedPrompt = prompts.find((prompt) => prompt.id === searchParams.get('promptId'));
+  const projectPromptsHref = (projectId: string) => {
+    const parameters = new URLSearchParams(searchParams.toString());
+    parameters.set('projectId', projectId);
+    parameters.delete('promptId');
+    return `/dashboard/prompts?${parameters}`;
+  };
   const actorRole = actor?.role ?? '';
   const adminLinksVisible = isTenantAdmin(actorRole);
   const tenantAdmin = actor ? isTenantAdmin(actor.role) : false;
   const needsAttention = prompts.filter((prompt) => {
     const score = prompt.analysis?.score;
-    return prompt.analysis?.status === 'FAILED' || (score !== null && score !== undefined && score < 75);
+    return (
+      prompt.analysis?.status === 'FAILED' || (score !== null && score !== undefined && score < 75)
+    );
   });
   const overviewTitle = tenantAdmin
     ? 'Where is your team getting stuck?'
@@ -626,29 +705,31 @@ export function DashboardClient() {
     { href: '/connect', label: 'Connect device' },
   ];
   if (adminLinksVisible) navItems.push({ href: '/admin', label: 'Administration' });
-  const tenantSwitcher = tenants.length > 1 ? (
-    <label className="editorial-switch">
-      Workspace
-      <select
-        aria-label="Active workspace"
-        defaultValue=""
-        onChange={(event) => {
-          if (event.target.value) void switchTenant(event.target.value);
-        }}
-      >
-        <option value="" disabled>
-          Switch workspace
-        </option>
-        {tenants.map(({ tenant, role }) => (
-          <option key={tenant.id} value={tenant.id}>
-            {tenant.name} - {role}
+  const tenantSwitcher =
+    tenants.length > 1 ? (
+      <label className="editorial-switch">
+        Workspace
+        <select
+          aria-label="Active workspace"
+          defaultValue=""
+          onChange={(event) => {
+            if (event.target.value) void switchTenant(event.target.value);
+          }}
+        >
+          <option value="" disabled>
+            Switch workspace
           </option>
-        ))}
-      </select>
-    </label>
-  ) : null;
+          {tenants.map(({ tenant, role }) => (
+            <option key={tenant.id} value={tenant.id}>
+              {tenant.name} - {role}
+            </option>
+          ))}
+        </select>
+      </label>
+    ) : null;
   const activeTenantName =
-    tenants.find((entry) => entry.tenant.id === actor?.tenantId)?.tenant.name ?? 'Current workspace';
+    tenants.find((entry) => entry.tenant.id === actor?.tenantId)?.tenant.name ??
+    'Current workspace';
   const navLinkClass = (target: string) =>
     target === '/dashboard/overview' && pathname === '/dashboard'
       ? 'active'
@@ -684,7 +765,11 @@ export function DashboardClient() {
         ) : null}
         <nav aria-label="Main navigation" className="editorial-nav">
           {navItems.map((item) => (
-            <Link className={`editorial-nav-link ${navLinkClass(item.href)}`} href={item.href} key={item.href}>
+            <Link
+              className={`editorial-nav-link ${navLinkClass(item.href)}`}
+              href={item.href}
+              key={item.href}
+            >
               {item.label}
             </Link>
           ))}
@@ -727,8 +812,12 @@ export function DashboardClient() {
             <span>{new Date().toLocaleTimeString()}</span>
           </div>
           <div className="editorial-metadata">
-            {demoMode ? <span className="editorial-chip editorial-chip-demo">Demo dataset</span> : null}
-            <span className="editorial-chip">Session {actor?.sessionId?.slice(0, 8) ?? 'offline'}</span>
+            {demoMode ? (
+              <span className="editorial-chip editorial-chip-demo">Demo dataset</span>
+            ) : null}
+            <span className="editorial-chip">
+              Session {actor?.sessionId?.slice(0, 8) ?? 'offline'}
+            </span>
           </div>
         </header>
         {error ? <p className="form-error">{error}</p> : null}
@@ -763,8 +852,12 @@ export function DashboardClient() {
                   <ol className="editorial-stat-list">
                     {needsAttention.map((prompt) => (
                       <li key={prompt.id}>
-                        <span>{prompt.projectName}: {prompt.content}</span>
-                        <strong>{prompt.analysis?.status === 'FAILED' ? 'Failed' : prompt.analysis?.score}</strong>
+                        <span>
+                          {prompt.projectName}: {prompt.content}
+                        </span>
+                        <strong>
+                          {prompt.analysis?.status === 'FAILED' ? 'Failed' : prompt.analysis?.score}
+                        </strong>
                       </li>
                     ))}
                   </ol>
@@ -772,7 +865,13 @@ export function DashboardClient() {
                   <p className="editorial-empty">No weak or failed prompts right now.</p>
                 )}
               </article>
-              {tenantAdmin ? <Distribution title="Project performance" items={stats.projectDistribution} compact /> : null}
+              {tenantAdmin ? (
+                <Distribution
+                  title="Project performance"
+                  items={stats.projectDistribution}
+                  compact
+                />
+              ) : null}
               {tenantAdmin ? (
                 <article className="editorial-panel editorial-panel-compact">
                   <p className="editorial-kicker">Team view</p>
@@ -848,11 +947,7 @@ export function DashboardClient() {
                 <select
                   aria-label="Filter by user"
                   value={memberFilter}
-                  onChange={(event) => {
-                    const next = event.target.value;
-                    setMemberFilter(next);
-                    void load();
-                  }}
+                  onChange={(event) => setMemberFilter(event.target.value)}
                 >
                   <option value="">All users</option>
                   {tenantMembers.map((member) => (
@@ -886,120 +981,161 @@ export function DashboardClient() {
                 onChange={(event) => setMinScoreFilter(event.target.value)}
               />
               <button className="editorial-chip" type="submit">
-                Search
+                Apply filters
               </button>
             </form>
             <div className="editorial-export-strip">
-              <button className="editorial-ghost" type="button" onClick={() => void download('json')}>
+              <button
+                className="editorial-ghost"
+                type="button"
+                onClick={() => void download('json')}
+              >
                 Export JSON
               </button>
-              <button className="editorial-ghost" type="button" onClick={() => void download('csv')}>
+              <button
+                className="editorial-ghost"
+                type="button"
+                onClick={() => void download('csv')}
+              >
                 Export CSV
               </button>
             </div>
-            <div className="editorial-prompts">
-              {prompts.length === 0 ? (
-                <p className="editorial-empty">No prompts yet. Connect a device to start syncing.</p>
-              ) : (
-                prompts.map((prompt) => {
-                  const status = (prompt.analysis?.status ?? 'QUEUED').toLowerCase();
-                  return (
-                    <article className="editorial-prompt-card" key={prompt.id}>
-                      <div className="editorial-score">{prompt.analysis?.score ?? '--'}</div>
-                      <div className="editorial-prompt-copy">
-                        <p>{prompt.content}</p>
-                        <div className="editorial-chip-row">
-                          <span className="editorial-mini-chip">{prompt.projectName}</span>
-                          <span className="editorial-mini-chip">{prompt.platform}</span>
-                          <span className="editorial-mini-chip">{prompt.model}</span>
+            <div className="prompt-workbench">
+              <div className="prompt-index">
+                {prompts.length === 0 ? (
+                  <p className="editorial-empty">
+                    No prompts yet. Connect a device to start syncing.
+                  </p>
+                ) : (
+                  prompts.map((prompt) => {
+                    const score = prompt.analysis?.score;
+                    return (
+                      <article className="editorial-prompt-card" key={prompt.id}>
+                        <div
+                          className={`editorial-score ${score !== null && score !== undefined && score < 75 ? 'editorial-score-warning' : ''}`}
+                        >
+                          {score ?? '--'}
                         </div>
-                        <small className="editorial-prompt-meta">
-                          {new Date(prompt.occurredAt).toLocaleString()} <span>{prompt.analysis?.status ?? 'Queued'}</span>
-                        </small>
-                      </div>
-                      <div className="editorial-prompt-actions">
-                        <span className={`editorial-status editorial-status-${status}`}>{prompt.analysis?.status ?? 'QUEUED'}</span>
+                        <div className="editorial-prompt-copy">
+                          <p>{prompt.content}</p>
+                          <small>
+                            {prompt.projectName} · {prompt.platform} · {prompt.model}
+                          </small>
+                        </div>
+                        <div className="editorial-prompt-actions">
+                          <button
+                            className="editorial-action"
+                            type="button"
+                            onClick={() => replaceUrlParameters({ promptId: prompt.id })}
+                          >
+                            Open analysis
+                          </button>
+                          <button
+                            className="editorial-danger"
+                            type="button"
+                            onClick={() => void deletePrompt(prompt.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })
+                )}
+              </div>
+              <aside className="prompt-analysis-panel" aria-live="polite">
+                {selectedPrompt ? (
+                  <>
+                    <div className="prompt-analysis-summary">
+                      <span
+                        className={`editorial-status editorial-status-${(selectedPrompt.analysis?.status ?? 'QUEUED').toLowerCase()}`}
+                      >
+                        {selectedPrompt.analysis?.status ?? 'QUEUED'}
+                      </span>
+                      <strong
+                        className={`editorial-score ${selectedPrompt.analysis?.score !== null && selectedPrompt.analysis?.score !== undefined && selectedPrompt.analysis.score < 75 ? 'editorial-score-warning' : ''}`}
+                      >
+                        {selectedPrompt.analysis?.score ?? '--'}
+                      </strong>
+                    </div>
+                    <section>
+                      <h2>Prompt</h2>
+                      <p>{selectedPrompt.content}</p>
+                      <small>
+                        {selectedPrompt.projectName} · {selectedPrompt.platform} ·{' '}
+                        {selectedPrompt.model} ·{' '}
+                        {new Date(selectedPrompt.occurredAt).toLocaleString()}
+                      </small>
+                    </section>
+                    <section>
+                      <h2>Strengths</h2>
+                      {selectedPrompt.analysis?.strengths.length ? (
+                        <ul>
+                          {selectedPrompt.analysis.strengths.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="editorial-empty">No strengths recorded yet.</p>
+                      )}
+                    </section>
+                    <section>
+                      <h2>Weaknesses</h2>
+                      {selectedPrompt.analysis?.weaknesses.length ? (
+                        <ul>
+                          {selectedPrompt.analysis.weaknesses.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="editorial-empty">No gaps identified.</p>
+                      )}
+                    </section>
+                    <section>
+                      <h2>Recommendations</h2>
+                      {selectedPrompt.analysis?.suggestions.length ? (
+                        <ol>
+                          {selectedPrompt.analysis.suggestions.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ol>
+                      ) : (
+                        <p className="editorial-empty">No recommendations available yet.</p>
+                      )}
+                    </section>
+                    <section>
+                      <h2>Improved prompt</h2>
+                      <pre>
+                        {selectedPrompt.analysis?.improvedPrompt ?? 'Analysis is still running.'}
+                      </pre>
+                    </section>
+                    <div className="editorial-prompt-actions">
+                      {selectedPrompt.analysis?.improvedPrompt ? (
                         <button
                           className="editorial-action"
                           type="button"
-                          aria-expanded={selectedPromptId === prompt.id}
-                          onClick={() => setSelectedPromptId(selectedPromptId === prompt.id ? null : prompt.id)}
+                          onClick={() =>
+                            void navigator.clipboard.writeText(
+                              selectedPrompt.analysis?.improvedPrompt ?? '',
+                            )
+                          }
                         >
-                          {selectedPromptId === prompt.id ? 'Hide analysis' : 'View analysis'}
+                          Copy improved prompt
                         </button>
-                        <button className="editorial-danger" type="button" onClick={() => void deletePrompt(prompt.id)}>
-                          Delete
-                        </button>
-                      </div>
-                      {selectedPromptId === prompt.id ? (
-                        <div className="editorial-analysis">
-                          <section>
-                            <h3>Strengths</h3>
-                            {prompt.analysis?.strengths.length ? (
-                              <ul>
-                                {prompt.analysis.strengths.map((item) => (
-                                  <li key={item}>{item}</li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="editorial-empty">No strengths recorded yet.</p>
-                            )}
-                          </section>
-                          <section>
-                            <h3>Missing or weak</h3>
-                            {prompt.analysis?.weaknesses.length ? (
-                              <ul>
-                                {prompt.analysis.weaknesses.map((item) => (
-                                  <li key={item}>{item}</li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="editorial-empty">No gaps identified.</p>
-                            )}
-                          </section>
-                          <section className="editorial-suggestions">
-                            <div className="editorial-section-title">
-                              <div>
-                                <p className="editorial-kicker">Action plan</p>
-                                <h3>Recommendations</h3>
-                              </div>
-                              <span className="editorial-chip">{prompt.analysis?.suggestions.length ?? 0}</span>
-                            </div>
-                            {prompt.analysis?.suggestions.length ? (
-                              <ul>
-                                {prompt.analysis.suggestions.map((item, index) => (
-                                  <li key={item}>
-                                    <span className="editorial-bullet">{index + 1}</span>
-                                    <span>{item}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="editorial-empty">No recommendations available yet.</p>
-                            )}
-                          </section>
-                          <section>
-                            <h3>Improved prompt</h3>
-                            <pre>{prompt.analysis?.improvedPrompt ?? 'Analysis is still running.'}</pre>
-                            {prompt.analysis?.improvedPrompt ? (
-                              <button
-                                className="editorial-action"
-                                type="button"
-                                onClick={() => void navigator.clipboard.writeText(prompt.analysis?.improvedPrompt ?? '')}
-                              >
-                                Copy improved prompt
-                              </button>
-                            ) : null}
-                            <button className="editorial-action" type="button" onClick={() => void reanalyze(prompt.id)}>
-                              Run analysis again
-                            </button>
-                          </section>
-                        </div>
                       ) : null}
-                    </article>
-                  );
-                })
-              )}
+                      <button
+                        className="editorial-action"
+                        type="button"
+                        onClick={() => void reanalyze(selectedPrompt.id)}
+                      >
+                        Run analysis again
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="editorial-empty">Select a prompt to inspect its analysis.</p>
+                )}
+              </aside>
             </div>
           </section>
         ) : null}
@@ -1016,7 +1152,18 @@ export function DashboardClient() {
                 <article className="editorial-project-card" key={project.id}>
                   <h3>{project.name}</h3>
                   <p>{project.description ?? 'No description'}</p>
-                  <span className={`editorial-mini-chip ${project.status.toLowerCase()}`}>{project.status}</span>
+                  <span
+                    className={`editorial-status editorial-status-${project.status.toLowerCase()}`}
+                  >
+                    {project.status}
+                  </span>
+                  <Link
+                    className="editorial-action"
+                    href={projectPromptsHref(project.id)}
+                    aria-label={`Open ${project.name} prompts`}
+                  >
+                    Open workbench →
+                  </Link>
                   <button
                     className="editorial-action"
                     type="button"
@@ -1069,8 +1216,3 @@ function Distribution({
     </div>
   );
 }
-
-
-
-
-

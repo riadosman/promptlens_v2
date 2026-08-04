@@ -11,7 +11,7 @@ import type {
   PromptListQuery,
   PromptListResponse,
 } from '@promptlens/contracts';
-import type { Prisma } from '@promptlens/database';
+import { Prisma } from '@promptlens/database';
 import { MembershipRole, PromptVersionKind, withTenantContext } from '@promptlens/database';
 import type { AuthenticatedActor } from '../auth/auth.types.js';
 import { DatabaseService } from '../database/database.service.js';
@@ -67,11 +67,28 @@ function mapPrompt(prompt: IncludedPrompt): PromptDetailResponse {
 export class PromptHistoryService {
   constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
 
+  private promptScope(actor: AuthenticatedActor, options: { userId?: string; mineOnly?: boolean } = {}) {
+    const canScopeByUser = actor.role === MembershipRole.OWNER || actor.role === MembershipRole.ADMIN;
+    if (!canScopeByUser) return { userId: actor.userId };
+    if (options.mineOnly) return { userId: actor.userId };
+    if (!options.userId) return {};
+    return { userId: options.userId };
+  }
+
+  private scopeFilter(actor: AuthenticatedActor, mineOnly?: boolean) {
+    return mineOnly ? this.promptScope(actor, { mineOnly: true }) : this.promptScope(actor);
+  }
+
   list(actor: AuthenticatedActor, query: PromptListQuery): Promise<PromptListResponse> {
     return withTenantContext(this.database.client, actor, async (transaction) => {
+      const promptScope = this.promptScope(actor, {
+        ...(query.userId ? { userId: query.userId } : {}),
+        ...(query.mine !== undefined ? { mineOnly: query.mine } : {}),
+      });
+      const scopedUserId = promptScope.userId;
       const cursorPrompt = query.cursor
         ? await transaction.prompt.findFirst({
-            where: { id: query.cursor, tenantId: actor.tenantId },
+            where: { id: query.cursor, tenantId: actor.tenantId, ...promptScope },
             select: { id: true, occurredAt: true },
           })
         : null;
@@ -81,6 +98,7 @@ export class PromptHistoryService {
             SELECT id
             FROM prompts
             WHERE tenant_id = ${actor.tenantId}::uuid
+              ${scopedUserId ? Prisma.sql`AND user_id = ${scopedUserId}::uuid` : Prisma.sql``}
               AND deleted_at IS NULL
               AND (
                 to_tsvector('simple', content) @@ websearch_to_tsquery('simple', ${query.q})
@@ -94,10 +112,11 @@ export class PromptHistoryService {
       const prompts = await transaction.prompt.findMany({
         where: {
           tenantId: actor.tenantId,
-          deletedAt: null,
-          ...(query.projectId ? { projectId: query.projectId } : {}),
-          ...(query.platform ? { platform: query.platform } : {}),
-          ...(query.model ? { model: query.model } : {}),
+            deletedAt: null,
+            ...promptScope,
+            ...(query.projectId ? { projectId: query.projectId } : {}),
+            ...(query.platform ? { platform: query.platform } : {}),
+            ...(query.model ? { model: query.model } : {}),
           ...(searchIds ? { id: { in: searchIds.map(({ id }) => id) } } : {}),
           ...(query.tag ? { tags: { some: { tag: { name: query.tag.toLowerCase() } } } } : {}),
           ...(query.minScore !== undefined || query.maxScore !== undefined
@@ -145,8 +164,9 @@ export class PromptHistoryService {
 
   detail(actor: AuthenticatedActor, promptId: string): Promise<PromptDetailResponse> {
     return withTenantContext(this.database.client, actor, async (transaction) => {
+      const promptScope = this.promptScope(actor);
       const prompt = await transaction.prompt.findFirst({
-        where: { id: promptId, tenantId: actor.tenantId, deletedAt: null },
+        where: { id: promptId, tenantId: actor.tenantId, deletedAt: null, ...promptScope },
         include: includePrompt,
       });
       if (!prompt) throw new NotFoundException('Prompt not found.');
@@ -154,7 +174,11 @@ export class PromptHistoryService {
     });
   }
 
-  stats(actor: AuthenticatedActor): Promise<DashboardStats> {
+  stats(actor: AuthenticatedActor, scope: 'tenant' | 'mine' = 'tenant'): Promise<DashboardStats> {
+    const canViewTenantScope = actor.role === MembershipRole.OWNER || actor.role === MembershipRole.ADMIN;
+    const effectiveScope = canViewTenantScope ? scope : 'mine';
+    const mineOnly = effectiveScope === 'mine';
+    const promptScope = this.scopeFilter(actor, mineOnly);
     return withTenantContext(this.database.client, actor, async (transaction) => {
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1_000);
       const [
@@ -168,42 +192,84 @@ export class PromptHistoryService {
         projectDistribution,
       ] = await Promise.all([
         transaction.project.count({ where: { tenantId: actor.tenantId, status: 'ACTIVE' } }),
-        transaction.prompt.count({ where: { tenantId: actor.tenantId, deletedAt: null } }),
+        transaction.prompt.count({ where: { tenantId: actor.tenantId, deletedAt: null, ...promptScope } }),
         transaction.analysis.count({
-          where: { tenantId: actor.tenantId, status: 'COMPLETED' },
+          where: {
+            tenantId: actor.tenantId,
+            status: 'COMPLETED',
+            ...(mineOnly ? { prompt: { userId: actor.userId } } : {}),
+          },
         }),
         transaction.analysis.aggregate({
-          where: { tenantId: actor.tenantId, status: 'COMPLETED' },
+          where: {
+            tenantId: actor.tenantId,
+            status: 'COMPLETED',
+            ...(mineOnly ? { prompt: { userId: actor.userId } } : {}),
+          },
           _avg: { score: true },
         }),
         transaction.prompt.count({
-          where: { tenantId: actor.tenantId, deletedAt: null, occurredAt: { gte: weekAgo } },
+          where: {
+            tenantId: actor.tenantId,
+            deletedAt: null,
+            occurredAt: { gte: weekAgo },
+            ...promptScope,
+          },
         }),
-        transaction.$queryRaw<Array<{ date: Date; score: number }>>`
-          SELECT date_trunc('day', completed_at) AS date, round(avg(score), 1)::float AS score
-          FROM analyses
-          WHERE tenant_id = ${actor.tenantId}::uuid
-            AND status = 'COMPLETED'
-            AND completed_at >= now() - interval '14 days'
-          GROUP BY 1
-          ORDER BY 1
-        `,
+        transaction.$queryRaw<Array<{ date: Date; score: number }>>(
+          mineOnly
+            ? Prisma.sql`
+                SELECT date_trunc('day', analyses.completed_at) AS date, round(avg(analyses.score), 1)::float AS score
+                FROM analyses
+                INNER JOIN prompts ON prompts.id = analyses.prompt_id
+                WHERE analyses.tenant_id = ${actor.tenantId}::uuid
+                  AND analyses.status = 'COMPLETED'
+                  AND prompts.user_id = ${actor.userId}::uuid
+                  AND analyses.completed_at >= now() - interval '14 days'
+                GROUP BY 1
+                ORDER BY 1
+              `
+            : Prisma.sql`
+                SELECT date_trunc('day', completed_at) AS date, round(avg(score), 1)::float AS score
+                FROM analyses
+                WHERE tenant_id = ${actor.tenantId}::uuid
+                  AND status = 'COMPLETED'
+                  AND completed_at >= now() - interval '14 days'
+                GROUP BY 1
+                ORDER BY 1
+              `,
+        ),
         transaction.prompt.groupBy({
           by: ['model'],
-          where: { tenantId: actor.tenantId, deletedAt: null },
+          where: { tenantId: actor.tenantId, deletedAt: null, ...promptScope },
           _count: { _all: true },
           orderBy: { _count: { model: 'desc' } },
           take: 8,
         }),
-        transaction.$queryRaw<Array<{ name: string; count: bigint }>>`
-          SELECT projects.name, count(prompts.id) AS count
-          FROM projects
-          LEFT JOIN prompts ON prompts.project_id = projects.id AND prompts.deleted_at IS NULL
-          WHERE projects.tenant_id = ${actor.tenantId}::uuid
-          GROUP BY projects.id, projects.name
-          ORDER BY count DESC, projects.name
-          LIMIT 8
-        `,
+        transaction.$queryRaw<Array<{ name: string; count: bigint }>>(
+          mineOnly
+            ? Prisma.sql`
+                SELECT projects.name, count(prompts.id) AS count
+                FROM projects
+                LEFT JOIN prompts
+                  ON prompts.project_id = projects.id AND prompts.deleted_at IS NULL AND prompts.user_id = ${
+                    actor.userId
+                  }::uuid
+                WHERE projects.tenant_id = ${actor.tenantId}::uuid
+                GROUP BY projects.id, projects.name
+                ORDER BY count DESC, projects.name
+                LIMIT 8
+              `
+            : Prisma.sql`
+                SELECT projects.name, count(prompts.id) AS count
+                FROM projects
+                LEFT JOIN prompts ON prompts.project_id = projects.id AND prompts.deleted_at IS NULL
+                WHERE projects.tenant_id = ${actor.tenantId}::uuid
+                GROUP BY projects.id, projects.name
+                ORDER BY count DESC, projects.name
+                LIMIT 8
+              `,
+        ),
       ]);
       return {
         projects,
@@ -298,8 +364,9 @@ export class PromptHistoryService {
       throw new ForbiddenException('This role cannot request analysis.');
     }
     return withTenantContext(this.database.client, actor, async (transaction) => {
+      const promptScope = this.promptScope(actor);
       const prompt = await transaction.prompt.findFirst({
-        where: { id: promptId, tenantId: actor.tenantId, deletedAt: null },
+        where: { id: promptId, tenantId: actor.tenantId, deletedAt: null, ...promptScope },
       });
       if (!prompt) throw new NotFoundException('Prompt not found.');
       const active = await transaction.analysis.findFirst({
@@ -333,8 +400,9 @@ export class PromptHistoryService {
       throw new ForbiddenException('This role cannot delete prompts.');
     }
     return withTenantContext(this.database.client, actor, async (transaction) => {
+      const promptScope = this.promptScope(actor);
       const deleted = await transaction.prompt.updateMany({
-        where: { id: promptId, tenantId: actor.tenantId, deletedAt: null },
+        where: { id: promptId, tenantId: actor.tenantId, deletedAt: null, ...promptScope },
         data: { deletedAt: new Date() },
       });
       if (deleted.count !== 1) throw new NotFoundException('Prompt not found.');

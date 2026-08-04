@@ -45,10 +45,12 @@ export {
 } from './prompts/prompts.js';
 export {
   dashboardStatsSchema,
+  dashboardStatsQuerySchema,
   promptDetailResponseSchema,
   promptListQuerySchema,
   promptListResponseSchema,
   type DashboardStats,
+  type DashboardStatsQuery,
   type PromptDetailResponse,
   type PromptListQuery,
   type PromptListResponse,

@@ -11,7 +11,12 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
-import { promptListQuerySchema, type PromptListQuery } from '@promptlens/contracts';
+import {
+  dashboardStatsQuerySchema,
+  promptListQuerySchema,
+  type DashboardStatsQuery,
+  type PromptListQuery,
+} from '@promptlens/contracts';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthService } from '../auth/auth.service.js';
 import { parseBody } from '../http/parse-body.js';
@@ -62,9 +67,10 @@ export class PromptHistoryController {
   }
 
   @Get('dashboard/stats')
-  async stats(@Req() request: FastifyRequest) {
+  async stats(@Req() request: FastifyRequest, @Query() query: DashboardStatsQuery) {
     const actor = await this.auth.authenticate(request.cookies[COOKIE_NAME]);
-    return this.history.stats(actor);
+    const parsed = parseBody(dashboardStatsQuerySchema, query);
+    return this.history.stats(actor, parsed.scope);
   }
 
   @Post('prompts/:id/analyses')

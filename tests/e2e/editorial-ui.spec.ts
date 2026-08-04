@@ -10,7 +10,7 @@ test('landing presents the Narrative Glow product story', async ({ page }) => {
   await expect(page.getByRole('region', { name: 'Editorial Workbench preview' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Capture' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Understand' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Improve' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Improve', exact: true })).toBeVisible();
 
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations).toEqual([]);

@@ -4,6 +4,7 @@
   --ink: #171717;
   --acid: #d9ff3f;
   --signal: #ff7046;
+  --signal-ink: #a43b1b;
   --muted: #625f58;
   --line: #171717;
   color-scheme: light;
@@ -213,6 +214,10 @@ li::before {
   text-transform: uppercase;
 }
 
+.landing-narrative > .editorial-kicker {
+  color: var(--signal-ink);
+}
+
 .landing-narrative h1 {
   grid-column: 1 / -1;
   max-width: 11ch;
@@ -397,7 +402,7 @@ li::before {
 }
 
 .landing-process span {
-  color: var(--signal);
+  color: var(--signal-ink);
   font-size: 0.78rem;
   font-weight: 900;
 }

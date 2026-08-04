@@ -26,7 +26,7 @@ test('registers, creates a project, and approves a connector', async ({ page }) 
   await expect(page.getByLabel('Device code')).toHaveValue(device.userCode);
 
   await page.goto('/dashboard');
-  await expect(page.getByRole('heading', { name: 'Prompt overview' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Where is your team getting stuck?' })).toBeVisible();
   const dashboardA11y = await new AxeBuilder({ page }).analyze();
   expect(dashboardA11y.violations).toEqual([]);
 

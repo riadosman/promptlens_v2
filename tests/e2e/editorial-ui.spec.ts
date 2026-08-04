@@ -1,6 +1,20 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
+test('owner overview prioritizes people and projects', async ({ page }) => {
+  await page.goto('/dashboard/overview?mock=1');
+  await expect(page.getByRole('heading', { name: 'Where is your team getting stuck?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Project performance' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'People performance' })).toBeVisible();
+});
+
+test('member overview stays personal', async ({ page }) => {
+  await page.goto('/dashboard/overview?mock=1&mockRole=user');
+  await expect(page.getByRole('heading', { name: 'What should you improve next?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'People performance' })).toHaveCount(0);
+  await expect(page.getByText('Needs attention')).toBeVisible();
+});
+
 test('landing presents the Narrative Glow product story', async ({ page }) => {
   await page.goto('/');
 

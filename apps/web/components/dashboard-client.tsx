@@ -611,6 +611,21 @@ export function DashboardClient() {
 
   const actorRole = actor?.role ?? '';
   const adminLinksVisible = isTenantAdmin(actorRole);
+  const tenantAdmin = actor ? isTenantAdmin(actor.role) : false;
+  const needsAttention = prompts.filter((prompt) => {
+    const score = prompt.analysis?.score;
+    return prompt.analysis?.status === 'FAILED' || (score !== null && score !== undefined && score < 75);
+  });
+  const overviewTitle = tenantAdmin
+    ? 'Where is your team getting stuck?'
+    : 'What should you improve next?';
+  const navItems = [
+    { href: '/dashboard/overview', label: 'Overview' },
+    { href: '/dashboard/prompts', label: 'Prompt log' },
+    { href: '/dashboard/projects', label: 'Projects' },
+    { href: '/connect', label: 'Connect device' },
+  ];
+  if (adminLinksVisible) navItems.push({ href: '/admin', label: 'Administration' });
   const activeTenantName =
     tenants.find((entry) => entry.tenant.id === actor?.tenantId)?.tenant.name ?? 'Current workspace';
   const navLinkClass = (target: string) =>
@@ -624,7 +639,7 @@ export function DashboardClient() {
       ? 'Prompt history'
       : section === 'projects'
         ? 'Project control'
-        : 'Prompt overview';
+        : overviewTitle;
   const sectionCaption =
     section === 'prompts'
       ? 'Prompt analysis'
@@ -633,40 +648,28 @@ export function DashboardClient() {
         : 'Workspace intelligence';
 
   return (
-    <div className="dashboard-shell-v2">
-      <aside className="v2-rail">
-        <Link className="v2-wordmark" href="/dashboard">
+    <div className="editorial-dashboard">
+      <aside className="editorial-sidebar">
+        <Link className="editorial-wordmark" href="/dashboard/overview">
           PromptLens
         </Link>
         {actor ? (
-          <div className="v2-panel v2-tenant">
-            <p className="v2-kicker">Active workspace</p>
+          <div className="editorial-tenant">
+            <p className="editorial-kicker">Active workspace</p>
             <strong>{activeTenantName}</strong>
             <span>{actorRole.toLowerCase()}</span>
-            <small className="v2-id">Tenant {actor.tenantId.slice(0, 7)}</small>
+            <small className="editorial-id">Tenant {actor.tenantId.slice(0, 7)}</small>
           </div>
         ) : null}
-        <nav aria-label="Main navigation" className="v2-nav">
-          <Link className={`v2-nav-link ${navLinkClass('/dashboard/overview')}`} href="/dashboard/overview">
-            Overview
-          </Link>
-          <Link className={`v2-nav-link ${navLinkClass('/dashboard/prompts')}`} href="/dashboard/prompts">
-            Prompt log
-          </Link>
-          <Link className={`v2-nav-link ${navLinkClass('/dashboard/projects')}`} href="/dashboard/projects">
-            Projects
-          </Link>
-          <Link className={`v2-nav-link ${pathname?.startsWith('/connect') ? 'active' : ''}`} href="/connect">
-            Connect device
-          </Link>
-          {adminLinksVisible ? (
-            <Link className={`v2-nav-link ${pathname?.startsWith('/admin') ? 'active' : ''}`} href="/admin">
-              Administration
+        <nav aria-label="Main navigation" className="editorial-nav">
+          {navItems.map((item) => (
+            <Link className={`editorial-nav-link ${navLinkClass(item.href)}`} href={item.href} key={item.href}>
+              {item.label}
             </Link>
-          ) : null}
+          ))}
         </nav>
         {tenants.length > 1 ? (
-          <label className="v2-switch">
+          <label className="editorial-switch">
             Workspace
             <select
               aria-label="Active workspace"
@@ -686,19 +689,29 @@ export function DashboardClient() {
             </select>
           </label>
         ) : null}
-        <button className="v2-ghost" onClick={() => void logout()}>
+        <button className="editorial-ghost" onClick={() => void logout()}>
           Sign out
         </button>
       </aside>
-      <main className="v2-main">
-        <header className="v2-header">
-          <div className="v2-header-copy">
-            <p className="v2-kicker">{sectionCaption}</p>
-            <div className="v2-header-title">
+      <main className="editorial-main">
+        <details className="mobile-navigation">
+          <summary>Menu</summary>
+          <nav aria-label="Mobile navigation">
+            {navItems.map((item) => (
+              <Link className={navLinkClass(item.href)} href={item.href} key={item.href}>
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </details>
+        <header className="editorial-header">
+          <div className="editorial-header-copy">
+            <p className="editorial-kicker">{sectionCaption}</p>
+            <div className="editorial-header-title">
               <h1>{sectionTitle}</h1>
-              <span className="v2-mode-dot" aria-hidden="true" />
+              <span className="editorial-mode-dot" aria-hidden="true" />
             </div>
-            <p className="v2-subline">
+            <p className="editorial-subline">
               {section === 'overview'
                 ? 'Signals from your workspace, in one controlled view.'
                 : section === 'prompts'
@@ -706,73 +719,90 @@ export function DashboardClient() {
                   : 'Organize work by projects and status.'}
             </p>
           </div>
-          <div className="v2-hero-ribbon" aria-hidden="true">
+          <div className="editorial-hero-ribbon" aria-hidden="true">
             <span>Live workspace control plane</span>
-            <span>●</span>
+            <span>â—</span>
             <span>{new Date().toLocaleTimeString()}</span>
           </div>
-          <div className="v2-metadata">
-            {demoMode ? <span className="v2-chip v2-chip-demo">Demo dataset</span> : null}
-            <span className="v2-chip">Session {actor?.sessionId?.slice(0, 8) ?? 'offline'}</span>
+          <div className="editorial-metadata">
+            {demoMode ? <span className="editorial-chip editorial-chip-demo">Demo dataset</span> : null}
+            <span className="editorial-chip">Session {actor?.sessionId?.slice(0, 8) ?? 'offline'}</span>
           </div>
         </header>
         {error ? <p className="form-error">{error}</p> : null}
         {section === 'overview' ? (
           <>
-            <section className="v2-kpi-grid" aria-label="Workspace statistics">
-              <article className="v2-kpi">
+            <section className="editorial-kpi-grid" aria-label="Workspace statistics">
+              <article className="editorial-kpi">
                 <p>Average score</p>
                 <strong>
                   {stats.averageScore ?? 'N/A'}
                   <small>/100</small>
                 </strong>
               </article>
-              <article className="v2-kpi">
+              <article className="editorial-kpi">
                 <p>Prompts</p>
                 <strong>{stats.prompts}</strong>
               </article>
-              <article className="v2-kpi">
+              <article className="editorial-kpi">
                 <p>Last 7 days</p>
                 <strong>{stats.promptsLast7Days}</strong>
               </article>
-              <article className="v2-kpi">
+              <article className="editorial-kpi">
                 <p>Analyses</p>
                 <strong>{stats.analysesCompleted}</strong>
               </article>
             </section>
-            <section className="v2-panels" aria-label="Prompt analytics">
-              <article className="v2-panel">
-                <p className="v2-kicker">Score trend</p>
-                <h2>Last 14 days</h2>
-                {stats.scoreTrend.length ? (
-                  <ol className="v2-stat-list">
-                    {stats.scoreTrend.map((point) => (
-                      <li key={point.date}>
-                        <span>{point.date}</span>
-                        <strong>{point.score}</strong>
+            <section className="editorial-panels" aria-label="Prompt analytics">
+              <article className="editorial-panel editorial-attention">
+                <p className="editorial-kicker">Action queue</p>
+                <h2>Needs attention</h2>
+                {needsAttention.length ? (
+                  <ol className="editorial-stat-list">
+                    {needsAttention.map((prompt) => (
+                      <li key={prompt.id}>
+                        <span>{prompt.projectName}: {prompt.content}</span>
+                        <strong>{prompt.analysis?.status === 'FAILED' ? 'Failed' : prompt.analysis?.score}</strong>
                       </li>
                     ))}
                   </ol>
                 ) : (
-                  <p className="v2-empty">No completed analyses yet.</p>
+                  <p className="editorial-empty">No weak or failed prompts right now.</p>
                 )}
               </article>
-              <Distribution title="Models" items={stats.modelDistribution} compact />
-              <Distribution title="Projects" items={stats.projectDistribution} compact />
+              {tenantAdmin ? <Distribution title="Project performance" items={stats.projectDistribution} compact /> : null}
+              {tenantAdmin ? (
+                <article className="editorial-panel editorial-panel-compact">
+                  <p className="editorial-kicker">Team view</p>
+                  <h2>People performance</h2>
+                  {tenantMembers.length ? (
+                    <ol className="editorial-stat-list">
+                      {tenantMembers.map((member) => (
+                        <li key={member.id}>
+                          <span>{member.displayName}</span>
+                          <strong>{member.email}</strong>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="editorial-empty">No people in this workspace yet.</p>
+                  )}
+                </article>
+              ) : null}
             </section>
-            <section className="v2-panel">
-              <p className="v2-kicker">Active sessions</p>
+            <section className="editorial-panel">
+              <p className="editorial-kicker">Active sessions</p>
               <h2>Security</h2>
-              <div className="v2-session-grid">
+              <div className="editorial-session-grid">
                 {sessions.map((session) => (
-                  <article className="v2-session-card" key={session.id}>
+                  <article className="editorial-session-card" key={session.id}>
                     <div>
                       <h3>{session.current ? 'Current session' : 'Signed-in device'}</h3>
                       <p>{session.userAgent ?? 'Unknown client'}</p>
                       <small>{new Date(session.createdAt).toLocaleString()}</small>
                     </div>
                     <button
-                      className="v2-danger"
+                      className="editorial-danger"
                       type="button"
                       onClick={() => void revokeSession(session.id, session.current)}
                     >
@@ -785,15 +815,15 @@ export function DashboardClient() {
           </>
         ) : null}
         {section === 'prompts' ? (
-          <section className="v2-panel" id="prompts">
-            <div className="v2-panel-head">
+          <section className="editorial-panel" id="prompts">
+            <div className="editorial-panel-head">
               <div>
-                <p className="v2-kicker">Prompt log</p>
+                <p className="editorial-kicker">Prompt log</p>
                 <h2>Recent prompts</h2>
               </div>
-              <span className="v2-chip">Total: {prompts.length}</span>
+              <span className="editorial-chip">Total: {prompts.length}</span>
             </div>
-            <form className="v2-filter-bar" onSubmit={search}>
+            <form className="editorial-filter-bar" onSubmit={search}>
               <input
                 aria-label="Search prompts"
                 placeholder="Search prompt content"
@@ -853,54 +883,54 @@ export function DashboardClient() {
                 value={minScoreFilter}
                 onChange={(event) => setMinScoreFilter(event.target.value)}
               />
-              <button className="v2-chip" type="submit">
+              <button className="editorial-chip" type="submit">
                 Search
               </button>
             </form>
-            <div className="v2-export-strip">
-              <button className="v2-ghost" type="button" onClick={() => void download('json')}>
+            <div className="editorial-export-strip">
+              <button className="editorial-ghost" type="button" onClick={() => void download('json')}>
                 Export JSON
               </button>
-              <button className="v2-ghost" type="button" onClick={() => void download('csv')}>
+              <button className="editorial-ghost" type="button" onClick={() => void download('csv')}>
                 Export CSV
               </button>
             </div>
-            <div className="v2-prompts">
+            <div className="editorial-prompts">
               {prompts.length === 0 ? (
-                <p className="v2-empty">No prompts yet. Connect a device to start syncing.</p>
+                <p className="editorial-empty">No prompts yet. Connect a device to start syncing.</p>
               ) : (
                 prompts.map((prompt) => {
                   const status = (prompt.analysis?.status ?? 'QUEUED').toLowerCase();
                   return (
-                    <article className="v2-prompt-card" key={prompt.id}>
-                      <div className="v2-score">{prompt.analysis?.score ?? '--'}</div>
-                      <div className="v2-prompt-copy">
+                    <article className="editorial-prompt-card" key={prompt.id}>
+                      <div className="editorial-score">{prompt.analysis?.score ?? '--'}</div>
+                      <div className="editorial-prompt-copy">
                         <p>{prompt.content}</p>
-                        <div className="v2-chip-row">
-                          <span className="v2-mini-chip">{prompt.projectName}</span>
-                          <span className="v2-mini-chip">{prompt.platform}</span>
-                          <span className="v2-mini-chip">{prompt.model}</span>
+                        <div className="editorial-chip-row">
+                          <span className="editorial-mini-chip">{prompt.projectName}</span>
+                          <span className="editorial-mini-chip">{prompt.platform}</span>
+                          <span className="editorial-mini-chip">{prompt.model}</span>
                         </div>
-                        <small className="v2-prompt-meta">
+                        <small className="editorial-prompt-meta">
                           {new Date(prompt.occurredAt).toLocaleString()} <span>{prompt.analysis?.status ?? 'Queued'}</span>
                         </small>
                       </div>
-                      <div className="v2-prompt-actions">
-                        <span className={`v2-status v2-status-${status}`}>{prompt.analysis?.status ?? 'QUEUED'}</span>
+                      <div className="editorial-prompt-actions">
+                        <span className={`editorial-status editorial-status-${status}`}>{prompt.analysis?.status ?? 'QUEUED'}</span>
                         <button
-                          className="v2-action"
+                          className="editorial-action"
                           type="button"
                           aria-expanded={selectedPromptId === prompt.id}
                           onClick={() => setSelectedPromptId(selectedPromptId === prompt.id ? null : prompt.id)}
                         >
                           {selectedPromptId === prompt.id ? 'Hide analysis' : 'View analysis'}
                         </button>
-                        <button className="v2-danger" type="button" onClick={() => void deletePrompt(prompt.id)}>
+                        <button className="editorial-danger" type="button" onClick={() => void deletePrompt(prompt.id)}>
                           Delete
                         </button>
                       </div>
                       {selectedPromptId === prompt.id ? (
-                        <div className="v2-analysis">
+                        <div className="editorial-analysis">
                           <section>
                             <h3>Strengths</h3>
                             {prompt.analysis?.strengths.length ? (
@@ -910,7 +940,7 @@ export function DashboardClient() {
                                 ))}
                               </ul>
                             ) : (
-                              <p className="v2-empty">No strengths recorded yet.</p>
+                              <p className="editorial-empty">No strengths recorded yet.</p>
                             )}
                           </section>
                           <section>
@@ -922,28 +952,28 @@ export function DashboardClient() {
                                 ))}
                               </ul>
                             ) : (
-                              <p className="v2-empty">No gaps identified.</p>
+                              <p className="editorial-empty">No gaps identified.</p>
                             )}
                           </section>
-                          <section className="v2-suggestions">
-                            <div className="v2-section-title">
+                          <section className="editorial-suggestions">
+                            <div className="editorial-section-title">
                               <div>
-                                <p className="v2-kicker">Action plan</p>
+                                <p className="editorial-kicker">Action plan</p>
                                 <h3>Recommendations</h3>
                               </div>
-                              <span className="v2-chip">{prompt.analysis?.suggestions.length ?? 0}</span>
+                              <span className="editorial-chip">{prompt.analysis?.suggestions.length ?? 0}</span>
                             </div>
                             {prompt.analysis?.suggestions.length ? (
                               <ul>
                                 {prompt.analysis.suggestions.map((item, index) => (
                                   <li key={item}>
-                                    <span className="v2-bullet">{index + 1}</span>
+                                    <span className="editorial-bullet">{index + 1}</span>
                                     <span>{item}</span>
                                   </li>
                                 ))}
                               </ul>
                             ) : (
-                              <p className="v2-empty">No recommendations available yet.</p>
+                              <p className="editorial-empty">No recommendations available yet.</p>
                             )}
                           </section>
                           <section>
@@ -951,14 +981,14 @@ export function DashboardClient() {
                             <pre>{prompt.analysis?.improvedPrompt ?? 'Analysis is still running.'}</pre>
                             {prompt.analysis?.improvedPrompt ? (
                               <button
-                                className="v2-action"
+                                className="editorial-action"
                                 type="button"
                                 onClick={() => void navigator.clipboard.writeText(prompt.analysis?.improvedPrompt ?? '')}
                               >
                                 Copy improved prompt
                               </button>
                             ) : null}
-                            <button className="v2-action" type="button" onClick={() => void reanalyze(prompt.id)}>
+                            <button className="editorial-action" type="button" onClick={() => void reanalyze(prompt.id)}>
                               Run analysis again
                             </button>
                           </section>
@@ -972,21 +1002,21 @@ export function DashboardClient() {
           </section>
         ) : null}
         {section === 'projects' ? (
-          <section className="v2-panel">
-            <div className="v2-panel-head">
+          <section className="editorial-panel">
+            <div className="editorial-panel-head">
               <div>
-                <p className="v2-kicker">Organization</p>
+                <p className="editorial-kicker">Organization</p>
                 <h2>Projects</h2>
               </div>
             </div>
-            <div className="v2-project-grid">
+            <div className="editorial-project-grid">
               {projects.map((project) => (
-                <article className="v2-project-card" key={project.id}>
+                <article className="editorial-project-card" key={project.id}>
                   <h3>{project.name}</h3>
                   <p>{project.description ?? 'No description'}</p>
-                  <span className={`v2-mini-chip ${project.status.toLowerCase()}`}>{project.status}</span>
+                  <span className={`editorial-mini-chip ${project.status.toLowerCase()}`}>{project.status}</span>
                   <button
-                    className="v2-action"
+                    className="editorial-action"
                     type="button"
                     onClick={() => void toggleProject(project.id, project.status !== 'ARCHIVED')}
                   >
@@ -995,10 +1025,10 @@ export function DashboardClient() {
                 </article>
               ))}
             </div>
-            <form className="v2-inline-form" onSubmit={createProject}>
+            <form className="editorial-inline-form" onSubmit={createProject}>
               <input name="name" placeholder="New project name" required maxLength={120} />
               <input name="description" placeholder="Description" maxLength={1000} />
-              <button type="submit" className="v2-chip">
+              <button type="submit" className="editorial-chip">
                 Create project
               </button>
             </form>
@@ -1019,11 +1049,11 @@ function Distribution({
   compact?: boolean;
 }) {
   return (
-    <div className={`v2-panel ${compact ? 'v2-panel-compact' : ''}`}>
-      <p className="v2-kicker">Distribution</p>
+    <div className={`editorial-panel ${compact ? 'editorial-panel-compact' : ''}`}>
+      <p className="editorial-kicker">Distribution</p>
       <h2>{title}</h2>
       {items.length ? (
-        <ol className="v2-stat-list">
+        <ol className="editorial-stat-list">
           {items.map((item) => (
             <li key={item.name}>
               <span>{item.name}</span>
@@ -1032,7 +1062,7 @@ function Distribution({
           ))}
         </ol>
       ) : (
-        <p className="v2-empty">No data yet.</p>
+        <p className="editorial-empty">No data yet.</p>
       )}
     </div>
   );

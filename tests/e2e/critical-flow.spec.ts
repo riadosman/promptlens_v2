@@ -26,10 +26,13 @@ test('registers, creates a project, and approves a connector', async ({ page }) 
   await expect(page.getByLabel('Device code')).toHaveValue(device.userCode);
 
   await page.goto('/dashboard');
-  await expect(page.getByRole('heading', { name: 'Where is your team getting stuck?' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Where is your team getting stuck?' }),
+  ).toBeVisible();
   const dashboardA11y = await new AxeBuilder({ page }).analyze();
   expect(dashboardA11y.violations).toEqual([]);
 
+  await page.getByRole('link', { name: 'Projects' }).click();
   await page.getByPlaceholder('New project name').fill('Browser Project');
   await page.getByPlaceholder('Description').fill('Created by the browser acceptance test');
   await page.getByRole('button', { name: 'Create project' }).click();
@@ -43,7 +46,7 @@ test('registers, creates a project, and approves a connector', async ({ page }) 
   expect(consentA11y.violations).toEqual([]);
 
   await page.goto('/admin');
-  await expect(page.getByRole('heading', { name: 'System control' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Instance operations' })).toBeVisible();
   const adminA11y = await new AxeBuilder({ page }).analyze();
   expect(adminA11y.violations).toEqual([]);
 });

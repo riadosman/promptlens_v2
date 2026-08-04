@@ -238,28 +238,30 @@ export function AdminClient() {
     setSupportMetadata(await apiRequest(`/admin/instance/support/${tenantId}/metadata`));
   }
 
+  const adminTitle = overview?.instance ? 'Instance operations' : 'Workspace administration';
+
   return (
-    <main className="dashboard-main admin-main">
-      <header className="dashboard-header">
+    <main className="editorial-admin">
+      <header className="admin-header">
         <div>
           <p className="eyebrow">Administration</p>
-          <h1>System control</h1>
+          <h1>{adminTitle}</h1>
         </div>
         <Link className="button-link" href="/dashboard">
           Back to dashboard
         </Link>
       </header>
       {error ? <p className="form-error">{error}</p> : null}
-      <section className="metric-grid">
+      <section className="admin-metrics">
         <AdminMetric label="Users" value={overview?.tenant.users ?? '—'} />
         <AdminMetric label="Projects" value={overview?.tenant.projects ?? '—'} />
         <AdminMetric label="Prompts" value={overview?.tenant.prompts ?? '—'} />
         <AdminMetric label="Connectors" value={overview?.tenant.connectors ?? '—'} />
       </section>
       {overview?.instance ? (
-        <section className="panel">
+        <section className="admin-section">
           <p className="eyebrow">Instance health</p>
-          <div className="metric-grid compact">
+          <div className="admin-metrics">
             <AdminMetric label="Tenants" value={overview.instance.tenants} />
             <AdminMetric label="All users" value={overview.instance.users} />
             <AdminMetric label="Queued analyses" value={overview.instance.queuedAnalyses} />
@@ -267,8 +269,71 @@ export function AdminClient() {
           </div>
         </section>
       ) : null}
+      {queue ? (
+        <section className="admin-section">
+          <p className="eyebrow">Analysis queue</p>
+          <div className="admin-metrics">
+            <AdminMetric label="Waiting" value={queue.counts.waiting ?? 0} />
+            <AdminMetric label="Active" value={queue.counts.active ?? 0} />
+            <AdminMetric label="Delayed" value={queue.counts.delayed ?? 0} />
+            <AdminMetric label="Failed / DLQ" value={queue.counts.failed ?? 0} />
+          </div>
+          <div className="admin-records">
+            {queue.failed.map((job) => (
+              <article key={job.id}>
+                <div>
+                  <strong>Job {job.id}</strong>
+                  <small>
+                    Tenant {job.tenantId ?? 'unknown'} · attempts {job.attemptsMade}
+                  </small>
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await apiRequest(`/admin/operations/queue/${job.id}/retry`, { method: 'POST' });
+                    load();
+                  }}
+                >
+                  Retry
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      {overview?.instance ? (
+        <section className="admin-section">
+          <p className="eyebrow">Instance access</p>
+          <h2>Users</h2>
+          <div className="admin-records">
+            {instanceUsers.map((user) => (
+              <article key={user.id}>
+                <div>
+                  <strong>{user.displayName}</strong>
+                  <small>
+                    {user.email} · {user._count.memberships} workspace(s)
+                  </small>
+                </div>
+                <span>
+                  {user.status}
+                  {user.isInstanceAdmin ? ' · instance admin' : ''}
+                </span>
+                {!user.isInstanceAdmin ? (
+                  <button
+                    className={user.status === 'ACTIVE' ? 'danger' : 'quiet'}
+                    type="button"
+                    onClick={() => void changeUserStatus(user)}
+                  >
+                    {user.status === 'ACTIVE' ? 'Suspend' : 'Reactivate'}
+                  </button>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
       {settings ? (
-        <section className="panel">
+        <section className="admin-section">
           <p className="eyebrow">Workspace policy</p>
           <h2>AI and data lifecycle</h2>
           <form className="settings-form" onSubmit={updateSettings}>
@@ -325,7 +390,7 @@ export function AdminClient() {
           </div>
         </section>
       ) : null}
-      <section className="panel">
+      <section className="admin-section">
         <p className="eyebrow">Privacy-preserving support</p>
         <h2>Time-limited support access</h2>
         <p className="muted">
@@ -339,7 +404,7 @@ export function AdminClient() {
             <button type="submit">Request support access</button>
           </form>
         ) : null}
-        <div className="data-list">
+        <div className="admin-records">
           {supportGrants.map((grant) => {
             const active =
               grant.approvedById &&
@@ -387,130 +452,65 @@ export function AdminClient() {
           <pre className="metadata-preview">{JSON.stringify(supportMetadata, null, 2)}</pre>
         ) : null}
       </section>
-      {queue ? (
-        <section className="panel">
-          <p className="eyebrow">Analysis queue</p>
-          <div className="metric-grid compact">
-            <AdminMetric label="Waiting" value={queue.counts.waiting ?? 0} />
-            <AdminMetric label="Active" value={queue.counts.active ?? 0} />
-            <AdminMetric label="Delayed" value={queue.counts.delayed ?? 0} />
-            <AdminMetric label="Failed / DLQ" value={queue.counts.failed ?? 0} />
-          </div>
-          <div className="data-list">
-            {queue.failed.map((job) => (
-              <article key={job.id}>
-                <div>
-                  <strong>Job {job.id}</strong>
-                  <small>
-                    Tenant {job.tenantId ?? 'unknown'} · attempts {job.attemptsMade}
-                  </small>
-                </div>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await apiRequest(`/admin/operations/queue/${job.id}/retry`, { method: 'POST' });
-                    load();
-                  }}
-                >
-                  Retry
-                </button>
-              </article>
-            ))}
-          </div>
-        </section>
-      ) : null}
-      {overview?.instance ? (
-        <section className="panel">
-          <p className="eyebrow">Instance access</p>
-          <h2>Users</h2>
-          <div className="data-list">
-            {instanceUsers.map((user) => (
-              <article key={user.id}>
-                <div>
-                  <strong>{user.displayName}</strong>
-                  <small>
-                    {user.email} · {user._count.memberships} workspace(s)
-                  </small>
-                </div>
-                <span>
-                  {user.status}
-                  {user.isInstanceAdmin ? ' · instance admin' : ''}
-                </span>
-                {!user.isInstanceAdmin ? (
-                  <button
-                    className={user.status === 'ACTIVE' ? 'danger' : 'quiet'}
-                    type="button"
-                    onClick={() => void changeUserStatus(user)}
-                  >
-                    {user.status === 'ACTIVE' ? 'Suspend' : 'Reactivate'}
-                  </button>
-                ) : null}
-              </article>
-            ))}
-          </div>
-        </section>
-      ) : null}
-      <div className="admin-columns">
-        <section className="panel">
-          <p className="eyebrow">Access</p>
-          <h2>Members</h2>
-          <div className="data-list">
-            {members.map((member) => (
-              <article key={member.user.id}>
-                <div>
-                  <strong>{member.user.displayName}</strong>
-                  <small>{member.user.email}</small>
-                </div>
-                <select
-                  aria-label={`Role for ${member.user.displayName}`}
-                  value={member.role}
-                  onChange={(event) => void changeRole(member.user.id, event.target.value)}
-                >
-                  <option value="OWNER">Owner</option>
-                  <option value="ADMIN">Admin</option>
-                  <option value="MEMBER">Member</option>
-                  <option value="VIEWER">Viewer</option>
-                </select>
-                <button
-                  className="quiet"
-                  type="button"
-                  onClick={() => void removeMember(member.user.id)}
-                >
-                  Remove
-                </button>
-              </article>
-            ))}
-          </div>
-          <form className="inline-form" onSubmit={addMember}>
-            <input name="email" type="email" placeholder="Existing user email" required />
-            <select name="role" defaultValue="MEMBER" aria-label="New member role">
-              <option value="ADMIN">Admin</option>
-              <option value="MEMBER">Member</option>
-              <option value="VIEWER">Viewer</option>
-            </select>
-            <button type="submit">Add member</button>
-          </form>
-        </section>
-        <section className="panel">
-          <p className="eyebrow">Security</p>
-          <h2>Audit trail</h2>
-          <div className="data-list">
-            {audit.map((event) => (
-              <article key={event.id}>
-                <div>
-                  <strong>{event.action}</strong>
-                  <small>{new Date(event.createdAt).toLocaleString()}</small>
-                </div>
-                <span>{event.result}</span>
-              </article>
-            ))}
-          </div>
-        </section>
-      </div>
-      <section className="panel">
+      <section className="admin-section">
+        <p className="eyebrow">Access</p>
+        <h2>Members</h2>
+        <div className="admin-records">
+          {members.map((member) => (
+            <article key={member.user.id}>
+              <div>
+                <strong>{member.user.displayName}</strong>
+                <small>{member.user.email}</small>
+              </div>
+              <select
+                aria-label={`Role for ${member.user.displayName}`}
+                value={member.role}
+                onChange={(event) => void changeRole(member.user.id, event.target.value)}
+              >
+                <option value="OWNER">Owner</option>
+                <option value="ADMIN">Admin</option>
+                <option value="MEMBER">Member</option>
+                <option value="VIEWER">Viewer</option>
+              </select>
+              <button
+                className="quiet"
+                type="button"
+                onClick={() => void removeMember(member.user.id)}
+              >
+                Remove
+              </button>
+            </article>
+          ))}
+        </div>
+        <form className="inline-form" onSubmit={addMember}>
+          <input name="email" type="email" placeholder="Existing user email" required />
+          <select name="role" defaultValue="MEMBER" aria-label="New member role">
+            <option value="ADMIN">Admin</option>
+            <option value="MEMBER">Member</option>
+            <option value="VIEWER">Viewer</option>
+          </select>
+          <button type="submit">Add member</button>
+        </form>
+      </section>
+      <section className="admin-section">
+        <p className="eyebrow">Security</p>
+        <h2>Audit trail</h2>
+        <div className="admin-records">
+          {audit.map((event) => (
+            <article key={event.id}>
+              <div>
+                <strong>{event.action}</strong>
+                <small>{new Date(event.createdAt).toLocaleString()}</small>
+              </div>
+              <span>{event.result}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section className="admin-section">
         <p className="eyebrow">Integrations</p>
         <h2>Connectors</h2>
-        <div className="data-list">
+        <div className="admin-records">
           {connectors.length === 0 ? (
             <p className="empty">No connectors installed.</p>
           ) : (
@@ -549,7 +549,7 @@ function AdminMetric({
   readonly value: string | number;
 }) {
   return (
-    <article className="metric">
+    <article>
       <p>{label}</p>
       <strong>{value}</strong>
     </article>

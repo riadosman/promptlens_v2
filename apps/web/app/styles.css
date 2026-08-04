@@ -612,6 +612,13 @@ select:focus {
   gap: 1rem;
   margin: 2rem 0;
 }
+
+.auth-card input,
+.auth-card select {
+  background: var(--paper);
+  color: var(--ink);
+}
+
 .editorial-auth label {
   display: grid;
   gap: 0.45rem;
@@ -2276,6 +2283,10 @@ select:focus {
   box-shadow: none;
 }
 
+.editorial-dashboard .editorial-session-card p {
+  color: var(--muted);
+}
+
 .editorial-dashboard .editorial-prompt-card {
   grid-template-columns: auto minmax(0, 1fr) auto;
   border: 1px solid var(--ink);
@@ -2475,5 +2486,161 @@ select:focus {
   .editorial-dashboard .editorial-metadata,
   .editorial-dashboard .editorial-prompt-actions {
     justify-content: flex-start;
+  }
+}
+
+.editorial-admin {
+  width: min(100%, 82rem);
+  margin: 0 auto;
+  padding: 2rem;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.admin-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 1.25rem;
+}
+
+.admin-header h1,
+.admin-section h2 {
+  margin: 0.2rem 0 0;
+  color: var(--ink);
+}
+
+.admin-header h1 {
+  font-size: clamp(2rem, 4vw, 4rem);
+  line-height: 1;
+}
+
+.editorial-admin .eyebrow {
+  color: var(--signal-ink);
+}
+
+.editorial-admin label {
+  color: var(--ink);
+}
+
+.admin-section {
+  border-top: 1px solid var(--ink);
+  padding: 1.25rem 0;
+}
+
+.admin-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 1rem;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+}
+
+.admin-metrics article {
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  background: var(--paper);
+}
+
+.admin-metrics p,
+.admin-metrics strong {
+  margin: 0;
+}
+
+.admin-metrics p,
+.admin-records small,
+.admin-records span {
+  color: var(--muted);
+}
+
+.admin-metrics strong {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: clamp(1.4rem, 3vw, 2.25rem);
+  letter-spacing: -0.05em;
+}
+
+.admin-records {
+  display: grid;
+  margin-top: 1rem;
+}
+
+.admin-records article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  border-top: 1px solid var(--ink);
+  padding: 0.8rem 0;
+}
+
+.admin-records article > div {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.editorial-admin button,
+.editorial-admin .button-link,
+.editorial-admin select,
+.editorial-admin input {
+  border-color: var(--ink);
+  border-radius: 0.15rem;
+  box-shadow: none;
+}
+
+.editorial-admin select,
+.editorial-admin input {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.editorial-admin .button-link {
+  background: var(--acid);
+  color: var(--ink);
+}
+
+.editorial-admin button:not(.danger) {
+  background: var(--acid);
+  color: var(--ink);
+}
+
+.editorial-admin .quiet {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.editorial-admin .danger {
+  border-color: var(--ink);
+  background: var(--signal);
+  color: var(--ink);
+}
+
+.editorial-admin .metadata-preview {
+  border-color: var(--ink);
+  border-radius: 0;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+@media (max-width: 760px) {
+  .editorial-admin {
+    padding: 1.25rem;
+  }
+
+  .admin-header {
+    flex-direction: column;
+  }
+
+  .admin-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-records article {
+    grid-template-columns: 1fr;
+    align-items: start;
   }
 }

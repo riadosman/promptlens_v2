@@ -2135,6 +2135,7 @@ select:focus {
 
 .editorial-dashboard .editorial-main {
   display: grid;
+  place-items: stretch;
   width: min(100%, 82rem);
   margin: 0 auto;
   gap: 1.25rem;
@@ -2350,6 +2351,11 @@ select:focus {
     display: grid;
     gap: 0.2rem;
     padding-top: 0.5rem;
+  }
+
+  .mobile-navigation .editorial-switch {
+    margin-top: 0.5rem;
+    color: var(--ink);
   }
 
   .editorial-dashboard .editorial-main {

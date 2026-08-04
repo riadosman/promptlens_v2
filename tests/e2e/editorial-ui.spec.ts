@@ -15,6 +15,15 @@ test('member overview stays personal', async ({ page }) => {
   await expect(page.getByText('Needs attention')).toBeVisible();
 });
 
+test('mobile navigation retains the workspace switcher', async ({ page }) => {
+  await page.setViewportSize({ width: 899, height: 900 });
+  await page.goto('/dashboard/overview?mock=1');
+  await page.getByText('Menu', { exact: true }).click();
+  await expect(
+    page.getByRole('navigation', { name: 'Mobile navigation' }).getByLabel('Active workspace'),
+  ).toBeVisible();
+});
+
 test('landing presents the Narrative Glow product story', async ({ page }) => {
   await page.goto('/');
 

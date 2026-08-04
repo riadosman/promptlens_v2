@@ -626,6 +626,27 @@ export function DashboardClient() {
     { href: '/connect', label: 'Connect device' },
   ];
   if (adminLinksVisible) navItems.push({ href: '/admin', label: 'Administration' });
+  const tenantSwitcher = tenants.length > 1 ? (
+    <label className="editorial-switch">
+      Workspace
+      <select
+        aria-label="Active workspace"
+        defaultValue=""
+        onChange={(event) => {
+          if (event.target.value) void switchTenant(event.target.value);
+        }}
+      >
+        <option value="" disabled>
+          Switch workspace
+        </option>
+        {tenants.map(({ tenant, role }) => (
+          <option key={tenant.id} value={tenant.id}>
+            {tenant.name} - {role}
+          </option>
+        ))}
+      </select>
+    </label>
+  ) : null;
   const activeTenantName =
     tenants.find((entry) => entry.tenant.id === actor?.tenantId)?.tenant.name ?? 'Current workspace';
   const navLinkClass = (target: string) =>
@@ -668,27 +689,7 @@ export function DashboardClient() {
             </Link>
           ))}
         </nav>
-        {tenants.length > 1 ? (
-          <label className="editorial-switch">
-            Workspace
-            <select
-              aria-label="Active workspace"
-              defaultValue=""
-              onChange={(event) => {
-                if (event.target.value) void switchTenant(event.target.value);
-              }}
-            >
-              <option value="" disabled>
-                Switch workspace
-              </option>
-              {tenants.map(({ tenant, role }) => (
-                <option key={tenant.id} value={tenant.id}>
-                  {tenant.name} - {role}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
+        {tenantSwitcher}
         <button className="editorial-ghost" onClick={() => void logout()}>
           Sign out
         </button>
@@ -702,6 +703,7 @@ export function DashboardClient() {
                 {item.label}
               </Link>
             ))}
+            {tenantSwitcher}
           </nav>
         </details>
         <header className="editorial-header">

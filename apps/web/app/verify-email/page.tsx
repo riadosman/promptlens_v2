@@ -1,17 +1,10 @@
-import Link from 'next/link';
 import { RecoveryForm } from '../../components/recovery-form';
+import { AuthPageShell } from '../../components/auth-page-shell';
 
 export default function VerifyEmailPage() {
   return (
-    <main className="auth-shell">
-      <section className="auth-card">
-        <Link className="wordmark" href="/">
-          PromptLens
-        </Link>
-        <p className="eyebrow">Account security</p>
-        <h1>Verify your email.</h1>
-        <RecoveryForm mode="verify" />
-      </section>
-    </main>
+    <AuthPageShell eyebrow="Account security" title="Verify your email.">
+      <RecoveryForm mode="verify" />
+    </AuthPageShell>
   );
 }

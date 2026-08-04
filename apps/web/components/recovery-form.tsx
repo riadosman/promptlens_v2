@@ -47,7 +47,7 @@ export function RecoveryForm({ mode }: { readonly mode: 'forgot' | 'reset' | 've
   }
 
   return (
-    <form className="auth-form" onSubmit={submit}>
+    <form className="auth-form" onSubmit={submit} aria-busy={pending}>
       {mode === 'forgot' ? (
         <label>
           Email
@@ -68,9 +68,9 @@ export function RecoveryForm({ mode }: { readonly mode: 'forgot' | 'reset' | 've
         </label>
       ) : null}
       {mode !== 'forgot' && !token ? (
-        <p className="form-error">The link is missing its security token.</p>
+        <p className="form-error" role="alert">The link is missing its security token.</p>
       ) : null}
-      {error ? <p className="form-error">{error}</p> : null}
+      {error ? <p className="form-error" role="alert">{error}</p> : null}
       {message ? (
         <p className="muted" role="status">
           {message}

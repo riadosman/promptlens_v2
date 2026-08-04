@@ -28,7 +28,7 @@ export function AuthForm({ mode }: { readonly mode: 'login' | 'register' }) {
   }
 
   return (
-    <form className="auth-form" onSubmit={submit}>
+    <form className="auth-form" onSubmit={submit} aria-busy={pending}>
       {mode === 'register' ? (
         <>
           <label>
@@ -56,7 +56,7 @@ export function AuthForm({ mode }: { readonly mode: 'login' | 'register' }) {
           maxLength={128}
         />
       </label>
-      {error ? <p className="form-error">{error}</p> : null}
+      {error ? <p className="form-error" role="alert">{error}</p> : null}
       <button type="submit" disabled={pending}>
         {pending ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
       </button>

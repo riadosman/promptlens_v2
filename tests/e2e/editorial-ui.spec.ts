@@ -48,3 +48,30 @@ test('auth errors are announced and readable', async ({ page }) => {
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations).toEqual([]);
 });
+
+test('auth panel controls show a contrasting keyboard focus indicator', async ({ page }) => {
+  await page.goto('/login');
+
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  await expect(page.getByLabel('Email')).toBeFocused();
+  await expect(page.getByLabel('Email')).toHaveCSS(
+    'box-shadow',
+    'rgb(23, 23, 23) 0px 0px 0px 3px',
+  );
+
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Sign in' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Sign in' })).toHaveCSS(
+    'outline-color',
+    'rgb(23, 23, 23)',
+  );
+
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('link', { name: 'Forgot your password?' })).toBeFocused();
+  await expect(page.getByRole('link', { name: 'Forgot your password?' })).toHaveCSS(
+    'outline-color',
+    'rgb(23, 23, 23)',
+  );
+});

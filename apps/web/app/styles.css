@@ -625,7 +625,10 @@ select:focus {
   padding: 0.78rem 0.9rem;
 }
 .editorial-auth input:focus {
-  box-shadow: 0 0 0 3px var(--acid);
+  box-shadow: 0 0 0 3px var(--ink);
+}
+.auth-panel :focus-visible {
+  outline: 3px solid var(--ink);
 }
 .muted,
 .empty {

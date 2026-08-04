@@ -20,3 +20,8 @@
 
 - The initial red run could not reach the web server until the isolated local app was started on port 3001.
 - A fresh E2E database where the registering user has instance data is required for the final `Instance operations` assertion to pass.
+
+## Fix Round 1
+
+- Queue rendering now requires both retained queue data and current instance availability.
+- Added a focused regression test for the no-instance retained-queue case; it was observed red before the guard was introduced.

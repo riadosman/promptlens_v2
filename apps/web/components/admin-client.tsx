@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { apiRequest } from '../lib/api';
+import { hasInstanceQueue } from './admin-queue';
 
 interface AdminOverview {
   tenant: {
@@ -269,7 +270,7 @@ export function AdminClient() {
           </div>
         </section>
       ) : null}
-      {queue ? (
+      {hasInstanceQueue(Boolean(overview?.instance), queue) ? (
         <section className="admin-section">
           <p className="eyebrow">Analysis queue</p>
           <div className="admin-metrics">

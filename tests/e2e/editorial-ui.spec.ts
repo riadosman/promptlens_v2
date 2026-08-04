@@ -39,7 +39,78 @@ test('clearing an empty prompt filter restores the prompt workbench', async ({ p
   await page.getByRole('button', { name: 'Clear filters' }).click();
   await expect(page).toHaveURL(/mock=1/);
   await expect(page).toHaveURL(/mockRole=user/);
+  await expect(page).not.toHaveURL(/[?&](q|projectId|platform|model|minScore|userId|promptId)=/);
   await expect(page.getByRole('button', { name: 'Open analysis' }).first()).toBeVisible();
+});
+
+test('clearing production filters reloads prompts without filter parameters', async ({ page }) => {
+  const promptRequests: string[] = [];
+  const response = (body: unknown) => ({ contentType: 'application/json', body: JSON.stringify(body) });
+
+  await page.route('http://localhost:4000/v1/**', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === '/v1/auth/session') {
+      await route.fulfill(
+        response({
+          userId: '00000000-0000-4000-8000-000000000001',
+          role: 'MEMBER',
+          tenantId: '00000000-0000-4000-8000-000000000002',
+          sessionId: '00000000-0000-4000-8000-000000000003',
+          isInstanceAdmin: false,
+        }),
+      );
+      return;
+    }
+    if (url.pathname === '/v1/prompts') {
+      promptRequests.push(url.search);
+      await route.fulfill(
+        response({
+          items: url.searchParams.has('q')
+            ? []
+            : [
+                {
+                  id: '00000000-0000-4000-8000-000000000004',
+                  projectId: '00000000-0000-4000-8000-000000000005',
+                  projectName: 'Production project',
+                  content: 'A restored production prompt.',
+                  platform: 'api',
+                  model: 'gpt-test',
+                  occurredAt: '2026-08-04T00:00:00.000Z',
+                  tags: [],
+                  analysis: null,
+                },
+              ],
+          nextCursor: null,
+        }),
+      );
+      return;
+    }
+    if (url.pathname === '/v1/dashboard/stats') {
+      await route.fulfill(
+        response({
+          projects: 0,
+          prompts: 0,
+          analysesCompleted: 0,
+          averageScore: null,
+          promptsLast7Days: 0,
+          scoreTrend: [],
+          modelDistribution: [],
+          projectDistribution: [],
+        }),
+      );
+      return;
+    }
+    await route.fulfill(response([]));
+  });
+
+  await page.goto('/dashboard/prompts?q=no-match');
+  await expect(page.getByText('No prompts match these filters.')).toBeVisible();
+  await page.getByRole('button', { name: 'Clear filters' }).click();
+
+  await expect(page.getByRole('button', { name: 'Open analysis' })).toBeVisible();
+  expect(promptRequests.some((search) => search.includes('mine=true') && !search.includes('q='))).toBe(
+    true,
+  );
 });
 
 test('project workbench link carries the selected project into prompts', async ({ page }) => {
@@ -54,7 +125,11 @@ test('mobile member navigation opens the prompt log accessibly', async ({ page }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/dashboard/overview?mock=1&mockRole=user');
   await page.getByText('Menu', { exact: true }).click();
-  await expect(page.getByRole('navigation', { name: 'Mobile navigation' })).toContainText('Prompt log');
+  const navigation = page.getByRole('navigation', { name: 'Mobile navigation' });
+  await expect(navigation).toContainText('Prompt log');
+  await expect(navigation.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  await expect(page.getByText('Menu', { exact: true })).toHaveCSS('min-height', '44px');
+  await expect(navigation.getByRole('link', { name: 'Prompt log' })).toHaveCSS('min-height', '44px');
 
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations).toEqual([]);

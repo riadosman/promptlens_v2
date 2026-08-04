@@ -24,3 +24,10 @@
 ## Generated files
 
 - Restored `apps/web/next-env.d.ts` and `apps/web/tsconfig.tsbuildinfo` after verification.
+
+## Fix round 1
+
+- `Clear filters` now invokes the existing production load flow with explicit cleared parameters, retaining only the required member scope. This prevents a stale closure from re-fetching the prior filter set.
+- Added the existing Sign out action to the mobile native navigation and made its summary and links 44px targets below 900px.
+- Extended E2E coverage to assert filter keys leave the URL, verify a mocked production API request reloads unfiltered prompts, and verify mobile Sign out and target sizes.
+- Focused checks passed: both clearing tests, the mobile accessibility test, and `tsc -p tsconfig.json --noEmit`.

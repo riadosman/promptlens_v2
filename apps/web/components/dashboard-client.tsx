@@ -451,7 +451,7 @@ export function DashboardClient() {
     setError(null);
   }, [actor, demoMode, mockConfig.tenants, mockConfig.tenantMembers, mockRows]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (clearFilters = false) => {
     if (!actor) return;
     if (demoMode) {
       const rows = mockRows();
@@ -466,7 +466,8 @@ export function DashboardClient() {
     }
     const tenantAdmin = isTenantAdmin(actor.role);
     const scope = tenantAdmin ? 'tenant' : 'mine';
-    const parameters = promptParameters();
+    const parameters = clearFilters ? new URLSearchParams() : promptParameters();
+    if (clearFilters && !tenantAdmin) parameters.set('mine', 'true');
     try {
       const [nextStats, nextProjects, nextPrompts, nextTenants, nextSessions, nextMembers] =
         await Promise.all([
@@ -567,7 +568,7 @@ export function DashboardClient() {
     await load();
   }
 
-  function clearPromptFilters() {
+  async function clearPromptFilters() {
     setQuery('');
     setProjectFilter('');
     setPlatformFilter('');
@@ -583,6 +584,7 @@ export function DashboardClient() {
       userId: null,
       promptId: null,
     });
+    if (!demoMode) await load(true);
   }
 
   async function toggleProject(projectId: string, archived: boolean) {
@@ -810,6 +812,9 @@ export function DashboardClient() {
               </Link>
             ))}
             {tenantSwitcher}
+            <button className="editorial-ghost" type="button" onClick={() => void logout()}>
+              Sign out
+            </button>
           </nav>
         </details>
         {!actor ? (
@@ -1046,7 +1051,7 @@ export function DashboardClient() {
                       <button
                         className="editorial-action"
                         type="button"
-                        onClick={clearPromptFilters}
+                        onClick={() => void clearPromptFilters()}
                       >
                         Clear filters
                       </button>

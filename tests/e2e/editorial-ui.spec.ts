@@ -28,6 +28,20 @@ test('prompt workbench keeps filters and the selected analysis in the URL', asyn
   await expect(page.getByRole('heading', { name: 'Improved prompt' })).toBeVisible();
 });
 
+test('clearing an empty prompt filter restores the prompt workbench', async ({ page }) => {
+  await page.goto('/dashboard/prompts?mock=1&mockRole=user');
+  await page.getByLabel('Search prompts').fill('no matching prompt');
+  await page.getByRole('button', { name: 'Apply filters' }).click();
+
+  await expect(page.getByText('No prompts match these filters.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Clear filters' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Clear filters' }).click();
+  await expect(page).toHaveURL(/mock=1/);
+  await expect(page).toHaveURL(/mockRole=user/);
+  await expect(page.getByRole('button', { name: 'Open analysis' }).first()).toBeVisible();
+});
+
 test('project workbench link carries the selected project into prompts', async ({ page }) => {
   await page.goto('/dashboard/projects?mock=1');
   await page.getByRole('link', { name: 'Open Content team prompts' }).click();
@@ -36,13 +50,14 @@ test('project workbench link carries the selected project into prompts', async (
   await expect(page.getByLabel('Filter by project')).toHaveValue('project-content');
 });
 
-test('mobile navigation retains the workspace switcher', async ({ page }) => {
-  await page.setViewportSize({ width: 899, height: 900 });
-  await page.goto('/dashboard/overview?mock=1');
+test('mobile member navigation opens the prompt log accessibly', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/dashboard/overview?mock=1&mockRole=user');
   await page.getByText('Menu', { exact: true }).click();
-  await expect(
-    page.getByRole('navigation', { name: 'Mobile navigation' }).getByLabel('Active workspace'),
-  ).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Mobile navigation' })).toContainText('Prompt log');
+
+  const accessibility = await new AxeBuilder({ page }).analyze();
+  expect(accessibility.violations).toEqual([]);
 });
 
 test('landing presents the Narrative Glow product story', async ({ page }) => {
@@ -58,6 +73,16 @@ test('landing presents the Narrative Glow product story', async ({ page }) => {
 
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations).toEqual([]);
+});
+
+test('landing respects reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+
+  await expect(page.locator('.landing-product-preview')).toHaveCSS(
+    'animation-duration',
+    /^(0s|0\.01ms|1e-05s)$/,
+  );
 });
 
 test('auth routes share the Editorial Intelligence shell', async ({ page }) => {

@@ -2411,6 +2411,34 @@ select:focus {
   color: var(--ink);
 }
 
+.editorial-dashboard .editorial-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid var(--ink);
+  background: var(--signal);
+  color: var(--ink);
+  padding: 0.75rem 1rem;
+}
+
+.editorial-dashboard .editorial-error p {
+  margin: 0;
+}
+
+.editorial-dashboard .editorial-loading {
+  display: grid;
+  gap: 1px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+}
+
+.editorial-dashboard .editorial-skeleton-row {
+  display: block;
+  height: 5rem;
+  background: color-mix(in srgb, var(--paper), var(--ink) 8%);
+}
+
 .mobile-navigation {
   display: none;
 }
@@ -2421,21 +2449,7 @@ select:focus {
   }
 
   .editorial-dashboard .editorial-sidebar {
-    position: static;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    height: auto;
-    padding: 0.85rem 1rem;
-  }
-
-  .editorial-dashboard .editorial-sidebar .editorial-tenant,
-  .editorial-dashboard .editorial-sidebar .editorial-nav,
-  .editorial-dashboard .editorial-sidebar .editorial-switch {
     display: none;
-  }
-
-  .editorial-dashboard .editorial-sidebar .editorial-ghost {
-    margin: 0;
   }
 
   .mobile-navigation {
@@ -2466,8 +2480,15 @@ select:focus {
   }
 
   .editorial-dashboard .editorial-kpi-grid,
-  .editorial-dashboard .editorial-panels {
+  .editorial-dashboard .editorial-panels,
+  .editorial-dashboard .prompt-workbench {
     grid-template-columns: 1fr;
+  }
+
+  .editorial-dashboard button,
+  .editorial-dashboard input,
+  .editorial-dashboard select {
+    min-height: 44px;
   }
 }
 

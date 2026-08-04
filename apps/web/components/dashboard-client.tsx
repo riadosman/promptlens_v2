@@ -567,6 +567,24 @@ export function DashboardClient() {
     await load();
   }
 
+  function clearPromptFilters() {
+    setQuery('');
+    setProjectFilter('');
+    setPlatformFilter('');
+    setModelFilter('');
+    setMinScoreFilter('');
+    setMemberFilter('');
+    replaceUrlParameters({
+      q: null,
+      projectId: null,
+      platform: null,
+      model: null,
+      minScore: null,
+      userId: null,
+      promptId: null,
+    });
+  }
+
   async function toggleProject(projectId: string, archived: boolean) {
     if (demoMode) {
       setProjects((current) =>
@@ -689,6 +707,9 @@ export function DashboardClient() {
   const actorRole = actor?.role ?? '';
   const adminLinksVisible = isTenantAdmin(actorRole);
   const tenantAdmin = actor ? isTenantAdmin(actor.role) : false;
+  const hasPromptFilters = Boolean(
+    query || projectFilter || platformFilter || modelFilter || minScoreFilter || memberFilter,
+  );
   const needsAttention = prompts.filter((prompt) => {
     const score = prompt.analysis?.score;
     return (
@@ -779,7 +800,7 @@ export function DashboardClient() {
           Sign out
         </button>
       </aside>
-      <main className="editorial-main">
+      <main className="editorial-main" aria-busy={!actor}>
         <details className="mobile-navigation">
           <summary>Menu</summary>
           <nav aria-label="Mobile navigation">
@@ -791,6 +812,14 @@ export function DashboardClient() {
             {tenantSwitcher}
           </nav>
         </details>
+        {!actor ? (
+          <section className="editorial-loading" aria-label="Loading dashboard">
+            <span className="editorial-skeleton-row" />
+            <span className="editorial-skeleton-row" />
+            <span className="editorial-skeleton-row" />
+          </section>
+        ) : (
+          <>
         <header className="editorial-header">
           <div className="editorial-header-copy">
             <p className="editorial-kicker">{sectionCaption}</p>
@@ -820,7 +849,14 @@ export function DashboardClient() {
             </span>
           </div>
         </header>
-        {error ? <p className="form-error">{error}</p> : null}
+        {error ? (
+          <div className="editorial-error" role="alert">
+            <p>{error}</p>
+            <button className="editorial-action" type="button" onClick={() => void load()}>
+              Retry
+            </button>
+          </div>
+        ) : null}
         {section === 'overview' ? (
           <>
             <section className="editorial-kpi-grid" aria-label="Workspace statistics">
@@ -1003,9 +1039,23 @@ export function DashboardClient() {
             <div className="prompt-workbench">
               <div className="prompt-index">
                 {prompts.length === 0 ? (
-                  <p className="editorial-empty">
-                    No prompts yet. Connect a device to start syncing.
-                  </p>
+                  hasPromptFilters ? (
+                    <div className="editorial-empty">
+                      <p>No prompts match these filters.</p>
+                      <p>Try clearing filters or broadening your search.</p>
+                      <button
+                        className="editorial-action"
+                        type="button"
+                        onClick={clearPromptFilters}
+                      >
+                        Clear filters
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="editorial-empty">
+                      No prompts yet. Connect a device to start syncing.
+                    </p>
+                  )
                 ) : (
                   prompts.map((prompt) => {
                     const score = prompt.analysis?.score;
@@ -1183,6 +1233,8 @@ export function DashboardClient() {
             </form>
           </section>
         ) : null}
+          </>
+        )}
       </main>
     </div>
   );

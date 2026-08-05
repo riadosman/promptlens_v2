@@ -74,17 +74,17 @@ jobs:
           PROMPTLENS_CONNECTORS: none
         run: sh promptlens install
 
-      - name: Verify v1 critical path
-        run: node scripts/acceptance.mjs
-
-      - name: Verify database role and RLS isolation
-        run: pnpm security:rls
-
       - name: Install browser runtime
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Verify browser critical path
         run: pnpm e2e
+
+      - name: Verify v1 critical path
+        run: node scripts/acceptance.mjs
+
+      - name: Verify database role and RLS isolation
+        run: pnpm security:rls
 
       - name: Verify ingest and search performance budgets
         run: >-

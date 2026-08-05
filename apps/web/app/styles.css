@@ -338,6 +338,13 @@ li::before {
   gap: 1rem;
   margin: 2rem 0;
 }
+
+.auth-shell,
+.auth-shell * {
+  color: #e5ecff !important;
+  -webkit-text-fill-color: #e5ecff !important;
+}
+
 label {
   display: grid;
   gap: 0.45rem;
@@ -1002,6 +1009,33 @@ select:focus {
   color: var(--v2-text);
 }
 
+.dashboard-shell-v2,
+.dashboard-shell-v2 * {
+  color: var(--v2-text) !important;
+  -webkit-text-fill-color: var(--v2-text) !important;
+}
+
+.dashboard-shell-v2 .v2-kicker,
+.dashboard-shell-v2 .v2-subline,
+.dashboard-shell-v2 .v2-tenant-role,
+.dashboard-shell-v2 .v2-tenant-id,
+.dashboard-shell-v2 .v2-empty,
+.dashboard-shell-v2 .v2-metadata,
+.dashboard-shell-v2 .v2-prompt-meta {
+  color: var(--v2-muted) !important;
+}
+
+.dashboard-shell-v2 .v2-nav-link,
+.dashboard-shell-v2 .v2-project-grid .v2-mini-chip,
+.dashboard-shell-v2 .v2-mini-chip {
+  color: #d6e2f8 !important;
+}
+
+.dashboard-shell-v2 .v2-nav-link.active,
+.dashboard-shell-v2 .v2-nav-link:hover {
+  color: #f2f7ff !important;
+}
+
 .v2-rail {
   position: sticky;
   top: 0;
@@ -1083,6 +1117,7 @@ select:focus {
   padding: 1.8rem 1.5rem 2.4rem;
   display: grid;
   gap: 1rem;
+  color: var(--v2-text);
 }
 
 .v2-header {
@@ -1115,6 +1150,11 @@ select:focus {
   margin: 0.2rem 0 0;
   font-size: clamp(1.8rem, 4.8vw, 3rem);
   line-height: 1;
+}
+
+.auth-form,
+.auth-form * {
+  color: #e5ecff;
 }
 
 .v2-hero-ribbon {
@@ -1178,6 +1218,7 @@ select:focus {
   border-radius: 0.8rem;
   background: linear-gradient(140deg, rgba(17, 24, 40, 0.88), rgba(15, 21, 35, 0.88));
   padding: 0.75rem 0.85rem;
+  color: #eaf1ff;
 }
 
 .v2-tenant strong,
@@ -1186,14 +1227,42 @@ select:focus {
   margin: 0;
 }
 
+.v2-tenant-kicker {
+  color: var(--v2-accent);
+}
+
 .v2-tenant strong {
   display: block;
   font-size: 0.98rem;
+  color: #eff6ff;
+}
+
+.v2-tenant-name {
+  display: block;
+  font-size: 0.98rem;
+  color: #eff6ff;
 }
 
 .v2-tenant span {
-  color: var(--v2-muted);
+  color: #c8d9f5;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.v2-tenant-role {
+  color: #c8d9f5;
   text-transform: capitalize;
+}
+
+.v2-tenant small {
+  color: #d5e2ff;
+}
+
+.v2-tenant-id {
+  color: #d5e2ff;
+  margin-top: 0.45rem;
+  font-size: 0.75rem;
+  display: block;
 }
 
 .v2-id {
@@ -1212,6 +1281,14 @@ select:focus {
   border-radius: 0.65rem;
   padding: 0.65rem 0.75rem;
   text-decoration: none;
+}
+
+.v2-nav-link:link,
+.v2-nav-link:visited,
+.v2-nav-link:hover,
+.v2-nav-link:active,
+.v2-nav-link:focus {
+  color: #d6e2f8;
 }
 
 .v2-nav-link.active,
@@ -1407,6 +1484,7 @@ select:focus {
 
 .v2-prompt-copy p {
   margin: 0 0 0.4rem;
+  color: var(--v2-text);
 }
 
 .v2-chip-row {
@@ -1438,6 +1516,13 @@ select:focus {
   gap: 0.6rem;
   justify-content: space-between;
   align-items: center;
+}
+
+.v2-prompt-card,
+.v2-session-card,
+.v2-project-card,
+.v2-analysis {
+  color: var(--v2-text);
 }
 
 .v2-prompt-actions {
@@ -1548,6 +1633,81 @@ select:focus {
 
 .v2-project-card h3 {
   margin: 0;
+  color: #eef3ff;
+}
+
+.v2-project-card p {
+  color: #d7e2f5;
+}
+
+select option,
+select optgroup {
+  color: #e5ecff !important;
+  background: #0b1220 !important;
+  -webkit-text-fill-color: #e5ecff !important;
+}
+
+.v2-project-card-skeleton {
+  gap: 0.7rem;
+}
+
+.v2-skeleton {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 0.45rem;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.10));
+  background-size: 200% 100%;
+  animation: v2-skeleton-shimmer 1.2s linear infinite;
+}
+
+.v2-skeleton-title {
+  height: 1.1rem;
+  width: 72%;
+}
+
+.v2-skeleton-line {
+  height: 0.9rem;
+  width: 100%;
+}
+
+.v2-skeleton-input {
+  height: 2.5rem;
+  width: 100%;
+}
+
+.v2-skeleton-score {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+}
+
+.v2-skeleton-chip {
+  height: 1.45rem;
+  width: 4.6rem;
+}
+
+.v2-skeleton-button {
+  margin-top: 0.3rem;
+  height: 2rem;
+  width: 7.2rem;
+}
+
+.v2-project-card .v2-skeleton-chip {
+  border-radius: 999px;
+}
+
+.v2-project-card .v2-skeleton-button {
+  border-radius: 0.55rem;
+}
+
+@keyframes v2-skeleton-shimmer {
+  0% {
+    background-position: 120% 0%;
+  }
+  100% {
+    background-position: -120% 0%;
+  }
 }
 
 .v2-inline-form {

@@ -340,6 +340,7 @@ export function DashboardClient() {
   >([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
+  const [sectionLoading, setSectionLoading] = useState(false);
   const [sessions, setSessions] = useState<
     Array<{ id: string; userAgent: string | null; createdAt: string; current: boolean }>
   >([]);
@@ -363,6 +364,7 @@ export function DashboardClient() {
 
     setActor(mockConfig.actor);
     setError(null);
+    setSectionLoading(false);
     return undefined;
   }, [demoMode, mockConfig.actor, router]);
 
@@ -416,58 +418,67 @@ export function DashboardClient() {
 
   const load = useCallback(async () => {
     if (!actor) return;
-    if (demoMode) {
-      const rows = mockRows();
-      setStats(buildMockStats(rows));
-      setProjects(mockProjects);
-      setPrompts(rows);
-      setTenants(mockConfig.tenants);
-      setSessions(mockSessions);
-      setTenantMembers(mockConfig.tenantMembers);
-      setError(null);
-      return;
-    }
-    const tenantAdmin = isTenantAdmin(actor.role);
-    const scope = tenantAdmin ? 'tenant' : 'mine';
-    const parameters = promptParameters();
+    setSectionLoading(true);
+    const startedAt = Date.now();
     try {
-      const [nextStats, nextProjects, nextPrompts, nextTenants, nextSessions, nextMembers] =
-        await Promise.all([
-          apiRequest<DashboardStats>(`/dashboard/stats?scope=${scope}`),
-          apiRequest<ProjectResponse[]>('/projects'),
-          apiRequest<PromptListResponse>(
-            `/prompts${parameters.size ? `?${parameters.toString()}` : ''}`,
-          ),
-          apiRequest<Array<{ role: string; tenant: { id: string; name: string } }>>('/auth/tenants'),
-          apiRequest<
-            Array<{ id: string; userAgent: string | null; createdAt: string; current: boolean }>
-          >('/auth/sessions'),
-          tenantAdmin ? apiRequest<AdminMember[]>('/admin/members') : Promise.resolve([] as AdminMember[]),
-        ]);
+      if (demoMode) {
+        const rows = mockRows();
+        setStats(buildMockStats(rows));
+        setProjects(mockProjects);
+        setPrompts(rows);
+        setTenants(mockConfig.tenants);
+        setSessions(mockSessions);
+        setTenantMembers(mockConfig.tenantMembers);
+        setError(null);
+      } else {
+        const tenantAdmin = isTenantAdmin(actor.role);
+        const scope = tenantAdmin ? 'tenant' : 'mine';
+        const parameters = promptParameters();
+        const [nextStats, nextProjects, nextPrompts, nextTenants, nextSessions, nextMembers] =
+          await Promise.all([
+            apiRequest<DashboardStats>(`/dashboard/stats?scope=${scope}`),
+            apiRequest<ProjectResponse[]>('/projects'),
+            apiRequest<PromptListResponse>(
+              `/prompts${parameters.size ? `?${parameters.toString()}` : ''}`,
+            ),
+            apiRequest<Array<{ role: string; tenant: { id: string; name: string } }>>('/auth/tenants'),
+            apiRequest<
+              Array<{ id: string; userAgent: string | null; createdAt: string; current: boolean }>
+            >('/auth/sessions'),
+            tenantAdmin ? apiRequest<AdminMember[]>('/admin/members') : Promise.resolve([] as AdminMember[]),
+          ]);
 
-      setStats(nextStats);
-      setProjects(nextProjects);
-      setPrompts(nextPrompts.items);
-      setTenants(nextTenants);
-      setSessions(nextSessions);
-      setTenantMembers(
-        tenantAdmin
-          ? nextMembers
-              .map((member) => ({
-                id: member.user.id,
-                displayName: member.user.displayName,
-                email: member.user.email,
-              }))
-              .sort((a, b) => a.displayName.localeCompare(b.displayName))
-          : [],
-      );
-      setError(null);
+        setStats(nextStats);
+        setProjects(nextProjects);
+        setPrompts(nextPrompts.items);
+        setTenants(nextTenants);
+        setSessions(nextSessions);
+        setTenantMembers(
+          tenantAdmin
+            ? nextMembers
+                .map((member) => ({
+                  id: member.user.id,
+                  displayName: member.user.displayName,
+                  email: member.user.email,
+                }))
+                .sort((a, b) => a.displayName.localeCompare(b.displayName))
+            : [],
+        );
+        setError(null);
+      }
     } catch (cause: unknown) {
       const message = cause instanceof Error ? cause.message : 'Dashboard could not be loaded.';
       setError(message);
       if (/Authentication|required|Session/i.test(message)) router.push('/login');
+    } finally {
+      const minDelayMs = 420;
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < minDelayMs) {
+        await new Promise((resolve) => setTimeout(resolve, minDelayMs - elapsed));
+      }
+      setSectionLoading(false);
     }
-  }, [actor, demoMode, mockConfig.tenants, mockConfig.tenantMembers, mockRows, promptParameters, router]);
+  }, [actor, demoMode, mockConfig.tenants, mockConfig.tenantMembers, mockRows, promptParameters, router, section]);
 
   useEffect(() => {
     void load();
@@ -640,10 +651,10 @@ export function DashboardClient() {
         </Link>
         {actor ? (
           <div className="v2-panel v2-tenant">
-            <p className="v2-kicker">Active workspace</p>
-            <strong>{activeTenantName}</strong>
-            <span>{actorRole.toLowerCase()}</span>
-            <small className="v2-id">Tenant {actor.tenantId.slice(0, 7)}</small>
+            <p className="v2-kicker v2-tenant-kicker">Active workspace</p>
+            <strong className="v2-tenant-name">{activeTenantName}</strong>
+            <span className="v2-tenant-role">{actorRole.toUpperCase()}</span>
+            <small className="v2-tenant-id v2-id">Tenant {actor.tenantId.slice(0, 7)}</small>
           </div>
         ) : null}
         <nav aria-label="Main navigation" className="v2-nav">
@@ -717,7 +728,7 @@ export function DashboardClient() {
           </div>
         </header>
         {error ? <p className="form-error">{error}</p> : null}
-        {section === 'overview' ? (
+        {section === 'overview' ? (sectionLoading ? <OverviewPanelSkeleton /> : (
           <>
             <section className="v2-kpi-grid" aria-label="Workspace statistics">
               <article className="v2-kpi">
@@ -783,229 +794,434 @@ export function DashboardClient() {
               </div>
             </section>
           </>
-        ) : null}
+        )) : null}
         {section === 'prompts' ? (
-          <section className="v2-panel" id="prompts">
-            <div className="v2-panel-head">
-              <div>
-                <p className="v2-kicker">Prompt log</p>
-                <h2>Recent prompts</h2>
+          sectionLoading ? (
+            <PromptsPanelSkeleton />
+          ) : (
+            <section className="v2-panel" id="prompts">
+              <div className="v2-panel-head">
+                <div>
+                  <p className="v2-kicker">Prompt log</p>
+                  <h2>Recent prompts</h2>
+                </div>
+                <span className="v2-chip">Total: {prompts.length}</span>
               </div>
-              <span className="v2-chip">Total: {prompts.length}</span>
-            </div>
-            <form className="v2-filter-bar" onSubmit={search}>
-              <input
-                aria-label="Search prompts"
-                placeholder="Search prompt content"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-              <select
-                aria-label="Filter by project"
-                value={projectFilter}
-                onChange={(event) => setProjectFilter(event.target.value)}
-              >
-                <option value="">All projects</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-              {adminLinksVisible ? (
+              <form className="v2-filter-bar" onSubmit={search}>
+                <input
+                  aria-label="Search prompts"
+                  placeholder="Search prompt content"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
                 <select
-                  aria-label="Filter by user"
-                  value={memberFilter}
-                  onChange={(event) => {
-                    const next = event.target.value;
-                    setMemberFilter(next);
-                    void load();
-                  }}
+                  aria-label="Filter by project"
+                  value={projectFilter}
+                  onChange={(event) => setProjectFilter(event.target.value)}
                 >
-                  <option value="">All users</option>
-                  {tenantMembers.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.displayName} - {member.email}
+                  <option value="">All projects</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
                     </option>
                   ))}
                 </select>
-              ) : null}
-              <input
-                aria-label="Filter by platform"
-                placeholder="Platform"
-                value={platformFilter}
-                onChange={(event) => setPlatformFilter(event.target.value)}
-                maxLength={80}
-              />
-              <input
-                aria-label="Filter by model"
-                placeholder="Model"
-                value={modelFilter}
-                onChange={(event) => setModelFilter(event.target.value)}
-                maxLength={160}
-              />
-              <input
-                aria-label="Minimum score"
-                type="number"
-                min="0"
-                max="100"
-                placeholder="Min score"
-                value={minScoreFilter}
-                onChange={(event) => setMinScoreFilter(event.target.value)}
-              />
-              <button className="v2-chip" type="submit">
-                Search
-              </button>
-            </form>
-            <div className="v2-export-strip">
-              <button className="v2-ghost" type="button" onClick={() => void download('json')}>
-                Export JSON
-              </button>
-              <button className="v2-ghost" type="button" onClick={() => void download('csv')}>
-                Export CSV
-              </button>
-            </div>
-            <div className="v2-prompts">
-              {prompts.length === 0 ? (
-                <p className="v2-empty">No prompts yet. Connect a device to start syncing.</p>
-              ) : (
-                prompts.map((prompt) => {
-                  const status = (prompt.analysis?.status ?? 'QUEUED').toLowerCase();
-                  return (
-                    <article className="v2-prompt-card" key={prompt.id}>
-                      <div className="v2-score">{prompt.analysis?.score ?? '--'}</div>
-                      <div className="v2-prompt-copy">
-                        <p>{prompt.content}</p>
-                        <div className="v2-chip-row">
-                          <span className="v2-mini-chip">{prompt.projectName}</span>
-                          <span className="v2-mini-chip">{prompt.platform}</span>
-                          <span className="v2-mini-chip">{prompt.model}</span>
+                {adminLinksVisible ? (
+                  <select
+                    aria-label="Filter by user"
+                    value={memberFilter}
+                    onChange={(event) => {
+                      const next = event.target.value;
+                      setMemberFilter(next);
+                      void load();
+                    }}
+                  >
+                    <option value="">All users</option>
+                    {tenantMembers.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.displayName} - {member.email}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+                <input
+                  aria-label="Filter by platform"
+                  placeholder="Platform"
+                  value={platformFilter}
+                  onChange={(event) => setPlatformFilter(event.target.value)}
+                  maxLength={80}
+                />
+                <input
+                  aria-label="Filter by model"
+                  placeholder="Model"
+                  value={modelFilter}
+                  onChange={(event) => setModelFilter(event.target.value)}
+                  maxLength={160}
+                />
+                <input
+                  aria-label="Minimum score"
+                  type="number"
+                  min="0"
+                  max="100"
+                  placeholder="Min score"
+                  value={minScoreFilter}
+                  onChange={(event) => setMinScoreFilter(event.target.value)}
+                />
+                <button className="v2-chip" type="submit">
+                  Search
+                </button>
+              </form>
+              <div className="v2-export-strip">
+                <button className="v2-ghost" type="button" onClick={() => void download('json')}>
+                  Export JSON
+                </button>
+                <button className="v2-ghost" type="button" onClick={() => void download('csv')}>
+                  Export CSV
+                </button>
+              </div>
+              <div className="v2-prompts">
+                {prompts.length === 0 ? (
+                  <p className="v2-empty">No prompts yet. Connect a device to start syncing.</p>
+                ) : (
+                  prompts.map((prompt) => {
+                    const status = (prompt.analysis?.status ?? 'QUEUED').toLowerCase();
+                    return (
+                      <article className="v2-prompt-card" key={prompt.id}>
+                        <div className="v2-score">{prompt.analysis?.score ?? '--'}</div>
+                        <div className="v2-prompt-copy">
+                          <p>{prompt.content}</p>
+                          <div className="v2-chip-row">
+                            <span className="v2-mini-chip">{prompt.projectName}</span>
+                            <span className="v2-mini-chip">{prompt.platform}</span>
+                            <span className="v2-mini-chip">{prompt.model}</span>
+                          </div>
+                          <small className="v2-prompt-meta">
+                            {new Date(prompt.occurredAt).toLocaleString()} <span>{prompt.analysis?.status ?? 'Queued'}</span>
+                          </small>
                         </div>
-                        <small className="v2-prompt-meta">
-                          {new Date(prompt.occurredAt).toLocaleString()} <span>{prompt.analysis?.status ?? 'Queued'}</span>
-                        </small>
-                      </div>
-                      <div className="v2-prompt-actions">
-                        <span className={`v2-status v2-status-${status}`}>{prompt.analysis?.status ?? 'QUEUED'}</span>
-                        <button
-                          className="v2-action"
-                          type="button"
-                          aria-expanded={selectedPromptId === prompt.id}
-                          onClick={() => setSelectedPromptId(selectedPromptId === prompt.id ? null : prompt.id)}
-                        >
-                          {selectedPromptId === prompt.id ? 'Hide analysis' : 'View analysis'}
-                        </button>
-                        <button className="v2-danger" type="button" onClick={() => void deletePrompt(prompt.id)}>
-                          Delete
-                        </button>
-                      </div>
-                      {selectedPromptId === prompt.id ? (
-                        <div className="v2-analysis">
-                          <section>
-                            <h3>Strengths</h3>
-                            {prompt.analysis?.strengths.length ? (
-                              <ul>
-                                {prompt.analysis.strengths.map((item) => (
-                                  <li key={item}>{item}</li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="v2-empty">No strengths recorded yet.</p>
-                            )}
-                          </section>
-                          <section>
-                            <h3>Missing or weak</h3>
-                            {prompt.analysis?.weaknesses.length ? (
-                              <ul>
-                                {prompt.analysis.weaknesses.map((item) => (
-                                  <li key={item}>{item}</li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="v2-empty">No gaps identified.</p>
-                            )}
-                          </section>
-                          <section className="v2-suggestions">
-                            <div className="v2-section-title">
-                              <div>
-                                <p className="v2-kicker">Action plan</p>
-                                <h3>Recommendations</h3>
+                        <div className="v2-prompt-actions">
+                          <span className={`v2-status v2-status-${status}`}>{prompt.analysis?.status ?? 'QUEUED'}</span>
+                          <button
+                            className="v2-action"
+                            type="button"
+                            aria-expanded={selectedPromptId === prompt.id}
+                            onClick={() => setSelectedPromptId(selectedPromptId === prompt.id ? null : prompt.id)}
+                          >
+                            {selectedPromptId === prompt.id ? 'Hide analysis' : 'View analysis'}
+                          </button>
+                          <button className="v2-danger" type="button" onClick={() => void deletePrompt(prompt.id)}>
+                            Delete
+                          </button>
+                        </div>
+                        {selectedPromptId === prompt.id ? (
+                          <div className="v2-analysis">
+                            <section>
+                              <h3>Strengths</h3>
+                              {prompt.analysis?.strengths.length ? (
+                                <ul>
+                                  {prompt.analysis.strengths.map((item) => (
+                                    <li key={item}>{item}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="v2-empty">No strengths recorded yet.</p>
+                              )}
+                            </section>
+                            <section>
+                              <h3>Missing or weak</h3>
+                              {prompt.analysis?.weaknesses.length ? (
+                                <ul>
+                                  {prompt.analysis.weaknesses.map((item) => (
+                                    <li key={item}>{item}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="v2-empty">No gaps identified.</p>
+                              )}
+                            </section>
+                            <section className="v2-suggestions">
+                              <div className="v2-section-title">
+                                <div>
+                                  <p className="v2-kicker">Action plan</p>
+                                  <h3>Recommendations</h3>
+                                </div>
+                                <span className="v2-chip">{prompt.analysis?.suggestions.length ?? 0}</span>
                               </div>
-                              <span className="v2-chip">{prompt.analysis?.suggestions.length ?? 0}</span>
-                            </div>
-                            {prompt.analysis?.suggestions.length ? (
-                              <ul>
-                                {prompt.analysis.suggestions.map((item, index) => (
-                                  <li key={item}>
-                                    <span className="v2-bullet">{index + 1}</span>
-                                    <span>{item}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="v2-empty">No recommendations available yet.</p>
-                            )}
-                          </section>
-                          <section>
-                            <h3>Improved prompt</h3>
-                            <pre>{prompt.analysis?.improvedPrompt ?? 'Analysis is still running.'}</pre>
-                            {prompt.analysis?.improvedPrompt ? (
-                              <button
-                                className="v2-action"
-                                type="button"
-                                onClick={() => void navigator.clipboard.writeText(prompt.analysis?.improvedPrompt ?? '')}
-                              >
-                                Copy improved prompt
+                              {prompt.analysis?.suggestions.length ? (
+                                <ul>
+                                  {prompt.analysis.suggestions.map((item, index) => (
+                                    <li key={item}>
+                                      <span className="v2-bullet">{index + 1}</span>
+                                      <span>{item}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="v2-empty">No recommendations available yet.</p>
+                              )}
+                            </section>
+                            <section>
+                              <h3>Improved prompt</h3>
+                              <pre>{prompt.analysis?.improvedPrompt ?? 'Analysis is still running.'}</pre>
+                              {prompt.analysis?.improvedPrompt ? (
+                                <button
+                                  className="v2-action"
+                                  type="button"
+                                  onClick={() => void navigator.clipboard.writeText(prompt.analysis?.improvedPrompt ?? '')}
+                                >
+                                  Copy improved prompt
+                                </button>
+                              ) : null}
+                              <button className="v2-action" type="button" onClick={() => void reanalyze(prompt.id)}>
+                                Run analysis again
                               </button>
-                            ) : null}
-                            <button className="v2-action" type="button" onClick={() => void reanalyze(prompt.id)}>
-                              Run analysis again
-                            </button>
-                          </section>
-                        </div>
-                      ) : null}
-                    </article>
-                  );
-                })
-              )}
-            </div>
-          </section>
+                            </section>
+                          </div>
+                        ) : null}
+                      </article>
+                    );
+                  })
+                )}
+              </div>
+            </section>
+          )
         ) : null}
         {section === 'projects' ? (
-          <section className="v2-panel">
-            <div className="v2-panel-head">
-              <div>
-                <p className="v2-kicker">Organization</p>
-                <h2>Projects</h2>
+          sectionLoading ? (
+            <ProjectsPanelSkeleton />
+          ) : (
+            <section className="v2-panel">
+              <div className="v2-panel-head">
+                <div>
+                  <p className="v2-kicker">Organization</p>
+                  <h2>Projects</h2>
+                </div>
               </div>
-            </div>
-            <div className="v2-project-grid">
-              {projects.map((project) => (
-                <article className="v2-project-card" key={project.id}>
-                  <h3>{project.name}</h3>
-                  <p>{project.description ?? 'No description'}</p>
-                  <span className={`v2-mini-chip ${project.status.toLowerCase()}`}>{project.status}</span>
-                  <button
-                    className="v2-action"
-                    type="button"
-                    onClick={() => void toggleProject(project.id, project.status !== 'ARCHIVED')}
-                  >
-                    {project.status === 'ARCHIVED' ? 'Restore' : 'Archive'}
-                  </button>
-                </article>
-              ))}
-            </div>
-            <form className="v2-inline-form" onSubmit={createProject}>
-              <input name="name" placeholder="New project name" required maxLength={120} />
-              <input name="description" placeholder="Description" maxLength={1000} />
-              <button type="submit" className="v2-chip">
-                Create project
-              </button>
-            </form>
-          </section>
+              <div className="v2-project-grid">
+                {projects.map((project) => (
+                  <article className="v2-project-card" key={project.id}>
+                    <h3>{project.name}</h3>
+                    <p>{project.description ?? 'No description'}</p>
+                    <span className={`v2-mini-chip ${project.status.toLowerCase()}`}>{project.status}</span>
+                    <button
+                      className="v2-action"
+                      type="button"
+                      onClick={() => void toggleProject(project.id, project.status !== 'ARCHIVED')}
+                    >
+                      {project.status === 'ARCHIVED' ? 'Restore' : 'Archive'}
+                    </button>
+                  </article>
+                ))}
+              </div>
+              <form className="v2-inline-form" onSubmit={createProject}>
+                <input name="name" placeholder="New project name" required maxLength={120} />
+                <input name="description" placeholder="Description" maxLength={1000} />
+                <button type="submit" className="v2-chip">
+                  Create project
+                </button>
+              </form>
+            </section>
+          )
         ) : null}
       </main>
     </div>
+  );
+}
+
+function ProjectCardSkeleton() {
+  return (
+    <article className="v2-project-card v2-project-card-skeleton">
+      <h3>
+        <span className="v2-skeleton v2-skeleton-title" />
+      </h3>
+      <p>
+        <span className="v2-skeleton v2-skeleton-line" />
+      </p>
+      <span className="v2-skeleton v2-skeleton-chip" />
+      <span className="v2-skeleton v2-skeleton-button" />
+    </article>
+  );
+}
+
+function PromptRowSkeleton() {
+  return (
+    <article className="v2-prompt-card">
+      <span className="v2-skeleton v2-skeleton-score" />
+      <div className="v2-prompt-copy">
+        <p>
+          <span className="v2-skeleton v2-skeleton-line" />
+        </p>
+        <div className="v2-chip-row">
+          <span className="v2-skeleton v2-skeleton-chip" style={{ width: '4.9rem' }} />
+          <span className="v2-skeleton v2-skeleton-chip" style={{ width: '3.9rem' }} />
+          <span className="v2-skeleton v2-skeleton-chip" style={{ width: '3.2rem' }} />
+        </div>
+        <small className="v2-prompt-meta">
+          <span className="v2-skeleton v2-skeleton-line" style={{ width: '62%' }} />
+        </small>
+      </div>
+      <div className="v2-prompt-actions">
+        <span className="v2-skeleton v2-skeleton-line" style={{ width: '5.4rem', height: '1.8rem' }} />
+        <span className="v2-skeleton v2-skeleton-line" style={{ width: '6.1rem', height: '1.8rem' }} />
+      </div>
+    </article>
+  );
+}
+
+function PromptsPanelSkeleton() {
+  return (
+    <section className="v2-panel" id="prompts">
+      <div className="v2-panel-head">
+        <div>
+          <p className="v2-kicker">
+            <span className="v2-skeleton v2-skeleton-line" style={{ width: '7.5rem' }} />
+          </p>
+          <h2>
+            <span className="v2-skeleton v2-skeleton-title" style={{ width: '10rem' }} />
+          </h2>
+        </div>
+        <span className="v2-skeleton v2-skeleton-line" style={{ width: '6rem' }} />
+      </div>
+      <div className="v2-filter-bar">
+        <span className="v2-skeleton v2-skeleton-input" />
+        <span className="v2-skeleton v2-skeleton-input" />
+        <span className="v2-skeleton v2-skeleton-input" />
+        <span className="v2-skeleton v2-skeleton-input" />
+        <span className="v2-skeleton v2-skeleton-input" />
+        <span className="v2-skeleton v2-skeleton-input" />
+      </div>
+      <div className="v2-export-strip">
+        <span className="v2-skeleton v2-skeleton-button" style={{ width: '8rem' }} />
+        <span className="v2-skeleton v2-skeleton-button" style={{ width: '8rem' }} />
+      </div>
+      <div className="v2-prompts">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <PromptRowSkeleton key={index} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProjectsPanelSkeleton() {
+  return (
+    <section className="v2-panel">
+      <div className="v2-panel-head">
+        <div>
+          <p className="v2-kicker">
+            <span className="v2-skeleton v2-skeleton-line" style={{ width: '6.4rem' }} />
+          </p>
+          <h2>
+            <span className="v2-skeleton v2-skeleton-title" style={{ width: '7rem' }} />
+          </h2>
+        </div>
+        <span className="v2-skeleton v2-skeleton-line" style={{ width: '6.5rem' }} />
+      </div>
+      <div className="v2-project-grid">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <ProjectCardSkeleton key={index} />
+        ))}
+      </div>
+      <div className="v2-inline-form">
+        <span className="v2-skeleton v2-skeleton-input" />
+        <span className="v2-skeleton v2-skeleton-input" />
+        <span className="v2-skeleton v2-skeleton-button" style={{ minWidth: '8.5rem' }} />
+      </div>
+    </section>
+  );
+}
+
+function DistributionPanelSkeleton() {
+  return (
+    <article className="v2-panel v2-panel-compact">
+      <p className="v2-kicker">
+        <span className="v2-skeleton v2-skeleton-line" style={{ width: '44%' }} />
+      </p>
+      <h2>
+        <span className="v2-skeleton v2-skeleton-title" />
+      </h2>
+      <ol className="v2-stat-list">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <li key={index}>
+            <span>
+              <span className="v2-skeleton v2-skeleton-line" />
+            </span>
+            <strong>
+              <span className="v2-skeleton v2-skeleton-line" style={{ width: '1.75rem' }} />
+            </strong>
+          </li>
+        ))}
+      </ol>
+    </article>
+  );
+}
+
+function OverviewPanelSkeleton() {
+  return (
+    <>
+      <section className="v2-kpi-grid" aria-label="Loading workspace statistics">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <article className="v2-kpi" key={index}>
+            <p>
+              <span className="v2-skeleton v2-skeleton-title" style={{ width: index === 0 ? '58%' : '42%' }} />
+            </p>
+            <strong>
+              <span className="v2-skeleton v2-skeleton-title" style={{ width: '58%' }} />
+            </strong>
+          </article>
+        ))}
+      </section>
+      <section className="v2-panels" aria-label="Loading prompt analytics">
+        <article className="v2-panel">
+          <p className="v2-kicker">
+            <span className="v2-skeleton v2-skeleton-line" style={{ width: '35%' }} />
+          </p>
+          <h2>
+            <span className="v2-skeleton v2-skeleton-title" />
+          </h2>
+          <ol className="v2-stat-list">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <li key={index}>
+                <span>
+                  <span className="v2-skeleton v2-skeleton-line" style={{ width: `${65 - index * 4}%` }} />
+                </span>
+                <strong>
+                  <span className="v2-skeleton v2-skeleton-line" style={{ width: '2rem' }} />
+                </strong>
+              </li>
+            ))}
+          </ol>
+        </article>
+        <DistributionPanelSkeleton />
+        <DistributionPanelSkeleton />
+      </section>
+      <section className="v2-panel">
+        <p className="v2-kicker">
+          <span className="v2-skeleton v2-skeleton-line" style={{ width: '38%' }} />
+        </p>
+        <h2>
+          <span className="v2-skeleton v2-skeleton-title" />
+        </h2>
+        <div className="v2-session-grid">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <article className="v2-session-card" key={index}>
+              <div>
+                <h3>
+                  <span className="v2-skeleton v2-skeleton-title" style={{ width: '58%' }} />
+                </h3>
+                <p>
+                  <span className="v2-skeleton v2-skeleton-line" />
+                </p>
+                <small>
+                  <span className="v2-skeleton v2-skeleton-line" />
+                </small>
+              </div>
+              <span className="v2-skeleton v2-skeleton-line" style={{ width: '5.5rem', height: '1.95rem' }} />
+            </article>
+          ))}
+        </div>
+      </section>
+    </>
   );
 }
 

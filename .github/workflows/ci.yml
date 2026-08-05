@@ -117,7 +117,6 @@ jobs:
         run: docker compose -p promptlens-platform --env-file .env -f infra/compose/compose.full.yaml down
 
   codeql:
-    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -127,10 +126,22 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4.37.4
         with:
           languages: javascript-typescript
+          build-mode: manual
+      - name: Build for CodeQL
+        run: pnpm build
       - name: Analyze
         uses: github/codeql-action/analyze@v4.37.4
 

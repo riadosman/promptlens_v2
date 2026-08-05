@@ -3,11 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import type {
-  DashboardStats,
-  ProjectResponse,
-  PromptListResponse,
-} from '@promptlens/contracts';
+import type { DashboardStats, ProjectResponse, PromptListResponse } from '@promptlens/contracts';
 import { apiDownload, apiRequest } from '../lib/api';
 
 type DashboardSection = 'overview' | 'prompts' | 'projects';
@@ -107,7 +103,11 @@ const mockPrompts: MockPromptRow[] = [
       score: 87,
       strengths: ['Clear CTA', 'Professional tone', 'Concise'],
       weaknesses: ['Could specify release window'],
-      suggestions: ['Add explicit rollout date', 'Mention migration checklist', 'Keep one CTA only'],
+      suggestions: [
+        'Add explicit rollout date',
+        'Mention migration checklist',
+        'Keep one CTA only',
+      ],
       improvedPrompt:
         'Create one concise social post for a finance-team product upgrade announcement, include rollout date, risk notes, and a single clear CTA.',
     },
@@ -221,7 +221,9 @@ const mockUsers: Record<'OWNER' | 'USER', MockMode> = {
       isInstanceAdmin: false,
     },
     tenantMembers: [],
-    tenants: [mockTenants[0] ?? { role: 'MEMBER', tenant: { id: 'tenant-001', name: 'Acme Marketing' } }],
+    tenants: [
+      mockTenants[0] ?? { role: 'MEMBER', tenant: { id: 'tenant-001', name: 'Acme Marketing' } },
+    ],
   },
 };
 
@@ -237,7 +239,9 @@ const emptyStats: DashboardStats = {
 };
 
 function buildMockStats(prompts: PromptListResponse['items']): DashboardStats {
-  const completed = prompts.filter((prompt) => prompt.analysis?.status === 'COMPLETED' && prompt.analysis.score !== null);
+  const completed = prompts.filter(
+    (prompt) => prompt.analysis?.status === 'COMPLETED' && prompt.analysis.score !== null,
+  );
   const totalScore = completed.reduce((sum, prompt) => sum + (prompt.analysis?.score ?? 0), 0);
   const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1_000;
   const last7Score = prompts.filter(
@@ -257,7 +261,10 @@ function buildMockStats(prompts: PromptListResponse['items']): DashboardStats {
   ).map(([name, count]) => ({ name, count }));
   const scoreByDay = prompts
     .filter((prompt) => prompt.analysis?.status === 'COMPLETED' && prompt.analysis.score !== null)
-    .map((prompt) => ({ date: prompt.occurredAt.slice(0, 10), score: prompt.analysis?.score ?? 0 }));
+    .map((prompt) => ({
+      date: prompt.occurredAt.slice(0, 10),
+      score: prompt.analysis?.score ?? 0,
+    }));
   return {
     projects: new Set(prompts.map((prompt) => prompt.projectId)).size,
     prompts: prompts.length,
@@ -291,16 +298,23 @@ function promptListMatchesFilter(
   const score = prompt.analysis?.score;
   if (loweredQuery && !prompt.content.toLowerCase().includes(loweredQuery)) return false;
   if (options.projectFilter && prompt.projectId !== options.projectFilter) return false;
-  if (options.platformFilter && !prompt.platform.toLowerCase().includes(options.platformFilter.toLowerCase()))
+  if (
+    options.platformFilter &&
+    !prompt.platform.toLowerCase().includes(options.platformFilter.toLowerCase())
+  )
     return false;
-  if (options.modelFilter && !prompt.model.toLowerCase().includes(options.modelFilter.toLowerCase()))
+  if (
+    options.modelFilter &&
+    !prompt.model.toLowerCase().includes(options.modelFilter.toLowerCase())
+  )
     return false;
   if (options.minScoreFilter) {
     const minScore = Number(options.minScoreFilter);
     if (Number.isNaN(minScore)) return false;
     if (score === null || score === undefined || score < minScore) return false;
   }
-  if (options.tenantAdmin && options.memberFilter && prompt.ownerId !== options.memberFilter) return false;
+  if (options.tenantAdmin && options.memberFilter && prompt.ownerId !== options.memberFilter)
+    return false;
   return true;
 }
 
@@ -386,7 +400,9 @@ export function DashboardClient() {
   const mockRows = useCallback(() => {
     if (!demoMode || !actor) return [];
     const isAdmin = isTenantAdmin(actor.role);
-    const scope = isAdmin ? mockPrompts : mockPrompts.filter((prompt) => prompt.ownerId === actor.userId);
+    const scope = isAdmin
+      ? mockPrompts
+      : mockPrompts.filter((prompt) => prompt.ownerId === actor.userId);
 
     return scope
       .filter((prompt) =>
@@ -441,11 +457,15 @@ export function DashboardClient() {
             apiRequest<PromptListResponse>(
               `/prompts${parameters.size ? `?${parameters.toString()}` : ''}`,
             ),
-            apiRequest<Array<{ role: string; tenant: { id: string; name: string } }>>('/auth/tenants'),
+            apiRequest<Array<{ role: string; tenant: { id: string; name: string } }>>(
+              '/auth/tenants',
+            ),
             apiRequest<
               Array<{ id: string; userAgent: string | null; createdAt: string; current: boolean }>
             >('/auth/sessions'),
-            tenantAdmin ? apiRequest<AdminMember[]>('/admin/members') : Promise.resolve([] as AdminMember[]),
+            tenantAdmin
+              ? apiRequest<AdminMember[]>('/admin/members')
+              : Promise.resolve([] as AdminMember[]),
           ]);
 
         setStats(nextStats);
@@ -478,7 +498,16 @@ export function DashboardClient() {
       }
       setSectionLoading(false);
     }
-  }, [actor, demoMode, mockConfig.tenants, mockConfig.tenantMembers, mockRows, promptParameters, router, section]);
+  }, [
+    actor,
+    demoMode,
+    mockConfig.tenants,
+    mockConfig.tenantMembers,
+    mockRows,
+    promptParameters,
+    router,
+    section,
+  ]);
 
   useEffect(() => {
     void load();
@@ -525,7 +554,11 @@ export function DashboardClient() {
       setProjects((current) =>
         current.map((project) =>
           project.id === projectId
-            ? { ...project, status: archived ? 'ACTIVE' : 'ARCHIVED', updatedAt: new Date().toISOString() }
+            ? {
+                ...project,
+                status: archived ? 'ACTIVE' : 'ARCHIVED',
+                updatedAt: new Date().toISOString(),
+              }
             : project,
         ),
       );
@@ -560,7 +593,13 @@ export function DashboardClient() {
       const payload =
         format === 'json'
           ? JSON.stringify({ prompts }, null, 2)
-          : ['id,project,platform,model,score,content', ...prompts.map((prompt) => `${prompt.id},"${prompt.projectName}","${prompt.platform}","${prompt.model}",${prompt.analysis?.score ?? ''},"${(prompt.content ?? '').replaceAll('"', '""')}"`)].join('\r\n');
+          : [
+              'id,project,platform,model,score,content',
+              ...prompts.map(
+                (prompt) =>
+                  `${prompt.id},"${prompt.projectName}","${prompt.platform}","${prompt.model}",${prompt.analysis?.score ?? ''},"${(prompt.content ?? '').replaceAll('"', '""')}"`,
+              ),
+            ].join('\r\n');
       const blob = new Blob([payload], {
         type: format === 'json' ? 'application/json; charset=utf-8' : 'text/csv; charset=utf-8',
       });
@@ -609,7 +648,9 @@ export function DashboardClient() {
         setSessions([]);
         setActor(mockConfig.actor);
       } else {
-        setSessions((currentSessions) => currentSessions.filter((session) => session.id !== sessionId));
+        setSessions((currentSessions) =>
+          currentSessions.filter((session) => session.id !== sessionId),
+        );
       }
       return;
     }
@@ -623,7 +664,8 @@ export function DashboardClient() {
   const actorRole = actor?.role ?? '';
   const adminLinksVisible = isTenantAdmin(actorRole);
   const activeTenantName =
-    tenants.find((entry) => entry.tenant.id === actor?.tenantId)?.tenant.name ?? 'Current workspace';
+    tenants.find((entry) => entry.tenant.id === actor?.tenantId)?.tenant.name ??
+    'Current workspace';
   const navLinkClass = (target: string) =>
     target === '/dashboard/overview' && pathname === '/dashboard'
       ? 'active'
@@ -658,20 +700,35 @@ export function DashboardClient() {
           </div>
         ) : null}
         <nav aria-label="Main navigation" className="v2-nav">
-          <Link className={`v2-nav-link ${navLinkClass('/dashboard/overview')}`} href="/dashboard/overview">
+          <Link
+            className={`v2-nav-link ${navLinkClass('/dashboard/overview')}`}
+            href="/dashboard/overview"
+          >
             Overview
           </Link>
-          <Link className={`v2-nav-link ${navLinkClass('/dashboard/prompts')}`} href="/dashboard/prompts">
+          <Link
+            className={`v2-nav-link ${navLinkClass('/dashboard/prompts')}`}
+            href="/dashboard/prompts"
+          >
             Prompt log
           </Link>
-          <Link className={`v2-nav-link ${navLinkClass('/dashboard/projects')}`} href="/dashboard/projects">
+          <Link
+            className={`v2-nav-link ${navLinkClass('/dashboard/projects')}`}
+            href="/dashboard/projects"
+          >
             Projects
           </Link>
-          <Link className={`v2-nav-link ${pathname?.startsWith('/connect') ? 'active' : ''}`} href="/connect">
+          <Link
+            className={`v2-nav-link ${pathname?.startsWith('/connect') ? 'active' : ''}`}
+            href="/connect"
+          >
             Connect device
           </Link>
           {adminLinksVisible ? (
-            <Link className={`v2-nav-link ${pathname?.startsWith('/admin') ? 'active' : ''}`} href="/admin">
+            <Link
+              className={`v2-nav-link ${pathname?.startsWith('/admin') ? 'active' : ''}`}
+              href="/admin"
+            >
               Administration
             </Link>
           ) : null}
@@ -728,73 +785,77 @@ export function DashboardClient() {
           </div>
         </header>
         {error ? <p className="form-error">{error}</p> : null}
-        {section === 'overview' ? (sectionLoading ? <OverviewPanelSkeleton /> : (
-          <>
-            <section className="v2-kpi-grid" aria-label="Workspace statistics">
-              <article className="v2-kpi">
-                <p>Average score</p>
-                <strong>
-                  {stats.averageScore ?? 'N/A'}
-                  <small>/100</small>
-                </strong>
-              </article>
-              <article className="v2-kpi">
-                <p>Prompts</p>
-                <strong>{stats.prompts}</strong>
-              </article>
-              <article className="v2-kpi">
-                <p>Last 7 days</p>
-                <strong>{stats.promptsLast7Days}</strong>
-              </article>
-              <article className="v2-kpi">
-                <p>Analyses</p>
-                <strong>{stats.analysesCompleted}</strong>
-              </article>
-            </section>
-            <section className="v2-panels" aria-label="Prompt analytics">
-              <article className="v2-panel">
-                <p className="v2-kicker">Score trend</p>
-                <h2>Last 14 days</h2>
-                {stats.scoreTrend.length ? (
-                  <ol className="v2-stat-list">
-                    {stats.scoreTrend.map((point) => (
-                      <li key={point.date}>
-                        <span>{point.date}</span>
-                        <strong>{point.score}</strong>
-                      </li>
-                    ))}
-                  </ol>
-                ) : (
-                  <p className="v2-empty">No completed analyses yet.</p>
-                )}
-              </article>
-              <Distribution title="Models" items={stats.modelDistribution} compact />
-              <Distribution title="Projects" items={stats.projectDistribution} compact />
-            </section>
-            <section className="v2-panel">
-              <p className="v2-kicker">Active sessions</p>
-              <h2>Security</h2>
-              <div className="v2-session-grid">
-                {sessions.map((session) => (
-                  <article className="v2-session-card" key={session.id}>
-                    <div>
-                      <h3>{session.current ? 'Current session' : 'Signed-in device'}</h3>
-                      <p>{session.userAgent ?? 'Unknown client'}</p>
-                      <small>{new Date(session.createdAt).toLocaleString()}</small>
-                    </div>
-                    <button
-                      className="v2-danger"
-                      type="button"
-                      onClick={() => void revokeSession(session.id, session.current)}
-                    >
-                      {session.current ? 'Sign out' : 'Revoke'}
-                    </button>
-                  </article>
-                ))}
-              </div>
-            </section>
-          </>
-        )) : null}
+        {section === 'overview' ? (
+          sectionLoading ? (
+            <OverviewPanelSkeleton />
+          ) : (
+            <>
+              <section className="v2-kpi-grid" aria-label="Workspace statistics">
+                <article className="v2-kpi">
+                  <p>Average score</p>
+                  <strong>
+                    {stats.averageScore ?? 'N/A'}
+                    <small>/100</small>
+                  </strong>
+                </article>
+                <article className="v2-kpi">
+                  <p>Prompts</p>
+                  <strong>{stats.prompts}</strong>
+                </article>
+                <article className="v2-kpi">
+                  <p>Last 7 days</p>
+                  <strong>{stats.promptsLast7Days}</strong>
+                </article>
+                <article className="v2-kpi">
+                  <p>Analyses</p>
+                  <strong>{stats.analysesCompleted}</strong>
+                </article>
+              </section>
+              <section className="v2-panels" aria-label="Prompt analytics">
+                <article className="v2-panel">
+                  <p className="v2-kicker">Score trend</p>
+                  <h2>Last 14 days</h2>
+                  {stats.scoreTrend.length ? (
+                    <ol className="v2-stat-list">
+                      {stats.scoreTrend.map((point) => (
+                        <li key={point.date}>
+                          <span>{point.date}</span>
+                          <strong>{point.score}</strong>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="v2-empty">No completed analyses yet.</p>
+                  )}
+                </article>
+                <Distribution title="Models" items={stats.modelDistribution} compact />
+                <Distribution title="Projects" items={stats.projectDistribution} compact />
+              </section>
+              <section className="v2-panel">
+                <p className="v2-kicker">Active sessions</p>
+                <h2>Security</h2>
+                <div className="v2-session-grid">
+                  {sessions.map((session) => (
+                    <article className="v2-session-card" key={session.id}>
+                      <div>
+                        <h3>{session.current ? 'Current session' : 'Signed-in device'}</h3>
+                        <p>{session.userAgent ?? 'Unknown client'}</p>
+                        <small>{new Date(session.createdAt).toLocaleString()}</small>
+                      </div>
+                      <button
+                        className="v2-danger"
+                        type="button"
+                        onClick={() => void revokeSession(session.id, session.current)}
+                      >
+                        {session.current ? 'Sign out' : 'Revoke'}
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            </>
+          )
+        ) : null}
         {section === 'prompts' ? (
           sectionLoading ? (
             <PromptsPanelSkeleton />
@@ -896,20 +957,29 @@ export function DashboardClient() {
                             <span className="v2-mini-chip">{prompt.model}</span>
                           </div>
                           <small className="v2-prompt-meta">
-                            {new Date(prompt.occurredAt).toLocaleString()} <span>{prompt.analysis?.status ?? 'Queued'}</span>
+                            {new Date(prompt.occurredAt).toLocaleString()}{' '}
+                            <span>{prompt.analysis?.status ?? 'Queued'}</span>
                           </small>
                         </div>
                         <div className="v2-prompt-actions">
-                          <span className={`v2-status v2-status-${status}`}>{prompt.analysis?.status ?? 'QUEUED'}</span>
+                          <span className={`v2-status v2-status-${status}`}>
+                            {prompt.analysis?.status ?? 'QUEUED'}
+                          </span>
                           <button
                             className="v2-action"
                             type="button"
                             aria-expanded={selectedPromptId === prompt.id}
-                            onClick={() => setSelectedPromptId(selectedPromptId === prompt.id ? null : prompt.id)}
+                            onClick={() =>
+                              setSelectedPromptId(selectedPromptId === prompt.id ? null : prompt.id)
+                            }
                           >
                             {selectedPromptId === prompt.id ? 'Hide analysis' : 'View analysis'}
                           </button>
-                          <button className="v2-danger" type="button" onClick={() => void deletePrompt(prompt.id)}>
+                          <button
+                            className="v2-danger"
+                            type="button"
+                            onClick={() => void deletePrompt(prompt.id)}
+                          >
                             Delete
                           </button>
                         </div>
@@ -945,7 +1015,9 @@ export function DashboardClient() {
                                   <p className="v2-kicker">Action plan</p>
                                   <h3>Recommendations</h3>
                                 </div>
-                                <span className="v2-chip">{prompt.analysis?.suggestions.length ?? 0}</span>
+                                <span className="v2-chip">
+                                  {prompt.analysis?.suggestions.length ?? 0}
+                                </span>
                               </div>
                               {prompt.analysis?.suggestions.length ? (
                                 <ul>
@@ -962,17 +1034,27 @@ export function DashboardClient() {
                             </section>
                             <section>
                               <h3>Improved prompt</h3>
-                              <pre>{prompt.analysis?.improvedPrompt ?? 'Analysis is still running.'}</pre>
+                              <pre>
+                                {prompt.analysis?.improvedPrompt ?? 'Analysis is still running.'}
+                              </pre>
                               {prompt.analysis?.improvedPrompt ? (
                                 <button
                                   className="v2-action"
                                   type="button"
-                                  onClick={() => void navigator.clipboard.writeText(prompt.analysis?.improvedPrompt ?? '')}
+                                  onClick={() =>
+                                    void navigator.clipboard.writeText(
+                                      prompt.analysis?.improvedPrompt ?? '',
+                                    )
+                                  }
                                 >
                                   Copy improved prompt
                                 </button>
                               ) : null}
-                              <button className="v2-action" type="button" onClick={() => void reanalyze(prompt.id)}>
+                              <button
+                                className="v2-action"
+                                type="button"
+                                onClick={() => void reanalyze(prompt.id)}
+                              >
                                 Run analysis again
                               </button>
                             </section>
@@ -1002,7 +1084,9 @@ export function DashboardClient() {
                   <article className="v2-project-card" key={project.id}>
                     <h3>{project.name}</h3>
                     <p>{project.description ?? 'No description'}</p>
-                    <span className={`v2-mini-chip ${project.status.toLowerCase()}`}>{project.status}</span>
+                    <span className={`v2-mini-chip ${project.status.toLowerCase()}`}>
+                      {project.status}
+                    </span>
                     <button
                       className="v2-action"
                       type="button"
@@ -1061,8 +1145,14 @@ function PromptRowSkeleton() {
         </small>
       </div>
       <div className="v2-prompt-actions">
-        <span className="v2-skeleton v2-skeleton-line" style={{ width: '5.4rem', height: '1.8rem' }} />
-        <span className="v2-skeleton v2-skeleton-line" style={{ width: '6.1rem', height: '1.8rem' }} />
+        <span
+          className="v2-skeleton v2-skeleton-line"
+          style={{ width: '5.4rem', height: '1.8rem' }}
+        />
+        <span
+          className="v2-skeleton v2-skeleton-line"
+          style={{ width: '6.1rem', height: '1.8rem' }}
+        />
       </div>
     </article>
   );
@@ -1163,7 +1253,10 @@ function OverviewPanelSkeleton() {
         {Array.from({ length: 4 }).map((_, index) => (
           <article className="v2-kpi" key={index}>
             <p>
-              <span className="v2-skeleton v2-skeleton-title" style={{ width: index === 0 ? '58%' : '42%' }} />
+              <span
+                className="v2-skeleton v2-skeleton-title"
+                style={{ width: index === 0 ? '58%' : '42%' }}
+              />
             </p>
             <strong>
               <span className="v2-skeleton v2-skeleton-title" style={{ width: '58%' }} />
@@ -1183,7 +1276,10 @@ function OverviewPanelSkeleton() {
             {Array.from({ length: 4 }).map((_, index) => (
               <li key={index}>
                 <span>
-                  <span className="v2-skeleton v2-skeleton-line" style={{ width: `${65 - index * 4}%` }} />
+                  <span
+                    className="v2-skeleton v2-skeleton-line"
+                    style={{ width: `${65 - index * 4}%` }}
+                  />
                 </span>
                 <strong>
                   <span className="v2-skeleton v2-skeleton-line" style={{ width: '2rem' }} />
@@ -1216,7 +1312,10 @@ function OverviewPanelSkeleton() {
                   <span className="v2-skeleton v2-skeleton-line" />
                 </small>
               </div>
-              <span className="v2-skeleton v2-skeleton-line" style={{ width: '5.5rem', height: '1.95rem' }} />
+              <span
+                className="v2-skeleton v2-skeleton-line"
+                style={{ width: '5.5rem', height: '1.95rem' }}
+              />
             </article>
           ))}
         </div>
@@ -1253,8 +1352,3 @@ function Distribution({
     </div>
   );
 }
-
-
-
-
-

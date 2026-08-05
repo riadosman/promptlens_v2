@@ -44,12 +44,14 @@
 ### Task 1: Shared Foundation and Narrative Glow Landing
 
 **Files:**
+
 - Modify: `apps/web/app/layout.tsx:1-15`
 - Modify: `apps/web/app/page.tsx:1-68`
 - Modify: `apps/web/app/styles.css:1-302`
 - Create: `tests/e2e/editorial-ui.spec.ts`
 
 **Interfaces:**
+
 - Produces: CSS variables `--paper`, `--ink`, `--acid`, `--signal`, `--muted`, `--line`, and `--font-poppins` for every later task.
 - Produces: stable landing landmarks `main`, heading `Make every prompt a reusable asset.`, region `Editorial Workbench preview`, and process headings `Capture`, `Understand`, `Improve`.
 
@@ -156,40 +158,94 @@ Keep the existing product claims and use this structure in `page.tsx`:
 
 ```tsx
 const capabilities = [
-  { index: '01', title: 'Capture', copy: 'Keep every prompt connected to the project and work it supports.' },
-  { index: '02', title: 'Understand', copy: 'See strengths, gaps, and practical feedback behind every score.' },
-  { index: '03', title: 'Improve', copy: 'Turn recommendations into a stronger prompt your team can reuse.' },
+  {
+    index: '01',
+    title: 'Capture',
+    copy: 'Keep every prompt connected to the project and work it supports.',
+  },
+  {
+    index: '02',
+    title: 'Understand',
+    copy: 'See strengths, gaps, and practical feedback behind every score.',
+  },
+  {
+    index: '03',
+    title: 'Improve',
+    copy: 'Turn recommendations into a stronger prompt your team can reuse.',
+  },
 ];
 
 export default function HomePage() {
   return (
     <main className="editorial-landing">
       <nav className="editorial-nav" aria-label="Primary navigation">
-        <a className="editorial-wordmark" href="/"><span aria-hidden="true" />PromptLens</a>
-        <div><a href="/login">Sign in</a><a className="ink-action" href="/register">Create a workspace</a></div>
+        <a className="editorial-wordmark" href="/">
+          <span aria-hidden="true" />
+          PromptLens
+        </a>
+        <div>
+          <a href="/login">Sign in</a>
+          <a className="ink-action" href="/register">
+            Create a workspace
+          </a>
+        </div>
       </nav>
       <section className="landing-narrative" aria-labelledby="hero-title">
         <p className="editorial-kicker">Open source prompt intelligence</p>
         <h1 id="hero-title">Make every prompt a reusable asset.</h1>
-        <div className="landing-stamp" aria-hidden="true">Prompt<br />quality<br />matters</div>
+        <div className="landing-stamp" aria-hidden="true">
+          Prompt
+          <br />
+          quality
+          <br />
+          matters
+        </div>
         <div className="landing-intro">
-          <p>Capture, understand and improve your best thinking without losing the project context that makes every prompt valuable.</p>
+          <p>
+            Capture, understand and improve your best thinking without losing the project context
+            that makes every prompt valuable.
+          </p>
           <a href="/register">Start your workspace →</a>
         </div>
       </section>
       <section className="landing-stage" aria-label="Editorial Workbench preview">
-        <header><div><p className="editorial-kicker">Editorial Workbench</p><h2>See what needs improvement at a glance.</h2></div><span>Role-aware · Project context</span></header>
+        <header>
+          <div>
+            <p className="editorial-kicker">Editorial Workbench</p>
+            <h2>See what needs improvement at a glance.</h2>
+          </div>
+          <span>Role-aware · Project context</span>
+        </header>
         <div className="landing-product-preview">
-          <div className="preview-list" aria-hidden="true"><i /><i /><i /></div>
-          <article><strong>69 / 100</strong><h3>Missing context and an unclear target</h3><p>Add the audience, policy constraint, and desired next action.</p></article>
+          <div className="preview-list" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </div>
+          <article>
+            <strong>69 / 100</strong>
+            <h3>Missing context and an unclear target</h3>
+            <p>Add the audience, policy constraint, and desired next action.</p>
+          </article>
         </div>
         <span className="floating-signal signal-one">3 weak prompts</span>
         <span className="floating-signal signal-two">+12 score improvement</span>
       </section>
       <section className="landing-process" aria-label="How PromptLens works">
-        {capabilities.map((item) => <article key={item.index}><span>{item.index}</span><h2>{item.title}</h2><p>{item.copy}</p></article>)}
+        {capabilities.map((item) => (
+          <article key={item.index}>
+            <span>{item.index}</span>
+            <h2>{item.title}</h2>
+            <p>{item.copy}</p>
+          </article>
+        ))}
       </section>
-      <section className="landing-final-cta"><h2>Better prompts are not an accident.</h2><a className="ink-action" href="/register">Create a workspace →</a></section>
+      <section className="landing-final-cta">
+        <h2>Better prompts are not an accident.</h2>
+        <a className="ink-action" href="/register">
+          Create a workspace →
+        </a>
+      </section>
     </main>
   );
 }
@@ -218,6 +274,7 @@ rtk git commit -m "feat(web): add Narrative Glow landing"
 ### Task 2: Cohesive Auth Page Family
 
 **Files:**
+
 - Create: `apps/web/components/auth-page-shell.tsx`
 - Modify: `apps/web/app/login/page.tsx:1-26`
 - Modify: `apps/web/app/register/page.tsx:1-23`
@@ -230,6 +287,7 @@ rtk git commit -m "feat(web): add Narrative Glow landing"
 - Modify: `tests/e2e/editorial-ui.spec.ts`
 
 **Interfaces:**
+
 - Produces: `AuthPageShell({ eyebrow, title, children }: AuthPageShellProps)`.
 - Preserves: `AuthForm` and `RecoveryForm` request payloads, redirects, validation, and button names.
 
@@ -256,7 +314,11 @@ test('auth routes share the Editorial Intelligence shell', async ({ page }) => {
 
 test('auth errors are announced and readable', async ({ page }) => {
   await page.route('**/auth/login', async (route) => {
-    await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ message: 'Invalid credentials.' }) });
+    await route.fulfill({
+      status: 401,
+      contentType: 'application/json',
+      body: JSON.stringify({ message: 'Invalid credentials.' }),
+    });
   });
   await page.goto('/login');
   await page.getByLabel('Email').fill('wrong@example.test');
@@ -292,12 +354,29 @@ export function AuthPageShell({ eyebrow, title, children }: AuthPageShellProps) 
   return (
     <main className="editorial-auth">
       <aside className="auth-story">
-        <Link className="editorial-wordmark inverse" href="/"><span aria-hidden="true" />PromptLens</Link>
-        <div><p className="editorial-kicker">Prompt intelligence</p><h2>Better prompts are not an accident.</h2><p>Find weak points, preserve project context, and turn team knowledge into reusable work.</p></div>
-        <p className="auth-proof"><strong>Editorial Workbench</strong><br />Clear feedback. Better outcomes.</p>
+        <Link className="editorial-wordmark inverse" href="/">
+          <span aria-hidden="true" />
+          PromptLens
+        </Link>
+        <div>
+          <p className="editorial-kicker">Prompt intelligence</p>
+          <h2>Better prompts are not an accident.</h2>
+          <p>
+            Find weak points, preserve project context, and turn team knowledge into reusable work.
+          </p>
+        </div>
+        <p className="auth-proof">
+          <strong>Editorial Workbench</strong>
+          <br />
+          Clear feedback. Better outcomes.
+        </p>
       </aside>
       <section className="auth-panel">
-        <div className="auth-panel-inner"><p className="editorial-kicker">{eyebrow}</p><h1>{title}</h1>{children}</div>
+        <div className="auth-panel-inner">
+          <p className="editorial-kicker">{eyebrow}</p>
+          <h1>{title}</h1>
+          {children}
+        </div>
       </section>
     </main>
   );
@@ -308,13 +387,13 @@ export function AuthPageShell({ eyebrow, title, children }: AuthPageShellProps) 
 
 Use these exact shell props while preserving each page's existing form and helper links:
 
-| File | `eyebrow` | `title` | Child form |
-|---|---|---|---|
-| `login/page.tsx` | `Welcome back` | `Sign in to your workspace.` | `<AuthForm mode="login" />` plus forgot/register links |
-| `register/page.tsx` | `Start your workspace` | `Turn prompts into durable knowledge.` | `<AuthForm mode="register" />` plus login link |
-| `forgot-password/page.tsx` | `Account recovery` | `Reset your password.` | `<RecoveryForm mode="forgot" />` |
-| `reset-password/page.tsx` | `Account recovery` | `Choose a new password.` | `<RecoveryForm mode="reset" />` |
-| `verify-email/page.tsx` | `Account security` | `Verify your email.` | `<RecoveryForm mode="verify" />` |
+| File                       | `eyebrow`              | `title`                                | Child form                                             |
+| -------------------------- | ---------------------- | -------------------------------------- | ------------------------------------------------------ |
+| `login/page.tsx`           | `Welcome back`         | `Sign in to your workspace.`           | `<AuthForm mode="login" />` plus forgot/register links |
+| `register/page.tsx`        | `Start your workspace` | `Turn prompts into durable knowledge.` | `<AuthForm mode="register" />` plus login link         |
+| `forgot-password/page.tsx` | `Account recovery`     | `Reset your password.`                 | `<RecoveryForm mode="forgot" />`                       |
+| `reset-password/page.tsx`  | `Account recovery`     | `Choose a new password.`               | `<RecoveryForm mode="reset" />`                        |
+| `verify-email/page.tsx`    | `Account security`     | `Verify your email.`                   | `<RecoveryForm mode="verify" />`                       |
 
 Remove the duplicated `main.auth-shell`, `section.auth-card`, and wordmark markup from those pages.
 
@@ -323,7 +402,13 @@ Remove the duplicated `main.auth-shell`, `section.auth-card`, and wordmark marku
 Change both form error paragraphs to:
 
 ```tsx
-{error ? <p className="form-error" role="alert">{error}</p> : null}
+{
+  error ? (
+    <p className="form-error" role="alert">
+      {error}
+    </p>
+  ) : null;
+}
 ```
 
 Set `aria-busy={pending}` on both `<form>` elements. Keep existing labels and native validation. Replace old `.auth-shell` and `.auth-card` rules with `.editorial-auth`, `.auth-story`, `.auth-panel`, and `.auth-panel-inner`; use black story / paper form columns on desktop and stack them below `760px`. Error text must be ink on a signal-orange surface.
@@ -349,12 +434,14 @@ rtk git commit -m "feat(web): unify auth page design"
 ### Task 3: Editorial Dashboard Shell and Role-Aware Overview
 
 **Files:**
+
 - Modify: `apps/web/components/dashboard-client.tsx:318-786`
 - Modify: `apps/web/app/styles.css:985-1290`
 - Modify: `tests/e2e/editorial-ui.spec.ts`
 - Modify: `tests/e2e/critical-flow.spec.ts:28-36`
 
 **Interfaces:**
+
 - Consumes: shared visual tokens from Task 1.
 - Preserves: existing `ActorContext`, mock owner/user modes, endpoint calls, session revocation, logout, and tenant switching.
 - Produces: role-aware headings `Where is your team getting stuck?` and `What should you improve next?`.
@@ -364,7 +451,9 @@ rtk git commit -m "feat(web): unify auth page design"
 ```ts
 test('owner overview prioritizes people and projects', async ({ page }) => {
   await page.goto('/dashboard/overview?mock=1');
-  await expect(page.getByRole('heading', { name: 'Where is your team getting stuck?' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Where is your team getting stuck?' }),
+  ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Project performance' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'People performance' })).toBeVisible();
 });
@@ -405,7 +494,11 @@ Render the active tenant above a desktop `<nav aria-label="Main navigation">`, m
 <details className="mobile-navigation">
   <summary>Menu</summary>
   <nav aria-label="Mobile navigation">
-    {navItems.map((item) => <Link href={item.href} key={item.href}>{item.label}</Link>)}
+    {navItems.map((item) => (
+      <Link href={item.href} key={item.href}>
+        {item.label}
+      </Link>
+    ))}
   </nav>
 </details>
 ```
@@ -418,7 +511,9 @@ Add only derived values; do not add state or endpoints:
 const tenantAdmin = actor ? isTenantAdmin(actor.role) : false;
 const needsAttention = prompts.filter((prompt) => {
   const score = prompt.analysis?.score;
-  return prompt.analysis?.status === 'FAILED' || (score !== null && score !== undefined && score < 75);
+  return (
+    prompt.analysis?.status === 'FAILED' || (score !== null && score !== undefined && score < 75)
+  );
 });
 const overviewTitle = tenantAdmin
   ? 'Where is your team getting stuck?'
@@ -436,7 +531,9 @@ Delete the `.dashboard-shell-v2` and `.v2-*` theme block as each renamed selecto
 Keep the existing `Prompt overview` page heading only if required by the critical flow; otherwise update its assertion to the owner heading:
 
 ```ts
-await expect(page.getByRole('heading', { name: 'Where is your team getting stuck?' })).toBeVisible();
+await expect(
+  page.getByRole('heading', { name: 'Where is your team getting stuck?' }),
+).toBeVisible();
 ```
 
 Run:
@@ -460,12 +557,14 @@ rtk git commit -m "feat(web): add role-aware editorial dashboard"
 ### Task 4: URL-Backed Prompt Workbench and Project Handoff
 
 **Files:**
+
 - Modify: `apps/web/components/dashboard-client.tsx:318-610`
 - Modify: `apps/web/components/dashboard-client.tsx:787-1016`
 - Modify: `apps/web/app/styles.css:1291-1585`
 - Modify: `tests/e2e/editorial-ui.spec.ts`
 
 **Interfaces:**
+
 - Consumes: existing prompt/project APIs and role scope.
 - Produces: query keys `q`, `projectId`, `userId`, `platform`, `model`, `minScore`, and `promptId`.
 - Preserves: `mock`, `demo`, and `mockRole` query keys when filters or selection change.
@@ -585,11 +684,13 @@ rtk git commit -m "feat(web): add editorial prompt workbench"
 ### Task 5: Editorial Tenant and Instance Administration
 
 **Files:**
+
 - Modify: `apps/web/components/admin-client.tsx:88-520`
 - Modify: `apps/web/app/styles.css:934-984`
 - Modify: `tests/e2e/critical-flow.spec.ts:47-50`
 
 **Interfaces:**
+
 - Consumes: existing `/admin/*` responses and shared Editorial Intelligence tokens.
 - Preserves: tenant member, connector, policy, audit, queue, instance user, support grant, and metadata-only support operations.
 - Produces: role-aware heading `Instance operations` when `overview.instance` exists; otherwise `Workspace administration`.
@@ -660,11 +761,13 @@ rtk git commit -m "feat(web): redesign tenant and instance admin"
 ### Task 6: States, Mobile Navigation, and Accessibility Verification
 
 **Files:**
+
 - Modify: `apps/web/components/dashboard-client.tsx:318-1016`
 - Modify: `apps/web/app/styles.css`
 - Modify: `tests/e2e/editorial-ui.spec.ts`
 
 **Interfaces:**
+
 - Consumes: all page landmarks and role-aware mock routes from Tasks 1-4.
 - Produces: visible empty-state action, `role="alert"` errors, `aria-busy` loading state, and native mobile menu.
 
@@ -692,9 +795,9 @@ test('mobile dashboard navigation and accessibility remain usable', async ({ pag
 test('reduced motion disables decorative animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
-  const duration = await page.locator('.landing-product-preview').evaluate(
-    (element) => getComputedStyle(element).animationDuration,
-  );
+  const duration = await page
+    .locator('.landing-product-preview')
+    .evaluate((element) => getComputedStyle(element).animationDuration);
   expect(duration === '0s' || duration === '0.01ms').toBeTruthy();
 });
 ```
@@ -715,7 +818,9 @@ While `actor` is null, mark the dashboard main surface `aria-busy="true"` and re
 <div className="editorial-empty">
   <strong>No prompts match these filters.</strong>
   <p>Clear the filters or broaden your search.</p>
-  <button type="button" onClick={clearPromptFilters}>Clear filters</button>
+  <button type="button" onClick={clearPromptFilters}>
+    Clear filters
+  </button>
 </div>
 ```
 
@@ -729,7 +834,15 @@ function clearPromptFilters() {
   setModelFilter('');
   setMinScoreFilter('');
   setMemberFilter('');
-  replaceDashboardQuery({ q: null, projectId: null, platform: null, model: null, minScore: null, userId: null, promptId: null });
+  replaceDashboardQuery({
+    q: null,
+    projectId: null,
+    platform: null,
+    model: null,
+    minScore: null,
+    userId: null,
+    promptId: null,
+  });
 }
 ```
 
@@ -741,7 +854,9 @@ At desktop widths, show `.editorial-sidebar` and hide `.mobile-navigation`. Belo
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

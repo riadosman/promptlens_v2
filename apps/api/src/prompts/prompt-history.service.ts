@@ -67,8 +67,12 @@ function mapPrompt(prompt: IncludedPrompt): PromptDetailResponse {
 export class PromptHistoryService {
   constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
 
-  private promptScope(actor: AuthenticatedActor, options: { userId?: string; mineOnly?: boolean } = {}) {
-    const canScopeByUser = actor.role === MembershipRole.OWNER || actor.role === MembershipRole.ADMIN;
+  private promptScope(
+    actor: AuthenticatedActor,
+    options: { userId?: string; mineOnly?: boolean } = {},
+  ) {
+    const canScopeByUser =
+      actor.role === MembershipRole.OWNER || actor.role === MembershipRole.ADMIN;
     if (!canScopeByUser) return { userId: actor.userId };
     if (options.mineOnly) return { userId: actor.userId };
     if (!options.userId) return {};
@@ -112,11 +116,11 @@ export class PromptHistoryService {
       const prompts = await transaction.prompt.findMany({
         where: {
           tenantId: actor.tenantId,
-            deletedAt: null,
-            ...promptScope,
-            ...(query.projectId ? { projectId: query.projectId } : {}),
-            ...(query.platform ? { platform: query.platform } : {}),
-            ...(query.model ? { model: query.model } : {}),
+          deletedAt: null,
+          ...promptScope,
+          ...(query.projectId ? { projectId: query.projectId } : {}),
+          ...(query.platform ? { platform: query.platform } : {}),
+          ...(query.model ? { model: query.model } : {}),
           ...(searchIds ? { id: { in: searchIds.map(({ id }) => id) } } : {}),
           ...(query.tag ? { tags: { some: { tag: { name: query.tag.toLowerCase() } } } } : {}),
           ...(query.minScore !== undefined || query.maxScore !== undefined
@@ -175,7 +179,8 @@ export class PromptHistoryService {
   }
 
   stats(actor: AuthenticatedActor, scope: 'tenant' | 'mine' = 'tenant'): Promise<DashboardStats> {
-    const canViewTenantScope = actor.role === MembershipRole.OWNER || actor.role === MembershipRole.ADMIN;
+    const canViewTenantScope =
+      actor.role === MembershipRole.OWNER || actor.role === MembershipRole.ADMIN;
     const effectiveScope = canViewTenantScope ? scope : 'mine';
     const mineOnly = effectiveScope === 'mine';
     const promptScope = this.scopeFilter(actor, mineOnly);
@@ -192,7 +197,9 @@ export class PromptHistoryService {
         projectDistribution,
       ] = await Promise.all([
         transaction.project.count({ where: { tenantId: actor.tenantId, status: 'ACTIVE' } }),
-        transaction.prompt.count({ where: { tenantId: actor.tenantId, deletedAt: null, ...promptScope } }),
+        transaction.prompt.count({
+          where: { tenantId: actor.tenantId, deletedAt: null, ...promptScope },
+        }),
         transaction.analysis.count({
           where: {
             tenantId: actor.tenantId,

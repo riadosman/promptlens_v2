@@ -443,8 +443,7 @@ select:focus {
   gap: 0.75rem;
   border-right: 1px solid var(--line-soft);
   background:
-    linear-gradient(180deg, rgba(11, 16, 24, 0.96), rgba(8, 12, 20, 0.9)),
-    var(--surface-soft);
+    linear-gradient(180deg, rgba(11, 16, 24, 0.96), rgba(8, 12, 20, 0.9)), var(--surface-soft);
   padding: 1.4rem 1rem;
   backdrop-filter: blur(18px);
 }
@@ -1004,7 +1003,8 @@ select:focus {
   display: grid;
   min-height: 100vh;
   grid-template-columns: 18rem minmax(0, 1fr);
-  background: radial-gradient(circle at -2% -6%, rgba(109, 139, 255, 0.2), transparent 34rem),
+  background:
+    radial-gradient(circle at -2% -6%, rgba(109, 139, 255, 0.2), transparent 34rem),
     radial-gradient(circle at 102% 0%, rgba(114, 240, 196, 0.17), transparent 29rem), var(--v2-bg);
   color: var(--v2-text);
 }
@@ -1656,7 +1656,12 @@ select optgroup {
   display: block;
   overflow: hidden;
   border-radius: 0.45rem;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.10));
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.22),
+    rgba(255, 255, 255, 0.1)
+  );
   background-size: 200% 100%;
   animation: v2-skeleton-shimmer 1.2s linear infinite;
 }

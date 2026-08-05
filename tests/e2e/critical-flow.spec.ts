@@ -30,6 +30,9 @@ test('registers, creates a project, and approves a connector', async ({ page }) 
   const dashboardA11y = await new AxeBuilder({ page }).analyze();
   expect(dashboardA11y.violations).toEqual([]);
 
+  await page.getByRole('link', { name: 'Projects' }).click();
+  await expect(page).toHaveURL(/\/dashboard\/projects$/u);
+  await expect(page.getByRole('heading', { name: 'Projects' })).toBeVisible();
   await page.getByPlaceholder('New project name').fill('Browser Project');
   await page.getByPlaceholder('Description').fill('Created by the browser acceptance test');
   await page.getByRole('button', { name: 'Create project' }).click();

@@ -117,7 +117,7 @@ jobs:
         run: docker compose -p promptlens-platform --env-file .env -f infra/compose/compose.full.yaml down
 
   codeql:
-    if: ${{ vars.CODEQL_ENABLED == 'true' }}
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:

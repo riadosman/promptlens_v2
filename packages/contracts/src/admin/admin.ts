@@ -9,7 +9,7 @@ export const updateMemberSchema = z.object({ role: membershipRoleSchema });
 export const switchTenantSchema = z.object({ tenantId: z.uuid() });
 export const tenantSettingsSchema = z.object({
   retentionDays: z.number().int().min(1).max(3650),
-  aiProvider: z.enum(['fake', 'openai', 'anthropic']),
+  aiProvider: z.enum(['fake', 'openai', 'anthropic', 'nvidia']),
   aiModel: z.string().trim().min(1).max(160),
   aiMonthlyTokenBudget: z.number().int().min(1_000).max(2_000_000_000),
 });

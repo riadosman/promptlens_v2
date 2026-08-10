@@ -31,7 +31,7 @@ Kuruluma başlamadan önce aşağıdakileri hazırlayın:
 - Web ve API için DNS kayıtları; örnek: `app.example.com` ve `api.example.com`.
 - TLS sertifikası veya otomatik sertifika üreten bir reverse proxy.
 - Production SMTP hesabı ve doğrulanmış gönderici adresi.
-- OpenAI veya Anthropic production API anahtarı.
+- OpenAI, Anthropic veya NVIDIA production API anahtarı.
 - Şifreli, sunucu dışı PostgreSQL yedekleme hedefi.
 - İsteğe bağlı OTLP uyumlu log/trace izleme servisi.
 
@@ -100,6 +100,8 @@ AI_MODEL=<supported-production-model>
 OPENAI_API_KEY=<provider-secret>
 ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=<supported-anthropic-model>
+NVIDIA_API_KEY=
+NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
 AI_TENANT_MONTHLY_TOKEN_BUDGET=1000000
 AI_TENANT_REQUESTS_PER_MINUTE=60
 AI_CIRCUIT_FAILURE_THRESHOLD=5
@@ -117,6 +119,8 @@ OTEL_EXPORTER_OTLP_ENDPOINT=
 ```
 
 Anthropic kullanıyorsanız `AI_PROVIDER=anthropic` yapın ve `ANTHROPIC_API_KEY` değerini sağlayın. `.env` dosyasını yalnızca servis hesabının okuyabileceği şekilde koruyun:
+
+NVIDIA API Catalog kullanıyorsanız `AI_PROVIDER=nvidia`, `NVIDIA_API_KEY=<secret>` ve NVIDIA'nın model sayfasında gösterdiği model kimliğini ayarlayın. Workspace provider/model seçimini ayrıca Admin ekranından kaydedin. Ayrıntılı kullanıcı adımları repository kökündeki [admin_config.md](../admin_config.md) dosyasındadır.
 
 ```bash
 chmod 600 .env
@@ -162,7 +166,7 @@ docker compose \
   -p promptlens-platform \
   --env-file .env \
   -f infra/compose/compose.full.yaml \
-  --profile tools run --rm migrate
+  --profile tools run --rm --build migrate
 
 docker compose \
   -p promptlens-platform \
@@ -270,7 +274,7 @@ docker compose \
   -p promptlens-platform \
   --env-file .env \
   -f infra/compose/compose.full.yaml \
-  --profile tools run --rm migrate
+  --profile tools run --rm --build migrate
 
 docker compose \
   -p promptlens-platform \

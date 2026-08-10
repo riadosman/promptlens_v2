@@ -69,7 +69,7 @@ interface TenantSettings {
   name: string;
   slug: string;
   retentionDays: number;
-  aiProvider: 'fake' | 'openai' | 'anthropic';
+  aiProvider: 'fake' | 'openai' | 'anthropic' | 'nvidia';
   aiModel: string;
   aiMonthlyTokenBudget: number;
   deletionScheduledAt: string | null;
@@ -296,6 +296,7 @@ export function AdminClient() {
                   <option value="fake">Deterministic local</option>
                   <option value="openai">OpenAI</option>
                   <option value="anthropic">Anthropic</option>
+                  <option value="nvidia">NVIDIA API Catalog</option>
                 </select>
               </label>
               <label>

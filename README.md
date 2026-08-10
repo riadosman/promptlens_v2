@@ -10,7 +10,7 @@ The project is an Apache-2.0 licensed, self-hostable TypeScript platform. It con
 - Multiple workspaces per user, OWNER/ADMIN/MEMBER/VIEWER policies, project lifecycle, and PostgreSQL row-level security.
 - PKCE-protected Device Authorization connector consent, short-lived access tokens, rotating refresh tokens, reuse detection, and connector revocation.
 - Offline-capable connector SDK with idempotency, exponential backoff, token refresh, and health diagnostics.
-- Transactional prompt/outbox creation, BullMQ delivery, deterministic test provider, and OpenAI/Anthropic structured-output adapters.
+- Transactional prompt/outbox creation, BullMQ delivery, deterministic test provider, and OpenAI/Anthropic/NVIDIA structured-output adapters.
 - Prompt scoring, strengths, weaknesses, suggestions, improved versions, usage records, FTS/trigram search, filters, and cursor pagination.
 - Responsive user and tenant/instance administration panels.
 - Non-root containers and separate migration, API, and worker database roles.
@@ -114,11 +114,13 @@ The installer-generated `.env` is ignored by Git. Important options:
 | `WEB_ORIGIN`                              | `http://localhost:3000`    | Exact browser origin used by CORS, CSRF, cookies, and action links |
 | `TRUST_PROXY`                             | `false`                    | Trust reverse-proxy client IP headers; required in public mode     |
 | `PUBLIC_API_URL`                          | `http://localhost:4000/v1` | API URL embedded in the web build                                  |
-| `AI_PROVIDER`                             | `fake`                     | `fake`, `openai`, or `anthropic`                                   |
+| `AI_PROVIDER`                             | `fake`                     | `fake`, `openai`, `anthropic`, or `nvidia`                         |
 | `AI_MODEL`                                | `gpt-5.6-luna`             | Provider model identifier                                          |
 | `OPENAI_API_KEY`                          | unset                      | Required only when `AI_PROVIDER=openai`                            |
 | `ANTHROPIC_API_KEY`                       | unset                      | Required only when `AI_PROVIDER=anthropic`                         |
 | `ANTHROPIC_MODEL`                         | `claude-sonnet-5`          | Pinned Anthropic model identifier                                  |
+| `NVIDIA_API_KEY`                          | unset                      | Required only when a workspace uses `nvidia`                       |
+| `NVIDIA_BASE_URL`                         | NVIDIA API Catalog URL     | OpenAI-compatible NVIDIA API endpoint                              |
 | `EMAIL_VERIFICATION_REQUIRED`             | `false`                    | Require verification before login; set `true` with SMTP configured |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`   | unset, `587`, `false`      | SMTP transport                                                     |
 | `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | unset                      | Optional SMTP authentication and sender                            |

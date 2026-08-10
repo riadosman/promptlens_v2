@@ -48,7 +48,7 @@ Başlıca tehditler:
 - CORS explicit origin allowlist; CSRF koruması cookie-authenticated mutasyonlarda zorunludur.
 - CSP nonce/hash, HSTS, `frame-ancestors`, `nosniff`, Referrer-Policy ve Permissions-Policy uygulanır.
 - SQL yalnız parameterized ORM/query ile; raw SQL merkezi ve testli wrapper'dan geçer.
-- Worker yalnız yapılandırılmış OpenAI veya Anthropic SDK endpointlerine çıkar; kullanıcı kontrollü URL kabul edilmez. Deployment seviyesinde egress policy operatör sorumluluğundadır.
+- Worker yalnız yapılandırılmış OpenAI, Anthropic veya NVIDIA endpointlerine çıkar; NVIDIA endpoint'i deployment ortamında yönetilir ve tenant kullanıcısı tarafından değiştirilemez. Deployment seviyesinde egress policy operatör sorumluluğundadır.
 - API rate limit IP + hassas endpoint grubu boyutlarında Redis üzerinde uygulanır. Tenant/provider bütçeleri AI worker katmanında ayrıca uygulanır.
 - API hataları iç stack, SQL, secret veya provider ham yanıtı döndürmez.
 - Idempotency kayıtları request body hash'iyle eşleşir; aynı anahtar farklı payload ile reddedilir.

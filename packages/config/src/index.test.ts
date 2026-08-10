@@ -33,4 +33,14 @@ describe('runtime configuration', () => {
     expect(config.DEPLOYMENT_MODE).toBe('public');
     expect(config.TRUST_PROXY).toBe(true);
   });
+
+  it('accepts NVIDIA as an AI provider', () => {
+    const config = parseRuntimeConfig({
+      AI_PROVIDER: 'nvidia',
+      NVIDIA_API_KEY: 'nvapi-test-key-that-is-long-enough',
+    });
+
+    expect(config.AI_PROVIDER).toBe('nvidia');
+    expect(config.NVIDIA_BASE_URL).toBe('https://integrate.api.nvidia.com/v1');
+  });
 });

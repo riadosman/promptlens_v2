@@ -15,6 +15,7 @@ import { classifyAnalysisError } from './analysis/analysis-errors.js';
 import { AnthropicAnalysisProvider } from './analysis/anthropic-analysis.provider.js';
 import { FakeAnalysisProvider } from './analysis/fake-analysis.provider.js';
 import { OpenAiAnalysisProvider } from './analysis/openai-analysis.provider.js';
+import { NvidiaAnalysisProvider } from './analysis/nvidia-analysis.provider.js';
 import { calculateScore } from './analysis/rubric.js';
 
 interface AnalysisJobData {
@@ -55,6 +56,11 @@ function provider(name: string, model: string): AnalysisProvider {
     if (!config.OPENAI_API_KEY)
       throw new Error('OPENAI_API_KEY is required for the OpenAI provider.');
     selected = new OpenAiAnalysisProvider(config.OPENAI_API_KEY, model);
+  } else if (name === 'nvidia') {
+    if (!config.NVIDIA_API_KEY) {
+      throw new Error('NVIDIA_API_KEY is required for the NVIDIA provider.');
+    }
+    selected = new NvidiaAnalysisProvider(config.NVIDIA_API_KEY, model, config.NVIDIA_BASE_URL);
   } else {
     selected = new FakeAnalysisProvider();
   }

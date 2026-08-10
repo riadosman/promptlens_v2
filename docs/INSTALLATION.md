@@ -84,6 +84,8 @@ AI_MODEL=gpt-5.6-luna
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=claude-sonnet-5
+NVIDIA_API_KEY=
+NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
 AI_TENANT_MONTHLY_TOKEN_BUDGET=1000000
 AI_TENANT_REQUESTS_PER_MINUTE=60
 AI_CIRCUIT_FAILURE_THRESHOLD=5
@@ -105,8 +107,9 @@ Değişken özeti:
 - WEB_PORT, API_PORT, POSTGRES_PORT: host portları.
 - POSTGRES_*: owner, API ve worker için ayrı least-privilege sırlar.
 - SESSION_HASH_SECRET: session hash anahtarı; kaybolursa oturumlar geçersizleşir.
-- AI_PROVIDER: fake, openai veya anthropic; ilk kurulumda fake anahtar gerektirmez.
-- OPENAI_API_KEY, ANTHROPIC_API_KEY: gerçek AI sağlayıcı anahtarları.
+- AI_PROVIDER: fake, openai, anthropic veya nvidia; ilk kurulumda fake anahtar gerektirmez.
+- OPENAI_API_KEY, ANTHROPIC_API_KEY, NVIDIA_API_KEY: gerçek AI sağlayıcı anahtarları.
+- NVIDIA_BASE_URL: NVIDIA API Catalog için `https://integrate.api.nvidia.com/v1`.
 - AI_MODEL, ANTHROPIC_MODEL: analiz modelleri.
 - AI_TENANT_MONTHLY_TOKEN_BUDGET, AI_TENANT_REQUESTS_PER_MINUTE: tenant limitleri.
 - EMAIL_VERIFICATION_REQUIRED ve SMTP_*: doğrulama/parola sıfırlama e-postaları.

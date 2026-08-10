@@ -21,7 +21,7 @@ export const runtimeConfigSchema = z
       z.url().optional(),
     ),
     REDIS_URL: z.url().default('redis://localhost:6379'),
-    AI_PROVIDER: z.enum(['fake', 'openai', 'anthropic']).default('fake'),
+    AI_PROVIDER: z.enum(['fake', 'openai', 'anthropic', 'nvidia']).default('fake'),
     AI_MODEL: z.string().min(1).default('gpt-5.6-luna'),
     OPENAI_API_KEY: z.preprocess(
       (value) => (value === '' ? undefined : value),
@@ -32,6 +32,11 @@ export const runtimeConfigSchema = z
       z.string().min(20).optional(),
     ),
     ANTHROPIC_MODEL: z.string().min(1).default('claude-sonnet-5'),
+    NVIDIA_API_KEY: z.preprocess(
+      (value) => (value === '' ? undefined : value),
+      z.string().min(20).optional(),
+    ),
+    NVIDIA_BASE_URL: z.url().default('https://integrate.api.nvidia.com/v1'),
     AI_TENANT_MONTHLY_TOKEN_BUDGET: z.coerce.number().int().positive().default(1_000_000),
     AI_TENANT_REQUESTS_PER_MINUTE: z.coerce.number().int().positive().default(60),
     AI_CIRCUIT_FAILURE_THRESHOLD: z.coerce.number().int().positive().default(5),

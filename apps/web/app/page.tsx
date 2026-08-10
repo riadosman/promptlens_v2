@@ -1,29 +1,23 @@
 import Link from 'next/link';
 import { LegalLinks } from '../components/legal-links';
 
-const features = [
+const workflow = [
   {
-    icon: '⌁',
-    title: 'Private by deployment',
-    copy: 'Run PromptLens in infrastructure you control, with explicit retention and deletion controls for every workspace.',
-    wide: true,
-    detail: 'Self-hosted · tenant isolated · auditable',
+    icon: '01',
+    title: 'Capture the real prompt',
+    copy: '“Write a launch announcement for our new finance feature.”',
+    detail: 'Browser connector · Product launch project',
   },
   {
-    icon: '◎',
-    title: 'Structured analysis',
-    copy: 'Turn raw prompt history into scores, strengths, weaknesses, and practical recommendations.',
+    icon: '02',
+    title: 'Understand what is missing',
+    copy: 'Score 54 · Audience, release timing, and a measurable outcome are missing.',
   },
   {
-    icon: '⌘',
-    title: 'Connector workflow',
-    copy: 'Capture work from supported AI tools with resilient delivery and device-scoped access.',
-  },
-  {
-    icon: '↗',
-    title: 'Project intelligence',
-    copy: 'Keep prompts tied to their project context, then search, filter, export, and improve them as a team.',
-    wide: true,
+    icon: '03',
+    title: 'Use the improved version',
+    copy: 'Create a concise launch announcement for finance leaders, including the August 18 rollout, one quantified benefit, and a demo CTA.',
+    detail: 'Ready to copy · retained in project history',
   },
 ];
 
@@ -115,18 +109,13 @@ export default function HomePage() {
 
       <section className="pl-feature-section" id="features">
         <div className="pl-section-heading">
-          <p>CONTROL PLANE / 01</p>
-          <h2>Architecture designed for trust.</h2>
-          <span>
-            One durable workspace for prompt history, quality signals, and operational control.
-          </span>
+          <p>PRODUCT FLOW / 01</p>
+          <h2>Capture. Understand. Improve.</h2>
+          <span>See the exact path from a vague input to a stronger, reusable team prompt.</span>
         </div>
-        <div className="pl-bento-grid">
-          {features.map((feature) => (
-            <article
-              className={feature.wide ? 'pl-feature-card pl-feature-wide' : 'pl-feature-card'}
-              key={feature.title}
-            >
+        <div className="pl-bento-grid pl-workflow-grid">
+          {workflow.map((feature) => (
+            <article className="pl-feature-card pl-workflow-card" key={feature.title}>
               <span className="pl-feature-icon" aria-hidden="true">
                 {feature.icon}
               </span>
@@ -134,7 +123,7 @@ export default function HomePage() {
                 <h3>{feature.title}</h3>
                 <p>{feature.copy}</p>
               </div>
-              {feature.detail ? (
+              {'detail' in feature && feature.detail ? (
                 <small>{feature.detail}</small>
               ) : (
                 <span className="pl-card-arrow" aria-hidden="true">

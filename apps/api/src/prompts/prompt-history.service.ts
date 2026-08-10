@@ -186,6 +186,9 @@ export class PromptHistoryService {
     const promptScope = this.scopeFilter(actor, mineOnly);
     return withTenantContext(this.database.client, actor, async (transaction) => {
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1_000);
+      const mineFilter = mineOnly
+        ? Prisma.sql`AND prompts.user_id = ${actor.userId}::uuid`
+        : Prisma.sql``;
       const [
         projects,
         prompts,
@@ -195,6 +198,9 @@ export class PromptHistoryService {
         scoreTrend,
         modelDistribution,
         projectDistribution,
+        actionCounts,
+        topWeaknesses,
+        recentAttention,
       ] = await Promise.all([
         transaction.project.count({ where: { tenantId: actor.tenantId, status: 'ACTIVE' } }),
         transaction.prompt.count({
@@ -277,7 +283,91 @@ export class PromptHistoryService {
                 LIMIT 8
               `,
         ),
+        transaction.$queryRaw<
+          Array<{ needs_attention: bigint; analyses_pending: bigint; analyses_failed: bigint }>
+        >(Prisma.sql`
+          WITH latest AS (
+            SELECT DISTINCT ON (analyses.prompt_id)
+              analyses.prompt_id, analyses.status, analyses.score
+            FROM analyses
+            INNER JOIN prompts ON prompts.id = analyses.prompt_id
+            WHERE analyses.tenant_id = ${actor.tenantId}::uuid
+              AND prompts.deleted_at IS NULL
+              ${mineFilter}
+            ORDER BY analyses.prompt_id, analyses.created_at DESC
+          )
+          SELECT
+            count(*) FILTER (
+              WHERE status = 'FAILED' OR (status = 'COMPLETED' AND score < 60)
+            ) AS needs_attention,
+            count(*) FILTER (WHERE status IN ('QUEUED', 'RUNNING')) AS analyses_pending,
+            count(*) FILTER (WHERE status = 'FAILED') AS analyses_failed
+          FROM latest
+        `),
+        transaction.$queryRaw<Array<{ name: string; count: bigint }>>(Prisma.sql`
+          WITH latest AS (
+            SELECT DISTINCT ON (analyses.prompt_id)
+              analyses.prompt_id, analyses.status, analyses.weaknesses
+            FROM analyses
+            INNER JOIN prompts ON prompts.id = analyses.prompt_id
+            WHERE analyses.tenant_id = ${actor.tenantId}::uuid
+              AND prompts.deleted_at IS NULL
+              ${mineFilter}
+            ORDER BY analyses.prompt_id, analyses.created_at DESC
+          )
+          SELECT weakness AS name, count(*) AS count
+          FROM latest,
+            LATERAL jsonb_array_elements_text(
+              CASE
+                WHEN jsonb_typeof(latest.weaknesses) = 'array' THEN latest.weaknesses
+                ELSE '[]'::jsonb
+              END
+            ) weakness
+          WHERE latest.status = 'COMPLETED'
+          GROUP BY weakness
+          ORDER BY count DESC, weakness
+          LIMIT 3
+        `),
+        transaction.$queryRaw<
+          Array<{
+            id: string;
+            project_name: string;
+            content: string;
+            score: number | null;
+            status: 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+            weakness: string | null;
+          }>
+        >(Prisma.sql`
+          SELECT prompts.id,
+            projects.name AS project_name,
+            prompts.content,
+            latest.score,
+            latest.status,
+            CASE
+              WHEN jsonb_typeof(latest.weaknesses) = 'array' THEN latest.weaknesses->>0
+              ELSE NULL
+            END AS weakness
+          FROM prompts
+          INNER JOIN projects ON projects.id = prompts.project_id
+          INNER JOIN LATERAL (
+            SELECT analyses.status, analyses.score, analyses.weaknesses
+            FROM analyses
+            WHERE analyses.prompt_id = prompts.id
+            ORDER BY analyses.created_at DESC
+            LIMIT 1
+          ) latest ON true
+          WHERE prompts.tenant_id = ${actor.tenantId}::uuid
+            AND prompts.deleted_at IS NULL
+            ${mineFilter}
+            AND (
+              latest.status = 'FAILED'
+              OR (latest.status = 'COMPLETED' AND latest.score < 60)
+            )
+          ORDER BY prompts.occurred_at DESC
+          LIMIT 5
+        `),
       ]);
+      const counts = actionCounts[0];
       return {
         projects,
         prompts,
@@ -295,6 +385,21 @@ export class PromptHistoryService {
         projectDistribution: projectDistribution.map((item) => ({
           name: item.name,
           count: Number(item.count),
+        })),
+        needsAttention: Number(counts?.needs_attention ?? 0),
+        analysesPending: Number(counts?.analyses_pending ?? 0),
+        analysesFailed: Number(counts?.analyses_failed ?? 0),
+        topWeaknesses: topWeaknesses.map((item) => ({
+          name: item.name,
+          count: Number(item.count),
+        })),
+        recentAttention: recentAttention.map((item) => ({
+          id: item.id,
+          projectName: item.project_name,
+          content: item.content,
+          score: item.score,
+          status: item.status,
+          weakness: item.weakness,
         })),
       };
     });

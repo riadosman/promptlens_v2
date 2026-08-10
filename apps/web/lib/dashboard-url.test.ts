@@ -5,12 +5,13 @@ describe('dashboard URL state', () => {
   it('restores shareable filters and prompt selection', () => {
     expect(
       readDashboardUrlState(
-        'q=onboarding&projectId=project-1&minScore=50&userId=user-1&promptId=prompt-1',
+        'q=onboarding&projectId=project-1&minScore=50&maxScore=79&userId=user-1&promptId=prompt-1',
       ),
     ).toMatchObject({
       query: 'onboarding',
       projectId: 'project-1',
       minScore: '50',
+      maxScore: '79',
       userId: 'user-1',
       promptId: 'prompt-1',
     });
@@ -25,6 +26,7 @@ describe('dashboard URL state', () => {
         platform: '',
         model: '',
         minScore: '',
+        maxScore: '',
         userId: 'other-user',
         promptId: null,
       },
@@ -41,6 +43,7 @@ describe('dashboard URL state', () => {
       platform: '',
       model: '',
       minScore: '',
+      maxScore: '',
       userId: '',
       promptId: null,
     });
@@ -56,13 +59,14 @@ describe('dashboard URL state', () => {
           platform: 'codex',
           model: 'model-1',
           minScore: '75',
+          maxScore: '90',
           userId: 'user-1',
           promptId: 'prompt-1',
         },
         true,
       ),
     ).toBe(
-      'q=launch+plan&projectId=project-1&platform=codex&model=model-1&minScore=75&userId=user-1&promptId=prompt-1',
+      'q=launch+plan&projectId=project-1&platform=codex&model=model-1&minScore=75&maxScore=90&userId=user-1&promptId=prompt-1',
     );
   });
 });

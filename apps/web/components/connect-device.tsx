@@ -11,6 +11,7 @@ export function ConnectDevice() {
   const [messageKind, setMessageKind] = useState<'success' | 'error'>('success');
   const [userCode, setUserCode] = useState('');
   const [needsAuthentication, setNeedsAuthentication] = useState(false);
+  const [pending, setPending] = useState(false);
 
   useEffect(() => {
     setUserCode(new URLSearchParams(window.location.search).get('code')?.toUpperCase() ?? '');
@@ -26,6 +27,8 @@ export function ConnectDevice() {
   async function approve(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    setPending(true);
+    setMessage(null);
     try {
       await apiRequest('/connectors/device/approve', {
         method: 'POST',
@@ -36,6 +39,8 @@ export function ConnectDevice() {
     } catch (error: unknown) {
       setMessageKind('error');
       setMessage(error instanceof Error ? error.message : 'Device could not be connected.');
+    } finally {
+      setPending(false);
     }
   }
 
@@ -90,8 +95,8 @@ export function ConnectDevice() {
           .
         </p>
       ) : null}
-      <button type="submit" disabled={needsAuthentication || projects.length === 0}>
-        Connect device
+      <button type="submit" disabled={pending || needsAuthentication || projects.length === 0}>
+        {pending ? 'Connecting…' : 'Connect device'}
       </button>
     </form>
   );

@@ -50,6 +50,9 @@ export function AuthForm({ mode }: { readonly mode: 'login' | 'register' }) {
               required
               maxLength={120}
             />
+            <small className="pl-field-help">
+              Your workspace keeps projects, members, and prompt history in one isolated team area.
+            </small>
           </label>
         </>
       ) : null}
@@ -75,6 +78,11 @@ export function AuthForm({ mode }: { readonly mode: 'login' | 'register' }) {
           minLength={mode === 'register' ? 12 : 1}
           maxLength={128}
         />
+        {mode === 'register' ? (
+          <small className="pl-field-help">
+            Use at least 12 characters. A passphrase is easiest to remember.
+          </small>
+        ) : null}
       </label>
       {error ? (
         <p className="form-error" role="alert">

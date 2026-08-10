@@ -1,0 +1,663 @@
+<!doctype html>
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>PromptLens - Secure Prompt Intelligence</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              'surface-container-low': '#1b1b1e',
+              'on-tertiary-fixed-variant': '#713700',
+              'primary-fixed-dim': '#d2bbff',
+              'on-error-container': '#ffdad6',
+              'secondary-fixed-dim': '#c3c0ff',
+              'on-surface-variant': '#ccc3d8',
+              outline: '#958da1',
+              'surface-bright': '#39393c',
+              background: '#131316',
+              'surface-tint': '#d2bbff',
+              'error-container': '#93000a',
+              'outline-variant': '#4a4455',
+              'inverse-on-surface': '#303033',
+              error: '#ffb4ab',
+              'surface-dim': '#131316',
+              primary: '#d2bbff',
+              'on-secondary': '#1d00a5',
+              'primary-container': '#7c3aed',
+              'secondary-container': '#3626ce',
+              'on-tertiary-fixed': '#301400',
+              'surface-container-high': '#2a2a2d',
+              'on-primary': '#3f008e',
+              'secondary-fixed': '#e2dfff',
+              'on-tertiary-container': '#ffe0cd',
+              'on-primary-fixed': '#25005a',
+              'tertiary-fixed-dim': '#ffb784',
+              'on-background': '#e4e1e6',
+              'tertiary-fixed': '#ffdcc6',
+              'inverse-primary': '#732ee4',
+              'on-primary-container': '#ede0ff',
+              'on-secondary-container': '#b3b1ff',
+              'surface-container-lowest': '#0e0e11',
+              'surface-variant': '#353438',
+              surface: '#131316',
+              'on-secondary-fixed-variant': '#3323cc',
+              'on-error': '#690005',
+              secondary: '#c3c0ff',
+              'tertiary-container': '#a15100',
+              'on-primary-fixed-variant': '#5a00c6',
+              'on-secondary-fixed': '#0f0069',
+              'on-tertiary': '#4f2500',
+              'surface-container-highest': '#353438',
+              'primary-fixed': '#eaddff',
+              'surface-container': '#1f1f22',
+              'inverse-surface': '#e4e1e6',
+              'on-surface': '#e4e1e6',
+              tertiary: '#ffb784',
+            },
+            borderRadius: {
+              DEFAULT: '0.125rem',
+              lg: '0.25rem',
+              xl: '0.5rem',
+              full: '0.75rem',
+            },
+            spacing: {
+              xs: '4px',
+              md: '16px',
+              sm: '8px',
+              base: '8px',
+              xl: '32px',
+              gutter: '24px',
+              '2xl': '48px',
+              '3xl': '64px',
+              'container-max': '1280px',
+              lg: '24px',
+            },
+            fontFamily: {
+              'headline-lg': ['Inter'],
+              'body-lg': ['Inter'],
+              'headline-md': ['Inter'],
+              display: ['Inter'],
+              'body-md': ['Inter'],
+              'headline-lg-mobile': ['Inter'],
+              'label-md': ['JetBrains Mono'],
+              'label-sm': ['JetBrains Mono'],
+            },
+            fontSize: {
+              'headline-lg': [
+                '32px',
+                { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '700' },
+              ],
+              'body-lg': ['16px', { lineHeight: '1.6', letterSpacing: '0', fontWeight: '400' }],
+              'headline-md': [
+                '20px',
+                { lineHeight: '1.4', letterSpacing: '-0.01em', fontWeight: '600' },
+              ],
+              display: ['48px', { lineHeight: '1.1', letterSpacing: '-0.04em', fontWeight: '800' }],
+              'body-md': ['14px', { lineHeight: '1.5', letterSpacing: '0', fontWeight: '400' }],
+              'headline-lg-mobile': [
+                '24px',
+                { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '700' },
+              ],
+              'label-md': ['13px', { lineHeight: '1', letterSpacing: '0.02em', fontWeight: '500' }],
+              'label-sm': ['11px', { lineHeight: '1', letterSpacing: '0.05em', fontWeight: '500' }],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      /* Custom utilities for subtle glassmorphism and grid patterns */
+      .glass-panel {
+        background: rgba(24, 24, 27, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .grid-bg {
+        background-image:
+          linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 32px 32px;
+      }
+    </style>
+  </head>
+  <body class="bg-background text-on-surface font-body-md min-h-screen flex flex-col antialiased">
+    <!-- TopAppBar (Shared Component) -->
+    <header
+      class="w-full top-0 sticky z-50 bg-background border-b border-outline-variant/30 flex items-center justify-between px-md py-sm"
+    >
+      <div class="flex items-center gap-md">
+        <span
+          class="material-symbols-outlined text-primary cursor-pointer active:scale-95 transition-transform hover:bg-surface-variant/50 rounded-full p-sm"
+          data-icon="menu"
+          >menu</span
+        >
+        <span class="font-display text-headline-md tracking-tighter text-primary">PROMPTLENS</span>
+      </div>
+      <div class="hidden md:flex items-center gap-xl">
+        <nav class="flex gap-lg">
+          <!-- Assuming 'Features' is active based on intent if not specified, defaulting all to inactive style for a pure landing page unless clicked -->
+          <a
+            class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+            href="#features"
+            >Features</a
+          >
+          <a
+            class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+            href="#pricing"
+            >Pricing</a
+          >
+          <a
+            class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+            href="#docs"
+            >Documentation</a
+          >
+        </nav>
+        <div class="flex items-center gap-md border-l border-outline-variant/30 pl-lg">
+          <button
+            class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors"
+          >
+            Log In
+          </button>
+          <button
+            class="bg-primary-container text-on-primary-container font-label-md text-label-md px-lg py-sm rounded-DEFAULT hover:bg-inverse-primary transition-colors cursor-pointer active:scale-95"
+          >
+            <a href="login_desktop.html"> Get Started </a>
+          </button>
+        </div>
+      </div>
+      <div class="md:hidden">
+        <span
+          class="material-symbols-outlined text-primary cursor-pointer active:scale-95 transition-transform"
+          data-icon="terminal"
+          >terminal</span
+        >
+      </div>
+    </header>
+    <main class="flex-1 flex flex-col">
+      <!-- Hero Section -->
+      <section
+        class="relative w-full min-h-[80vh] flex flex-col items-center justify-center py-3xl px-gutter grid-bg"
+      >
+        <div
+          class="absolute inset-0 bg-gradient-to-b from-transparent to-background pointer-events-none"
+        ></div>
+        <div
+          class="relative z-10 max-w-container-max w-full mx-auto flex flex-col lg:flex-row items-center gap-2xl"
+        >
+          <div class="flex-1 flex flex-col gap-xl">
+            <div
+              class="inline-flex items-center gap-sm bg-surface-container-high border border-outline-variant/50 rounded-full px-md py-xs w-fit"
+            >
+              <span
+                class="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(210,187,255,0.6)]"
+              ></span>
+              <span
+                class="font-label-sm text-label-sm text-on-surface-variant tracking-wider uppercase"
+                >v2.0 Beta Available</span
+              >
+            </div>
+            <h1 class="font-display text-display text-on-surface leading-tight">
+              Secure Prompt <br />
+              <span class="text-primary">Intelligence.</span><br />
+              Built for Privacy.
+            </h1>
+            <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+              Deploy air-gapped analytics for your LLM interactions. Analyze, optimize, and secure
+              prompt architectures without exposing proprietary data to third-party endpoints.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-md pt-sm">
+              <button
+                class="bg-primary-container text-white font-label-md text-label-md px-xl py-md rounded-DEFAULT hover:bg-inverse-primary transition-colors cursor-pointer active:scale-95 flex items-center justify-center gap-sm"
+              >
+                <span class="material-symbols-outlined text-[18px]">rocket_launch</span>
+                <a href="login_desktop.html"> Start Free Trial </a>
+              </button>
+              <button
+                class="bg-transparent border border-outline-variant/50 text-on-surface font-label-md text-label-md px-xl py-md rounded-DEFAULT hover:bg-surface-variant/30 transition-colors cursor-pointer active:scale-95 flex items-center justify-center gap-sm"
+              >
+                <span class="material-symbols-outlined text-[18px]">book</span>
+                Read Docs
+              </button>
+            </div>
+          </div>
+          <div class="flex-1 w-full max-w-2xl relative">
+            <!-- Technical Terminal/Code Preview -->
+            <div
+              class="glass-panel rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.4)]"
+            >
+              <div
+                class="flex items-center gap-sm bg-surface-container-highest px-md py-sm border-b border-outline-variant/30"
+              >
+                <div class="w-3 h-3 rounded-full bg-outline-variant/50"></div>
+                <div class="w-3 h-3 rounded-full bg-outline-variant/50"></div>
+                <div class="w-3 h-3 rounded-full bg-outline-variant/50"></div>
+                <span class="font-label-sm text-label-sm text-on-surface-variant ml-md"
+                  >prompt_analyzer.py — ~/promptlens/core</span
+                >
+              </div>
+              <div
+                class="p-lg font-label-md text-label-md text-on-surface-variant overflow-x-auto leading-relaxed"
+              >
+                <span class="text-primary-fixed-dim">import</span> lens_core<br />
+                <span class="text-primary-fixed-dim">from</span> security
+                <span class="text-primary-fixed-dim">import</span> AirGapProtocol<br /><br />
+                <span class="text-outline-variant"># Initialize secure enclave</span><br />
+                engine = lens_core.Engine(<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;mode=<span class="text-tertiary-fixed-dim"
+                  >"local_strict"</span
+                >,<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;protocol=AirGapProtocol.V2<br />
+                )<br /><br />
+                <span class="text-outline-variant"># Analyze incoming payload</span><br />
+                <span class="text-primary-fixed-dim">def</span>
+                <span class="text-secondary-fixed">inspect_prompt</span>(payload):<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;metrics = engine.evaluate(payload)<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-primary-fixed-dim">if</span>
+                metrics.risk_score &gt; <span class="text-tertiary-fixed-dim">0.8</span>:<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-primary-fixed-dim"
+                  >return</span
+                >
+                engine.redact(payload)<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-primary-fixed-dim">return</span>
+                metrics.approved_stream()
+              </div>
+              <div
+                class="bg-surface-container px-lg py-sm border-t border-outline-variant/30 flex justify-between items-center"
+              >
+                <span class="font-label-sm text-label-sm text-outline-variant"
+                  >Status: Enclave Active</span
+                >
+                <span class="font-label-sm text-label-sm text-primary">0ms latency</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Bento Grid Features -->
+      <section class="w-full py-3xl px-gutter bg-surface-container-lowest" id="features">
+        <div class="max-w-container-max mx-auto flex flex-col gap-2xl">
+          <div class="flex flex-col gap-sm items-center text-center max-w-2xl mx-auto">
+            <h2 class="font-headline-lg text-headline-lg text-on-surface">
+              Architecture Designed for Trust
+            </h2>
+            <p class="font-body-md text-body-md text-on-surface-variant">
+              We built PromptLens on a foundation of zero-trust principles. Every feature is
+              designed to keep your intellectual property exactly where it belongs: on your servers.
+            </p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+            <!-- Feature 1: Large Span -->
+            <div
+              class="md:col-span-2 glass-panel rounded-xl p-xl flex flex-col justify-between group hover:border-primary/50 transition-colors relative overflow-hidden"
+            >
+              <div
+                class="absolute -right-20 -top-20 w-64 h-64 bg-primary-container/10 rounded-full blur-3xl group-hover:bg-primary-container/20 transition-all"
+              ></div>
+              <div class="z-10 flex flex-col gap-md">
+                <span
+                  class="material-symbols-outlined text-primary text-[32px]"
+                  data-icon="shield_lock"
+                  >shield_lock</span
+                >
+                <h3 class="font-headline-md text-headline-md text-on-surface">
+                  Air-gapped Security
+                </h3>
+                <p class="font-body-md text-body-md text-on-surface-variant max-w-md">
+                  Deploy entirely within your VPC. No outbound connections required. Our core
+                  analysis engine runs completely offline, ensuring your proprietary prompts never
+                  touch the public internet.
+                </p>
+              </div>
+              <div
+                class="z-10 mt-xl bg-surface-container border border-outline-variant/30 rounded-lg p-md"
+              >
+                <div class="flex items-center justify-between mb-sm">
+                  <span class="font-label-sm text-label-sm text-on-surface">Network Traffic</span>
+                  <span class="font-label-sm text-label-sm text-primary">0 bytes outbound</span>
+                </div>
+                <div class="w-full h-2 bg-surface-variant rounded-full overflow-hidden">
+                  <div class="w-[0%] h-full bg-primary"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Feature 2 -->
+            <div
+              class="glass-panel rounded-xl p-xl flex flex-col justify-between group hover:border-primary/50 transition-colors"
+            >
+              <div class="flex flex-col gap-md">
+                <span class="material-symbols-outlined text-primary text-[32px]" data-icon="memory"
+                  >memory</span
+                >
+                <h3 class="font-headline-md text-headline-md text-on-surface">
+                  Local Model Analysis
+                </h3>
+                <p class="font-body-md text-body-md text-on-surface-variant">
+                  Leverage quantized, edge-optimized models to classify and score prompts locally.
+                  High performance without the cloud latency.
+                </p>
+              </div>
+            </div>
+            <!-- Feature 3 -->
+            <div
+              class="glass-panel rounded-xl p-xl flex flex-col justify-between group hover:border-primary/50 transition-colors"
+            >
+              <div class="flex flex-col gap-md">
+                <span
+                  class="material-symbols-outlined text-primary text-[32px]"
+                  data-icon="admin_panel_settings"
+                  >admin_panel_settings</span
+                >
+                <h3 class="font-headline-md text-headline-md text-on-surface">Role-based Access</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant">
+                  Granular IAM integration. Control exactly who can view, edit, or approve prompt
+                  templates across your organization.
+                </p>
+              </div>
+            </div>
+            <!-- Feature 4: Span -->
+            <div
+              class="md:col-span-2 glass-panel rounded-xl p-xl flex flex-col justify-between group hover:border-primary/50 transition-colors"
+            >
+              <div class="flex flex-col gap-md">
+                <span
+                  class="material-symbols-outlined text-primary text-[32px]"
+                  data-icon="analytics"
+                  >analytics</span
+                >
+                <h3 class="font-headline-md text-headline-md text-on-surface">
+                  Deep Semantic Tracing
+                </h3>
+                <p class="font-body-md text-body-md text-on-surface-variant max-w-lg">
+                  Track the lineage of every prompt generation. Our visual dependency graph shows
+                  exactly how variables map to final outputs, highlighting potential injection
+                  vulnerabilities before deployment.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Pricing Section -->
+      <section
+        class="w-full py-3xl px-gutter bg-background border-t border-outline-variant/30"
+        id="pricing"
+      >
+        <div class="max-w-container-max mx-auto flex flex-col gap-2xl">
+          <div class="flex flex-col gap-sm items-center text-center max-w-2xl mx-auto">
+            <h2 class="font-headline-lg text-headline-lg text-on-surface">Transparent Licensing</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant">
+              Simple, predictable pricing designed for engineering teams of all sizes.
+            </p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-lg max-w-5xl mx-auto w-full">
+            <!-- Tier 1 -->
+            <div class="glass-panel rounded-xl p-xl flex flex-col gap-xl">
+              <div class="flex flex-col gap-sm">
+                <h3 class="font-headline-md text-headline-md text-on-surface">Developer</h3>
+                <div class="flex items-end gap-xs">
+                  <span class="font-display text-[32px] font-bold text-on-surface">$0</span>
+                  <span class="font-label-md text-label-md text-on-surface-variant pb-xs">/mo</span>
+                </div>
+                <p class="font-body-md text-body-md text-on-surface-variant">
+                  For individuals evaluating the platform locally.
+                </p>
+              </div>
+              <ul class="flex flex-col gap-md flex-1">
+                <li class="flex items-center gap-sm font-body-md text-body-md text-on-surface">
+                  <span class="material-symbols-outlined text-primary text-[18px]">check</span>
+                  Local CLI evaluation
+                </li>
+                <li class="flex items-center gap-sm font-body-md text-body-md text-on-surface">
+                  <span class="material-symbols-outlined text-primary text-[18px]">check</span>
+                  Basic semantic scoring
+                </li>
+                <li class="flex items-center gap-sm font-body-md text-body-md text-on-surface">
+                  <span class="material-symbols-outlined text-primary text-[18px]">check</span>
+                  Community support
+                </li>
+              </ul>
+              <button
+                class="w-full bg-transparent border border-outline-variant/50 text-on-surface font-label-md text-label-md py-md rounded-DEFAULT hover:bg-surface-variant/30 transition-colors"
+              >
+                Download CLI
+              </button>
+            </div>
+            <!-- Tier 2 (Highlighted) -->
+            <div
+              class="bg-surface-container-high border border-primary/50 rounded-xl p-xl flex flex-col gap-xl relative overflow-hidden shadow-[0_10px_30px_rgba(124,58,237,0.15)]"
+            >
+              <div class="absolute top-0 inset-x-0 h-1 bg-primary"></div>
+              <div class="flex flex-col gap-sm">
+                <div class="flex justify-between items-center">
+                  <h3 class="font-headline-md text-headline-md text-on-surface">Team</h3>
+                  <span
+                    class="bg-primary-container/20 text-primary font-label-sm text-label-sm px-sm py-xs rounded-full"
+                    >Most Popular</span
+                  >
+                </div>
+                <div class="flex items-end gap-xs">
+                  <span class="font-display text-[32px] font-bold text-on-surface">$499</span>
+                  <span class="font-label-md text-label-md text-on-surface-variant pb-xs">/mo</span>
+                </div>
+                <p class="font-body-md text-body-md text-on-surface-variant">
+                  For engineering teams building production AI features.
+                </p>
+              </div>
+              <ul class="flex flex-col gap-md flex-1">
+                <li class="flex items-center gap-sm font-body-md text-body-md text-on-surface">
+                  <span class="material-symbols-outlined text-primary text-[18px]">check</span>
+                  Everything in Developer
+                </li>
+                <li class="flex items-center gap-sm font-body-md text-body-md text-on-surface">
+                  <span class="material-symbols-outlined text-primary text-[18px]">check</span>
+                  Shared Workspace &amp; RBAC
+                </li>
+                <li class="flex items-center gap-sm font-body-md text-body-md text-on-surface">
+                  <span class="material-symbols-outlined text-primary text-[18px]">check</span>
+                  Webhook integrations
+                </li>
+                <li class="flex items-center gap-sm font-body-md text-body-md text-on-surface">
+                  <span class="material-symbols-outlined text-primary text-[18px]">check</span>
+                  Version control history
+                </li>
+              </ul>
+              <button
+                class="w-full bg-primary-container text-white font-label-md text-label-md py-md rounded-DEFAULT hover:bg-inverse-primary transition-colors"
+              >
+                Start 14-Day Trial
+              </button>
+            </div>
+            <!-- Tier 3 -->
+            <div class="glass-panel rounded-xl p-xl flex flex-col gap-xl">
+              <div class="flex flex-col gap-sm">
+                <h3 class="font-headline-md text-headline-md text-on-surface">Enterprise</h3>
+                <div class="flex items-end gap-xs">
+                  <span class="font-display text-[32px] font-bold text-on-surface">Custom</span>
+                </div>
+                <p class="font-body-md text-body-md text-on-surface-variant">
+                  Full air-gapped deployment for strict compliance.
+                </p>
+              </div>
+              <ul class="flex flex-col gap-md flex-1">
+                <li class="flex items-center gap-sm font-body-md text-body-md text-on-surface">
+                  <span class="material-symbols-outlined text-primary text-[18px]">check</span>
+                  Everything in Team
+                </li>
+                <li class="flex items-center gap-sm font-body-md text-body-md text-on-surface">
+                  <span class="material-symbols-outlined text-primary text-[18px]">check</span>
+                  VPC / On-prem deployment
+                </li>
+                <li class="flex items-center gap-sm font-body-md text-body-md text-on-surface">
+                  <span class="material-symbols-outlined text-primary text-[18px]">check</span>
+                  Custom model fine-tuning
+                </li>
+                <li class="flex items-center gap-sm font-body-md text-body-md text-on-surface">
+                  <span class="material-symbols-outlined text-primary text-[18px]">check</span>
+                  Dedicated support engineer
+                </li>
+              </ul>
+              <button
+                class="w-full bg-transparent border border-outline-variant/50 text-on-surface font-label-md text-label-md py-md rounded-DEFAULT hover:bg-surface-variant/30 transition-colors"
+              >
+                Contact Sales
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <!-- Footer with Technical Sitemap -->
+    <footer
+      class="w-full bg-surface-container-lowest border-t border-outline-variant/30 py-2xl px-gutter"
+    >
+      <div class="max-w-container-max mx-auto flex flex-col gap-2xl">
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-xl">
+          <!-- Brand Column -->
+          <div class="col-span-2 lg:col-span-2 flex flex-col gap-md">
+            <span class="font-display text-headline-md tracking-tighter text-primary"
+              >PROMPTLENS</span
+            >
+            <p class="font-body-md text-body-md text-on-surface-variant max-w-sm">
+              Securing the next generation of application architectures through robust, private
+              prompt intelligence and analytics.
+            </p>
+            <div class="flex gap-md mt-sm">
+              <a class="text-on-surface-variant hover:text-primary transition-colors" href="#"
+                ><span class="material-symbols-outlined" data-icon="terminal">terminal</span></a
+              >
+              <a class="text-on-surface-variant hover:text-primary transition-colors" href="#"
+                ><span class="material-symbols-outlined" data-icon="code">code</span></a
+              >
+              <a class="text-on-surface-variant hover:text-primary transition-colors" href="#"
+                ><span class="material-symbols-outlined" data-icon="bug_report">bug_report</span></a
+              >
+            </div>
+          </div>
+          <!-- Sitemap Columns -->
+          <div class="flex flex-col gap-md">
+            <h4 class="font-label-md text-label-md text-on-surface uppercase tracking-wider">
+              Product
+            </h4>
+            <a
+              class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+              href="#"
+              >Core Engine</a
+            >
+            <a
+              class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+              href="#"
+              >Security Enclave</a
+            >
+            <a
+              class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+              href="#"
+              >Integrations</a
+            >
+            <a
+              class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+              href="#"
+              >Pricing</a
+            >
+            <a
+              class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+              href="#"
+              >Changelog</a
+            >
+          </div>
+          <div class="flex flex-col gap-md">
+            <h4 class="font-label-md text-label-md text-on-surface uppercase tracking-wider">
+              Resources
+            </h4>
+            <a
+              class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+              href="#"
+              >Documentation</a
+            >
+            <a
+              class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+              href="#"
+              >API Reference</a
+            >
+            <a
+              class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+              href="#"
+              >Architecture Guides</a
+            >
+            <a
+              class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+              href="#"
+              >Security Whitepaper</a
+            >
+            <a
+              class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+              href="#"
+              >GitHub Repository</a
+            >
+          </div>
+          <div class="flex flex-col gap-md">
+            <h4 class="font-label-md text-label-md text-on-surface uppercase tracking-wider">
+              Company
+            </h4>
+            <a
+              class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+              href="#"
+              >About Us</a
+            >
+            <a
+              class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+              href="#"
+              >Careers</a
+            >
+            <a
+              class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+              href="#"
+              >Privacy Policy</a
+            >
+            <a
+              class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+              href="#"
+              >Terms of Service</a
+            >
+            <a
+              class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors"
+              href="#"
+              >Contact</a
+            >
+          </div>
+        </div>
+        <div
+          class="flex flex-col md:flex-row justify-between items-center pt-xl border-t border-outline-variant/30"
+        >
+          <span class="font-label-sm text-label-sm text-on-surface-variant"
+            >© 2024 PromptLens Inc. All rights reserved.</span
+          >
+          <span
+            class="font-label-sm text-label-sm text-outline-variant mt-sm md:mt-0 flex items-center gap-xs"
+          >
+            <span class="w-2 h-2 rounded-full bg-green-500"></span> Systems Operational
+          </span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

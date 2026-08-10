@@ -4,6 +4,7 @@ export interface DashboardUrlState {
   readonly platform: string;
   readonly model: string;
   readonly minScore: string;
+  readonly maxScore: string;
   readonly userId: string;
   readonly promptId: string | null;
 }
@@ -16,6 +17,7 @@ export function readDashboardUrlState(queryString: string): DashboardUrlState {
     platform: parameters.get('platform') ?? '',
     model: parameters.get('model') ?? '',
     minScore: parameters.get('minScore') ?? '',
+    maxScore: parameters.get('maxScore') ?? '',
     userId: parameters.get('userId') ?? '',
     promptId: parameters.get('promptId'),
   };
@@ -33,6 +35,7 @@ export function writeDashboardUrlState(
     ['platform', state.platform],
     ['model', state.model],
     ['minScore', state.minScore],
+    ['maxScore', state.maxScore],
     ['userId', allowUserFilter ? state.userId : ''],
     ['promptId', state.promptId],
   ];

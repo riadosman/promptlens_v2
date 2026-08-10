@@ -61,6 +61,20 @@ export const dashboardStatsSchema = z.object({
   scoreTrend: z.array(z.object({ date: z.string(), score: z.number() })),
   modelDistribution: z.array(z.object({ name: z.string(), count: z.number().int() })),
   projectDistribution: z.array(z.object({ name: z.string(), count: z.number().int() })),
+  needsAttention: z.number().int().nonnegative(),
+  analysesPending: z.number().int().nonnegative(),
+  analysesFailed: z.number().int().nonnegative(),
+  topWeaknesses: z.array(z.object({ name: z.string(), count: z.number().int().positive() })),
+  recentAttention: z.array(
+    z.object({
+      id: z.uuid(),
+      projectName: z.string(),
+      content: z.string(),
+      score: z.number().int().nullable(),
+      status: z.enum(['QUEUED', 'RUNNING', 'COMPLETED', 'FAILED']),
+      weakness: z.string().nullable(),
+    }),
+  ),
 });
 
 export type PromptListQuery = z.infer<typeof promptListQuerySchema>;

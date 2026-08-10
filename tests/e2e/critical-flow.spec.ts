@@ -26,15 +26,16 @@ test('registers, creates a project, and approves a connector', async ({ page }) 
   await expect(page.getByLabel('Device code')).toHaveValue(device.userCode);
 
   await page.goto('/dashboard');
-  await expect(page.getByRole('heading', { name: 'Prompt overview' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Workspace overview' })).toBeVisible();
   const dashboardA11y = await new AxeBuilder({ page }).analyze();
   expect(dashboardA11y.violations).toEqual([]);
 
   await page.getByRole('link', { name: 'Projects' }).click();
   await expect(page).toHaveURL(/\/dashboard\/projects$/u);
-  await expect(page.getByRole('heading', { name: 'Projects' })).toBeVisible();
-  await page.getByPlaceholder('New project name').fill('Browser Project');
-  await page.getByPlaceholder('Description').fill('Created by the browser acceptance test');
+  await expect(page.getByRole('heading', { name: 'Projects', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'General', exact: true })).toBeVisible();
+  await page.getByLabel('Project name').fill('Browser Project');
+  await page.getByLabel('Description').fill('Created by the browser acceptance test');
   await page.getByRole('button', { name: 'Create project' }).click();
   await expect(page.getByRole('heading', { name: 'Browser Project' })).toBeVisible();
 

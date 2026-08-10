@@ -2,7 +2,10 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  fullyParallel: true,
+  // The production API intentionally rate-limits by client IP. Run viewport
+  // projects serially so the test harness does not create artificial 429s.
+  fullyParallel: false,
+  workers: 1,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? 'github' : 'list',
   use: {

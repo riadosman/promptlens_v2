@@ -96,6 +96,8 @@ export function AdminClient() {
   const [supportGrants, setSupportGrants] = useState<SupportGrant[]>([]);
   const [supportMetadata, setSupportMetadata] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(() => {
     Promise.all([
@@ -125,62 +127,93 @@ export function AdminClient() {
 
   useEffect(() => load(), [load]);
 
+  async function runAction(key: string, success: string, action: () => Promise<void>) {
+    if (pendingAction) return;
+    setPendingAction(key);
+    setError(null);
+    setNotice(null);
+    try {
+      await action();
+      setNotice(success);
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : 'The action could not be completed.');
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   async function addMember(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const fields = new FormData(form);
-    await apiRequest('/admin/members', {
-      method: 'POST',
-      body: JSON.stringify({ email: fields.get('email'), role: fields.get('role') }),
+    await runAction('add-member', 'Member added.', async () => {
+      await apiRequest('/admin/members', {
+        method: 'POST',
+        body: JSON.stringify({ email: fields.get('email'), role: fields.get('role') }),
+      });
+      form.reset();
+      load();
     });
-    form.reset();
-    load();
   }
 
   async function changeRole(userId: string, role: string) {
-    await apiRequest(`/admin/members/${userId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ role }),
+    await runAction(`role-${userId}`, 'Member role updated.', async () => {
+      await apiRequest(`/admin/members/${userId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role }),
+      });
+      load();
     });
-    load();
   }
 
   async function removeMember(userId: string) {
     if (!window.confirm('Remove this member and revoke their workspace sessions?')) return;
-    await apiRequest(`/admin/members/${userId}`, { method: 'DELETE' });
-    load();
+    await runAction(`remove-${userId}`, 'Member removed.', async () => {
+      await apiRequest(`/admin/members/${userId}`, { method: 'DELETE' });
+      load();
+    });
   }
 
   async function revokeConnector(connectorId: string) {
     if (!window.confirm('Revoke this connector and all of its active tokens?')) return;
-    await apiRequest(`/admin/connectors/${connectorId}`, { method: 'DELETE' });
-    load();
+    await runAction(`connector-${connectorId}`, 'Connector revoked.', async () => {
+      await apiRequest(`/admin/connectors/${connectorId}`, { method: 'DELETE' });
+      load();
+    });
   }
 
   async function changeUserStatus(user: InstanceUser) {
     const status = user.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
     if (!window.confirm(`${status === 'SUSPENDED' ? 'Suspend' : 'Reactivate'} ${user.email}?`))
       return;
-    await apiRequest(`/admin/instance/users/${user.id}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
-    load();
+    await runAction(
+      `user-${user.id}`,
+      `User ${status === 'ACTIVE' ? 'reactivated' : 'suspended'}.`,
+      async () => {
+        await apiRequest(`/admin/instance/users/${user.id}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status }),
+        });
+        load();
+      },
+    );
   }
 
   async function updateSettings(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const fields = new FormData(event.currentTarget);
-    await apiRequest<TenantSettings>('/admin/settings', {
-      method: 'PATCH',
-      body: JSON.stringify({
-        retentionDays: Number(fields.get('retentionDays')),
-        aiProvider: fields.get('aiProvider'),
-        aiModel: fields.get('aiModel'),
-        aiMonthlyTokenBudget: Number(fields.get('aiMonthlyTokenBudget')),
-      }),
+    await runAction('settings', 'Workspace policy saved.', async () => {
+      await apiRequest<TenantSettings>('/admin/settings', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          retentionDays: Number(fields.get('retentionDays')),
+          aiProvider: fields.get('aiProvider'),
+          aiModel: fields.get('aiModel'),
+          aiMonthlyTokenBudget: Number(fields.get('aiMonthlyTokenBudget')),
+        }),
+      });
+      load();
     });
-    load();
   }
 
   async function exportWorkspace() {
@@ -253,6 +286,11 @@ export function AdminClient() {
               Try again
             </button>
           </div>
+        ) : null}
+        {notice ? (
+          <p className="form-message pl-inline-status" role="status">
+            {notice}
+          </p>
         ) : null}
         <section
           className="metric-grid pl-admin-metrics"

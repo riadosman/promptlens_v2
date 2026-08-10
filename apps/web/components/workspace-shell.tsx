@@ -38,6 +38,10 @@ export function WorkspaceSidebar({
       <Link className="v2-wordmark" href="/dashboard/overview">
         PromptLens
       </Link>
+      <div className="pl-mobile-workspace" aria-label={`Active workspace: ${tenantName}`}>
+        <span>Workspace</span>
+        <strong>{tenantName}</strong>
+      </div>
       <div className="v2-panel v2-tenant">
         <p className="v2-kicker v2-tenant-kicker">Active workspace</p>
         <strong className="v2-tenant-name">{tenantName}</strong>
@@ -54,7 +58,7 @@ export function WorkspaceSidebar({
             (item.href === '/dashboard/overview' && pathname === '/dashboard');
           return (
             <Link
-              className={`v2-nav-link ${active ? 'active' : ''}`}
+              className={`v2-nav-link ${item.href === '/connect' || item.href === '/admin' ? 'pl-secondary-nav' : ''} ${active ? 'active' : ''}`}
               href={item.href}
               key={item.href}
             >
@@ -65,8 +69,20 @@ export function WorkspaceSidebar({
             </Link>
           );
         })}
+        <details className="pl-nav-more">
+          <summary>More</summary>
+          <div>
+            {items
+              .filter((item) => item.href === '/connect' || item.href === '/admin')
+              .map((item) => (
+                <Link href={item.href} key={item.href}>
+                  {item.label}
+                </Link>
+              ))}
+          </div>
+        </details>
       </nav>
-      {workspaceControl}
+      {workspaceControl ? <div className="pl-workspace-control">{workspaceControl}</div> : null}
       {onSignOut ? (
         <button className="v2-ghost pl-sidebar-exit" onClick={onSignOut} type="button">
           Sign out

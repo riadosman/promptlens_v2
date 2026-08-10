@@ -4,7 +4,7 @@ import type {
   ProjectResponse,
   UpdateProjectRequest,
 } from '@promptlens/contracts';
-import { MembershipRole, ProjectStatus, withTenantContext } from '@promptlens/database';
+import { MembershipRole, Prisma, ProjectStatus, withTenantContext } from '@promptlens/database';
 import { DatabaseService } from '../database/database.service.js';
 import type { AuthenticatedActor } from '../auth/auth.types.js';
 
@@ -38,11 +38,52 @@ export class ProjectsService {
 
   list(actor: AuthenticatedActor): Promise<ProjectResponse[]> {
     return withTenantContext(this.database.client, actor, async (transaction) => {
-      const projects = await transaction.project.findMany({
-        where: { tenantId: actor.tenantId },
-        orderBy: [{ status: 'asc' }, { updatedAt: 'desc' }],
+      const [projects, metrics] = await Promise.all([
+        transaction.project.findMany({
+          where: { tenantId: actor.tenantId },
+          orderBy: [{ status: 'asc' }, { updatedAt: 'desc' }],
+        }),
+        transaction.$queryRaw<
+          Array<{
+            id: string;
+            prompt_count: bigint;
+            average_score: number | null;
+            low_score_count: bigint;
+            last_activity_at: Date | null;
+          }>
+        >(Prisma.sql`
+          SELECT projects.id,
+            count(prompts.id) AS prompt_count,
+            round(avg(latest.score), 1)::float AS average_score,
+            count(prompts.id) FILTER (
+              WHERE latest.status = 'COMPLETED' AND latest.score < 60
+            ) AS low_score_count,
+            max(prompts.occurred_at) AS last_activity_at
+          FROM projects
+          LEFT JOIN prompts
+            ON prompts.project_id = projects.id AND prompts.deleted_at IS NULL
+          LEFT JOIN LATERAL (
+            SELECT analyses.status, analyses.score
+            FROM analyses
+            WHERE analyses.prompt_id = prompts.id
+            ORDER BY analyses.created_at DESC
+            LIMIT 1
+          ) latest ON true
+          WHERE projects.tenant_id = ${actor.tenantId}::uuid
+          GROUP BY projects.id
+        `),
+      ]);
+      const metricsById = new Map(metrics.map((item) => [item.id, item]));
+      return projects.map((project) => {
+        const projectMetrics = metricsById.get(project.id);
+        return {
+          ...toResponse(project),
+          promptCount: Number(projectMetrics?.prompt_count ?? 0),
+          averageScore: projectMetrics?.average_score ?? null,
+          lowScoreCount: Number(projectMetrics?.low_score_count ?? 0),
+          lastActivityAt: projectMetrics?.last_activity_at?.toISOString() ?? null,
+        };
       });
-      return projects.map(toResponse);
     });
   }
 

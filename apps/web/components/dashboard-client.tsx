@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { DashboardStats, ProjectResponse, PromptListResponse } from '@promptlens/contracts';
@@ -38,6 +38,8 @@ type MockPromptRow = PromptListResponse['items'][number] & {
   ownerId: string;
 };
 
+type PromptRow = PromptListResponse['items'][number];
+
 type MockMode = {
   actor: ActorContext;
   tenantMembers: MemberOption[];
@@ -68,6 +70,10 @@ const mockProjects: ProjectResponse[] = [
     status: 'ACTIVE',
     createdAt: relativeIsoDate(180),
     updatedAt: relativeIsoDate(3),
+    promptCount: 2,
+    averageScore: 72,
+    lowScoreCount: 1,
+    lastActivityAt: relativeIsoDate(0.2),
   },
   {
     id: 'project-support',
@@ -76,6 +82,10 @@ const mockProjects: ProjectResponse[] = [
     status: 'ACTIVE',
     createdAt: relativeIsoDate(120),
     updatedAt: relativeIsoDate(7),
+    promptCount: 1,
+    averageScore: null,
+    lowScoreCount: 0,
+    lastActivityAt: relativeIsoDate(1),
   },
   {
     id: 'project-ai',
@@ -84,6 +94,10 @@ const mockProjects: ProjectResponse[] = [
     status: 'ARCHIVED',
     createdAt: relativeIsoDate(95),
     updatedAt: relativeIsoDate(30),
+    promptCount: 1,
+    averageScore: 54,
+    lowScoreCount: 1,
+    lastActivityAt: relativeIsoDate(2),
   },
 ];
 
@@ -147,7 +161,7 @@ const mockPrompts: MockPromptRow[] = [
     analysis: {
       id: 'analysis-003',
       status: 'COMPLETED',
-      score: 74,
+      score: 54,
       strengths: ['Structured output', 'Action-oriented'],
       weaknesses: ['No priority labels'],
       suggestions: ['Add Priority tag', 'Split long ideas'],
@@ -238,6 +252,11 @@ const emptyStats: DashboardStats = {
   scoreTrend: [],
   modelDistribution: [],
   projectDistribution: [],
+  needsAttention: 0,
+  analysesPending: 0,
+  analysesFailed: 0,
+  topWeaknesses: [],
+  recentAttention: [],
 };
 
 function buildMockStats(prompts: PromptListResponse['items']): DashboardStats {
@@ -267,6 +286,19 @@ function buildMockStats(prompts: PromptListResponse['items']): DashboardStats {
       date: prompt.occurredAt.slice(0, 10),
       score: prompt.analysis?.score ?? 0,
     }));
+  const actionable = prompts.filter((prompt) => {
+    const analysis = prompt.analysis;
+    return (
+      analysis?.status === 'FAILED' ||
+      (analysis?.status === 'COMPLETED' && (analysis.score ?? 100) < 60)
+    );
+  });
+  const weaknessCounts = prompts.reduce<Record<string, number>>((acc, prompt) => {
+    for (const weakness of prompt.analysis?.weaknesses ?? []) {
+      acc[weakness] = (acc[weakness] ?? 0) + 1;
+    }
+    return acc;
+  }, {});
   return {
     projects: new Set(prompts.map((prompt) => prompt.projectId)).size,
     prompts: prompts.length,
@@ -276,6 +308,23 @@ function buildMockStats(prompts: PromptListResponse['items']): DashboardStats {
     scoreTrend: scoreByDay,
     modelDistribution,
     projectDistribution,
+    needsAttention: actionable.length,
+    analysesPending: prompts.filter((prompt) =>
+      ['QUEUED', 'RUNNING'].includes(prompt.analysis?.status ?? 'QUEUED'),
+    ).length,
+    analysesFailed: prompts.filter((prompt) => prompt.analysis?.status === 'FAILED').length,
+    topWeaknesses: Object.entries(weaknessCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([name, count]) => ({ name, count })),
+    recentAttention: actionable.slice(0, 5).map((prompt) => ({
+      id: prompt.id,
+      projectName: prompt.projectName,
+      content: prompt.content,
+      score: prompt.analysis?.score ?? null,
+      status: prompt.analysis?.status ?? 'QUEUED',
+      weakness: prompt.analysis?.weaknesses[0] ?? null,
+    })),
   };
 }
 
@@ -294,6 +343,7 @@ function promptListMatchesFilter(
     modelFilter: string;
     query: string;
     minScoreFilter: string;
+    maxScoreFilter: string;
     memberFilter: string;
   },
 ) {
@@ -315,6 +365,11 @@ function promptListMatchesFilter(
     const minScore = Number(options.minScoreFilter);
     if (Number.isNaN(minScore)) return false;
     if (score === null || score === undefined || score < minScore) return false;
+  }
+  if (options.maxScoreFilter) {
+    const maxScore = Number(options.maxScoreFilter);
+    if (Number.isNaN(maxScore)) return false;
+    if (score === null || score === undefined || score > maxScore) return false;
   }
   if (options.tenantAdmin && options.memberFilter && prompt.ownerId !== options.memberFilter)
     return false;
@@ -352,6 +407,7 @@ export function DashboardClient() {
   const [platformFilter, setPlatformFilter] = useState(initialUrlState.platform);
   const [modelFilter, setModelFilter] = useState(initialUrlState.model);
   const [minScoreFilter, setMinScoreFilter] = useState(initialUrlState.minScore);
+  const [maxScoreFilter, setMaxScoreFilter] = useState(initialUrlState.maxScore);
   const [memberFilter, setMemberFilter] = useState(initialUrlState.userId);
   const [tenantMembers, setTenantMembers] = useState<MemberOption[]>([]);
   const [tenants, setTenants] = useState<
@@ -361,6 +417,11 @@ export function DashboardClient() {
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(initialUrlState.promptId);
   const [sectionLoading, setSectionLoading] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [systemStatus, setSystemStatus] = useState<
+    'checking' | 'operational' | 'degraded' | 'unavailable'
+  >('checking');
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [sessions, setSessions] = useState<
     Array<{ id: string; userAgent: string | null; createdAt: string; current: boolean }>
   >([]);
@@ -389,12 +450,45 @@ export function DashboardClient() {
   }, [demoMode, mockConfig.actor, router]);
 
   useEffect(() => {
+    if (demoMode) {
+      setSystemStatus('operational');
+      return;
+    }
+    let active = true;
+    setSystemStatus('checking');
+    void apiRequest<{ status: string; checks?: Record<string, string> }>('/health/ready')
+      .then((health) => {
+        if (!active) return;
+        const checks = Object.values(health.checks ?? {});
+        setSystemStatus(
+          health.status === 'ready' && checks.every((check) => check === 'ok')
+            ? 'operational'
+            : 'degraded',
+        );
+      })
+      .catch(() => {
+        if (active) setSystemStatus('unavailable');
+      });
+    return () => {
+      active = false;
+    };
+  }, [demoMode]);
+
+  useEffect(() => {
+    const workspaceNotice = window.sessionStorage.getItem('promptlens:workspace-notice');
+    if (!workspaceNotice) return;
+    window.sessionStorage.removeItem('promptlens:workspace-notice');
+    setNotice(workspaceNotice);
+  }, []);
+
+  useEffect(() => {
     const state = readDashboardUrlState(serializedSearchParams);
     setQuery(state.query);
     setProjectFilter(state.projectId);
     setPlatformFilter(state.platform);
     setModelFilter(state.model);
     setMinScoreFilter(state.minScore);
+    setMaxScoreFilter(state.maxScore);
     setMemberFilter(state.userId);
     setSelectedPromptId(state.promptId);
   }, [serializedSearchParams]);
@@ -409,10 +503,20 @@ export function DashboardClient() {
     if (platformFilter) parameters.set('platform', platformFilter);
     if (modelFilter) parameters.set('model', modelFilter);
     if (minScoreFilter) parameters.set('minScore', minScoreFilter);
+    if (maxScoreFilter) parameters.set('maxScore', maxScoreFilter);
     if (!tenantAdmin) parameters.set('mine', 'true');
     if (tenantAdmin && memberFilter) parameters.set('userId', memberFilter);
     return parameters;
-  }, [actor, query, projectFilter, platformFilter, modelFilter, minScoreFilter, memberFilter]);
+  }, [
+    actor,
+    query,
+    projectFilter,
+    platformFilter,
+    modelFilter,
+    minScoreFilter,
+    maxScoreFilter,
+    memberFilter,
+  ]);
 
   const mockRows = useCallback(() => {
     if (!demoMode || !actor) return [];
@@ -430,12 +534,22 @@ export function DashboardClient() {
           modelFilter,
           query,
           minScoreFilter,
+          maxScoreFilter,
           memberFilter,
         }),
       )
       .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
       .map(stripMockPromptOwner);
-  }, [actor, demoMode, modelFilter, minScoreFilter, memberFilter, projectFilter, query]);
+  }, [
+    actor,
+    demoMode,
+    modelFilter,
+    minScoreFilter,
+    maxScoreFilter,
+    memberFilter,
+    projectFilter,
+    query,
+  ]);
 
   useEffect(() => {
     if (!demoMode || !actor) return;
@@ -530,6 +644,26 @@ export function DashboardClient() {
     void load();
   }, [load]);
 
+  async function runAction(
+    key: string,
+    successMessage: string,
+    action: () => Promise<void> | void,
+  ): Promise<boolean> {
+    if (pendingAction) return false;
+    setPendingAction(key);
+    setNotice(null);
+    try {
+      await action();
+      setNotice(successMessage);
+      return true;
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : 'The action could not be completed.');
+      return false;
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   async function createProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -539,27 +673,32 @@ export function DashboardClient() {
     const name = typeof nameValue === 'string' ? nameValue.trim() : '';
     const description = typeof descriptionValue === 'string' ? descriptionValue.trim() : '';
     if (!name) return;
-    if (demoMode) {
-      setProjects((current) => [
-        ...current,
-        {
-          id: `project-${Date.now()}`,
-          name,
-          description: description || null,
-          status: 'ACTIVE',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ]);
-      form.reset();
-      return;
-    }
-    await apiRequest('/projects', {
-      method: 'POST',
-      body: JSON.stringify({ name: data.get('name'), description: data.get('description') }),
+    const completed = await runAction('create-project', `Project “${name}” created.`, async () => {
+      if (demoMode) {
+        setProjects((current) => [
+          ...current,
+          {
+            id: `project-${Date.now()}`,
+            name,
+            description: description || null,
+            status: 'ACTIVE',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            promptCount: 0,
+            averageScore: null,
+            lowScoreCount: 0,
+            lastActivityAt: null,
+          },
+        ]);
+        return;
+      }
+      await apiRequest('/projects', {
+        method: 'POST',
+        body: JSON.stringify({ name: data.get('name'), description: data.get('description') }),
+      });
+      await load();
     });
-    form.reset();
-    await load();
+    if (completed) form.reset();
   }
 
   async function search(event: FormEvent<HTMLFormElement>) {
@@ -572,6 +711,7 @@ export function DashboardClient() {
         platform: platformFilter,
         model: modelFilter,
         minScore: minScoreFilter,
+        maxScore: maxScoreFilter,
         userId: memberFilter,
         promptId: null,
       },
@@ -592,6 +732,7 @@ export function DashboardClient() {
         platform: platformFilter,
         model: modelFilter,
         minScore: minScoreFilter,
+        maxScore: maxScoreFilter,
         userId: memberFilter,
         promptId: nextPromptId,
       },
@@ -607,25 +748,31 @@ export function DashboardClient() {
   }
 
   async function toggleProject(projectId: string, archived: boolean) {
-    if (demoMode) {
-      setProjects((current) =>
-        current.map((project) =>
-          project.id === projectId
-            ? {
-                ...project,
-                status: archived ? 'ACTIVE' : 'ARCHIVED',
-                updatedAt: new Date().toISOString(),
-              }
-            : project,
-        ),
-      );
-      return;
-    }
-    await apiRequest(`/projects/${projectId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ archived }),
-    });
-    await load();
+    await runAction(
+      `project-${projectId}`,
+      archived ? 'Project restored.' : 'Project archived.',
+      async () => {
+        if (demoMode) {
+          setProjects((current) =>
+            current.map((project) =>
+              project.id === projectId
+                ? {
+                    ...project,
+                    status: archived ? 'ACTIVE' : 'ARCHIVED',
+                    updatedAt: new Date().toISOString(),
+                  }
+                : project,
+            ),
+          );
+          return;
+        }
+        await apiRequest(`/projects/${projectId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ archived }),
+        });
+        await load();
+      },
+    );
   }
 
   async function logout() {
@@ -639,8 +786,18 @@ export function DashboardClient() {
 
   async function switchTenant(tenantId: string) {
     if (demoMode) return;
-    await apiRequest('/auth/tenant/switch', { method: 'POST', body: JSON.stringify({ tenantId }) });
-    window.location.reload();
+    const target = tenants.find((entry) => entry.tenant.id === tenantId)?.tenant.name;
+    await runAction('switch-workspace', 'Workspace changed.', async () => {
+      await apiRequest('/auth/tenant/switch', {
+        method: 'POST',
+        body: JSON.stringify({ tenantId }),
+      });
+      window.sessionStorage.setItem(
+        'promptlens:workspace-notice',
+        `Workspace changed to ${target ?? 'the selected workspace'}.`,
+      );
+      window.location.reload();
+    });
   }
 
   async function download(format: 'json' | 'csv') {
@@ -682,21 +839,31 @@ export function DashboardClient() {
   }
 
   async function reanalyze(promptId: string) {
-    if (demoMode) return;
-    await apiRequest(`/prompts/${promptId}/analyses`, { method: 'POST' });
-    await load();
+    await runAction(`reanalyze-${promptId}`, 'Analysis queued.', async () => {
+      if (demoMode) return;
+      await apiRequest(`/prompts/${promptId}/analyses`, { method: 'POST' });
+      await load();
+    });
+  }
+
+  async function copyImprovedPrompt(content: string) {
+    await runAction('copy-prompt', 'Improved prompt copied.', async () => {
+      await navigator.clipboard.writeText(content);
+    });
   }
 
   async function deletePrompt(promptId: string) {
     if (!window.confirm('Delete this prompt and hide it from all workspace views?')) return;
-    if (demoMode) {
-      setPrompts((current) => current.filter((item) => item.id !== promptId));
-      setSelectedPromptId((current) => (current === promptId ? null : current));
-      return;
-    }
-    await apiRequest(`/prompts/${promptId}`, { method: 'DELETE' });
-    setSelectedPromptId(null);
-    await load();
+    await runAction(`delete-${promptId}`, 'Prompt deleted.', async () => {
+      if (demoMode) {
+        setPrompts((current) => current.filter((item) => item.id !== promptId));
+        setSelectedPromptId((current) => (current === promptId ? null : current));
+        return;
+      }
+      await apiRequest(`/prompts/${promptId}`, { method: 'DELETE' });
+      setSelectedPromptId(null);
+      await load();
+    });
   }
 
   async function revokeSession(sessionId: string, current: boolean) {
@@ -713,9 +880,11 @@ export function DashboardClient() {
     }
     if (!window.confirm(current ? 'Sign out this current session?' : 'Revoke this session?'))
       return;
-    await apiRequest(`/auth/sessions/${sessionId}`, { method: 'DELETE' });
-    if (current) router.push('/login');
-    else await load();
+    await runAction(`session-${sessionId}`, 'Session revoked.', async () => {
+      await apiRequest(`/auth/sessions/${sessionId}`, { method: 'DELETE' });
+      if (current) router.push('/login');
+      else await load();
+    });
   }
 
   const actorRole = actor?.role ?? '';
@@ -723,6 +892,110 @@ export function DashboardClient() {
   const activeTenantName =
     tenants.find((entry) => entry.tenant.id === actor?.tenantId)?.tenant.name ??
     'Current workspace';
+  const selectedPrompt = prompts.find((prompt) => prompt.id === selectedPromptId) ?? null;
+  const platformOptions = useMemo(
+    () => [...new Set(prompts.map((prompt) => prompt.platform))].sort(),
+    [prompts],
+  );
+  const modelOptions = useMemo(
+    () => [...new Set(prompts.map((prompt) => prompt.model))].sort(),
+    [prompts],
+  );
+  const hasActiveFilters = Boolean(
+    query ||
+    projectFilter ||
+    platformFilter ||
+    modelFilter ||
+    minScoreFilter ||
+    maxScoreFilter ||
+    memberFilter,
+  );
+  const activeFilters = [
+    query ? { key: 'query', label: `Search: ${query}` } : null,
+    projectFilter
+      ? {
+          key: 'project',
+          label: `Project: ${projects.find((project) => project.id === projectFilter)?.name ?? 'Selected'}`,
+        }
+      : null,
+    platformFilter ? { key: 'platform', label: `Platform: ${platformFilter}` } : null,
+    modelFilter ? { key: 'model', label: `Model: ${modelFilter}` } : null,
+    minScoreFilter ? { key: 'minScore', label: `Score ≥ ${minScoreFilter}` } : null,
+    maxScoreFilter ? { key: 'maxScore', label: `Score ≤ ${maxScoreFilter}` } : null,
+    memberFilter
+      ? {
+          key: 'member',
+          label: `User: ${tenantMembers.find((member) => member.id === memberFilter)?.displayName ?? 'Selected'}`,
+        }
+      : null,
+  ].filter((item): item is { key: string; label: string } => item !== null);
+  const qualityPreset =
+    minScoreFilter === '' && maxScoreFilter === '59'
+      ? 'low'
+      : minScoreFilter === '60' && maxScoreFilter === '79'
+        ? 'medium'
+        : minScoreFilter === '80' && maxScoreFilter === '100'
+          ? 'high'
+          : minScoreFilter || maxScoreFilter
+            ? 'custom'
+            : '';
+  const prioritizedProjects = [...projects].sort(
+    (a, b) =>
+      (b.lowScoreCount ?? 0) - (a.lowScoreCount ?? 0) ||
+      (a.averageScore ?? 101) - (b.averageScore ?? 101),
+  );
+
+  function applyFilterPatch(patch: Record<string, string>): void {
+    const next = {
+      query,
+      projectId: projectFilter,
+      platform: platformFilter,
+      model: modelFilter,
+      minScore: minScoreFilter,
+      maxScore: maxScoreFilter,
+      userId: memberFilter,
+      promptId: null,
+      ...patch,
+    };
+    if ('query' in patch) setQuery(patch.query ?? '');
+    if ('projectId' in patch) setProjectFilter(patch.projectId ?? '');
+    if ('platform' in patch) setPlatformFilter(patch.platform ?? '');
+    if ('model' in patch) setModelFilter(patch.model ?? '');
+    if ('minScore' in patch) setMinScoreFilter(patch.minScore ?? '');
+    if ('maxScore' in patch) setMaxScoreFilter(patch.maxScore ?? '');
+    if ('userId' in patch) setMemberFilter(patch.userId ?? '');
+    const nextQuery = writeDashboardUrlState(serializedSearchParams, next, adminLinksVisible);
+    router.push(`${pathname ?? '/dashboard/prompts'}${nextQuery ? `?${nextQuery}` : ''}`);
+  }
+
+  function removeFilter(key: string): void {
+    const patches: Record<string, Record<string, string>> = {
+      query: { query: '' },
+      project: { projectId: '' },
+      platform: { platform: '' },
+      model: { model: '' },
+      minScore: { minScore: '' },
+      maxScore: { maxScore: '' },
+      member: { userId: '' },
+    };
+    applyFilterPatch(patches[key] ?? {});
+  }
+
+  function setQualityPreset(value: string): void {
+    if (value === 'low') {
+      setMinScoreFilter('');
+      setMaxScoreFilter('59');
+    } else if (value === 'medium') {
+      setMinScoreFilter('60');
+      setMaxScoreFilter('79');
+    } else if (value === 'high') {
+      setMinScoreFilter('80');
+      setMaxScoreFilter('100');
+    } else if (!value) {
+      setMinScoreFilter('');
+      setMaxScoreFilter('');
+    }
+  }
   const sectionTitle =
     section === 'prompts'
       ? 'Prompt history'
@@ -785,8 +1058,15 @@ export function DashboardClient() {
             </p>
           </div>
           <div className="pl-header-actions">
-            <span className="pl-live-status">
-              <i /> Systems operational
+            <span className={`pl-live-status is-${systemStatus}`} role="status">
+              <i />
+              {systemStatus === 'checking'
+                ? 'Checking systems'
+                : systemStatus === 'operational'
+                  ? 'Systems operational'
+                  : systemStatus === 'degraded'
+                    ? 'Partial service issue'
+                    : 'Systems unavailable'}
             </span>
             <div className="v2-metadata">
               {demoMode ? <span className="v2-chip v2-chip-demo">Demo dataset</span> : null}
@@ -802,12 +1082,109 @@ export function DashboardClient() {
             </button>
           </div>
         ) : null}
+        {notice ? (
+          <div className="pl-action-notice" role="status">
+            <span>{notice}</span>
+            <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss message">
+              ×
+            </button>
+          </div>
+        ) : null}
         {section === 'overview' ? (
           sectionLoading ? (
             <OverviewPanelSkeleton />
           ) : (
             <>
-              <section className="v2-kpi-grid" aria-label="Workspace statistics">
+              <section className="pl-action-center" aria-labelledby="attention-heading">
+                <article className="pl-attention-hero">
+                  <div>
+                    <p className="v2-kicker">Your next action</p>
+                    <h2 id="attention-heading">Prompts that need attention</h2>
+                    <p>
+                      Low-quality and failed analyses are grouped here so you can fix the highest
+                      impact work first.
+                    </p>
+                  </div>
+                  <strong>{stats.needsAttention}</strong>
+                  <Link className="pl-primary-action" href="/dashboard/prompts?maxScore=59">
+                    Review priority prompts <span aria-hidden="true">→</span>
+                  </Link>
+                </article>
+                <div className="pl-action-signals">
+                  <article>
+                    <span>Waiting for analysis</span>
+                    <strong>{stats.analysesPending}</strong>
+                    <Link href="/dashboard/prompts">Open queue</Link>
+                  </article>
+                  <article className={stats.analysesFailed ? 'is-warning' : ''}>
+                    <span>Failed analyses</span>
+                    <strong>{stats.analysesFailed}</strong>
+                    <Link href="/dashboard/prompts">Review failures</Link>
+                  </article>
+                </div>
+              </section>
+              <section className="pl-priority-grid" aria-label="Priority prompt insights">
+                <article className="v2-panel">
+                  <div className="v2-panel-head">
+                    <div>
+                      <p className="v2-kicker">Recurring quality gaps</p>
+                      <h2>Top weaknesses</h2>
+                    </div>
+                  </div>
+                  {stats.topWeaknesses.length ? (
+                    <ol className="pl-weakness-list">
+                      {stats.topWeaknesses.map((weakness, index) => (
+                        <li key={weakness.name}>
+                          <span className="pl-list-index">{index + 1}</span>
+                          <span>{weakness.name}</span>
+                          <strong>{weakness.count}</strong>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="v2-empty">No recurring weaknesses detected yet.</p>
+                  )}
+                </article>
+                <article className="v2-panel pl-recent-attention">
+                  <div className="v2-panel-head">
+                    <div>
+                      <p className="v2-kicker">Recent priority work</p>
+                      <h2>What to inspect now</h2>
+                    </div>
+                    <Link className="v2-ghost" href="/dashboard/prompts?maxScore=59">
+                      View all
+                    </Link>
+                  </div>
+                  {stats.recentAttention.length ? (
+                    <div className="pl-attention-list">
+                      {stats.recentAttention.map((prompt) => (
+                        <article key={prompt.id}>
+                          <span className="v2-score">{prompt.score ?? '!'}</span>
+                          <div>
+                            <strong>{prompt.projectName}</strong>
+                            <p>{prompt.content}</p>
+                            <small>
+                              {prompt.weakness ?? `${prompt.status.toLowerCase()} analysis`}
+                            </small>
+                          </div>
+                          <Link href={`/dashboard/prompts?promptId=${prompt.id}`}>Inspect</Link>
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="v2-empty">
+                      <p>No priority prompts right now.</p>
+                      <Link className="v2-action" href="/dashboard/prompts">
+                        Browse all prompts
+                      </Link>
+                    </div>
+                  )}
+                </article>
+              </section>
+              <section
+                className="v2-kpi-grid pl-secondary-metrics"
+                aria-label="Workspace statistics"
+              >
                 <article className="v2-kpi pl-kpi-featured">
                   <div className="pl-kpi-label">
                     <p>Average quality</p>
@@ -837,11 +1214,11 @@ export function DashboardClient() {
                 </article>
                 <article className="v2-kpi">
                   <div className="pl-kpi-label">
-                    <p>Analyses</p>
+                    <p>Completed</p>
                     <span aria-hidden="true">◇</span>
                   </div>
                   <strong>{stats.analysesCompleted}</strong>
-                  <small className="pl-kpi-foot">Successfully completed</small>
+                  <small className="pl-kpi-foot">Successful analyses</small>
                 </article>
               </section>
               <section className="v2-panels pl-analytics-grid" aria-label="Prompt analytics">
@@ -926,6 +1303,7 @@ export function DashboardClient() {
                   onClick={() => setFiltersExpanded((current) => !current)}
                 >
                   {filtersExpanded ? 'Hide filters' : 'More filters'}
+                  {activeFilters.length ? ` (${activeFilters.length})` : ''}
                 </button>
                 <div
                   className={`pl-filter-options ${filtersExpanded ? 'open' : ''}`}
@@ -965,38 +1343,90 @@ export function DashboardClient() {
                   ) : null}
                   <label className="v2-field">
                     <span>Platform</span>
-                    <input
-                      placeholder="Platform"
+                    <select
                       value={platformFilter}
                       onChange={(event) => setPlatformFilter(event.target.value)}
-                      maxLength={80}
-                    />
+                    >
+                      <option value="">All platforms</option>
+                      {platformOptions.map((platform) => (
+                        <option key={platform} value={platform}>
+                          {platform}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   <label className="v2-field">
                     <span>Model</span>
-                    <input
-                      placeholder="Model"
+                    <select
                       value={modelFilter}
                       onChange={(event) => setModelFilter(event.target.value)}
-                      maxLength={160}
-                    />
+                    >
+                      <option value="">All models</option>
+                      {modelOptions.map((model) => (
+                        <option key={model} value={model}>
+                          {model}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   <label className="v2-field">
-                    <span>Minimum score</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      placeholder="Min score"
-                      value={minScoreFilter}
-                      onChange={(event) => setMinScoreFilter(event.target.value)}
-                    />
+                    <span>Quality</span>
+                    <select
+                      value={qualityPreset}
+                      onChange={(event) => setQualityPreset(event.target.value)}
+                    >
+                      <option value="">All scores</option>
+                      <option value="low">Needs attention (0–59)</option>
+                      <option value="medium">Developing (60–79)</option>
+                      <option value="high">Strong (80–100)</option>
+                      <option value="custom">Custom range</option>
+                    </select>
                   </label>
+                  {qualityPreset === 'custom' ? (
+                    <div className="pl-score-range">
+                      <label className="v2-field">
+                        <span>Minimum</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={minScoreFilter}
+                          onChange={(event) => setMinScoreFilter(event.target.value)}
+                        />
+                      </label>
+                      <label className="v2-field">
+                        <span>Maximum</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={maxScoreFilter}
+                          onChange={(event) => setMaxScoreFilter(event.target.value)}
+                        />
+                      </label>
+                    </div>
+                  ) : null}
                 </div>
                 <button className="pl-primary-action pl-filter-submit" type="submit">
                   Apply filters
                 </button>
               </form>
+              {activeFilters.length ? (
+                <div className="pl-active-filters" aria-label="Active filters">
+                  {activeFilters.map((filter) => (
+                    <button key={filter.key} type="button" onClick={() => removeFilter(filter.key)}>
+                      {filter.label} <span aria-hidden="true">×</span>
+                    </button>
+                  ))}
+                  <button
+                    className="pl-clear-filters"
+                    type="button"
+                    onClick={() => router.push('/dashboard/prompts')}
+                  >
+                    Clear all
+                  </button>
+                </div>
+              ) : null}
               <div className="v2-export-strip pl-export-strip">
                 <span>Export current result</span>
                 <button className="v2-ghost" type="button" onClick={() => void download('json')}>
@@ -1006,153 +1436,90 @@ export function DashboardClient() {
                   CSV
                 </button>
               </div>
-              <div className="v2-prompts">
-                {prompts.length === 0 ? (
-                  <div className="v2-empty">
-                    <p>
-                      {query || projectFilter || platformFilter || modelFilter || minScoreFilter
-                        ? 'No prompts match the current filters.'
-                        : 'No prompts yet. Connect a device to start syncing.'}
-                    </p>
-                    {query || projectFilter || platformFilter || modelFilter || minScoreFilter ? (
-                      <button
-                        className="v2-action"
-                        type="button"
-                        onClick={() => router.push('/dashboard/prompts')}
-                      >
-                        Clear filters
-                      </button>
-                    ) : (
-                      <Link className="v2-action" href="/connect">
-                        Connect a device
-                      </Link>
-                    )}
-                  </div>
-                ) : (
-                  prompts.map((prompt) => {
-                    const status = (prompt.analysis?.status ?? 'QUEUED').toLowerCase();
-                    return (
-                      <article className="v2-prompt-card" key={prompt.id}>
-                        <div className="v2-score">{prompt.analysis?.score ?? '--'}</div>
-                        <div className="v2-prompt-copy">
-                          <p>{prompt.content}</p>
-                          <div className="v2-chip-row">
-                            <span className="v2-mini-chip">{prompt.projectName}</span>
-                            <span className="v2-mini-chip">{prompt.platform}</span>
-                            <span className="v2-mini-chip">{prompt.model}</span>
+              <div className={`pl-prompt-workbench ${selectedPrompt ? 'has-selection' : ''}`}>
+                <div className="v2-prompts pl-prompt-list-column">
+                  {prompts.length === 0 ? (
+                    <div className="v2-empty">
+                      <p>
+                        {hasActiveFilters
+                          ? 'No prompts match the current filters.'
+                          : 'No prompts yet. Connect a device to start syncing.'}
+                      </p>
+                      {hasActiveFilters ? (
+                        <button
+                          className="v2-action"
+                          type="button"
+                          onClick={() => router.push('/dashboard/prompts')}
+                        >
+                          Clear filters
+                        </button>
+                      ) : (
+                        <Link className="v2-action" href="/connect">
+                          Connect a device
+                        </Link>
+                      )}
+                    </div>
+                  ) : (
+                    prompts.map((prompt) => {
+                      const status = (prompt.analysis?.status ?? 'QUEUED').toLowerCase();
+                      return (
+                        <article
+                          className={`v2-prompt-card ${selectedPromptId === prompt.id ? 'active' : ''}`}
+                          key={prompt.id}
+                        >
+                          <div className="v2-score">{prompt.analysis?.score ?? '--'}</div>
+                          <div className="v2-prompt-copy">
+                            <p>{prompt.content}</p>
+                            <div className="v2-chip-row">
+                              <span className="v2-mini-chip">{prompt.projectName}</span>
+                              <span className="v2-mini-chip">{prompt.platform}</span>
+                              <span className="v2-mini-chip">{prompt.model}</span>
+                            </div>
+                            <small className="v2-prompt-meta">
+                              Captured{' '}
+                              {new Date(prompt.occurredAt).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </small>
                           </div>
-                          <small className="v2-prompt-meta">
-                            Captured{' '}
-                            {new Date(prompt.occurredAt).toLocaleString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </small>
-                        </div>
-                        <div className="v2-prompt-actions">
-                          <span className={`v2-status v2-status-${status}`}>
-                            {prompt.analysis?.status ?? 'QUEUED'}
-                          </span>
-                          <button
-                            className="v2-action"
-                            type="button"
-                            aria-expanded={selectedPromptId === prompt.id}
-                            onClick={() => selectPrompt(prompt.id)}
-                          >
-                            {selectedPromptId === prompt.id ? 'Hide analysis' : 'View analysis'}
-                          </button>
-                          <button
-                            className="v2-danger pl-delete-action"
-                            type="button"
-                            onClick={() => void deletePrompt(prompt.id)}
-                          >
-                            <span aria-hidden="true">×</span>
-                            <span className="pl-delete-label">Delete</span>
-                          </button>
-                        </div>
-                        {selectedPromptId === prompt.id ? (
-                          <div className="v2-analysis">
-                            <section>
-                              <h3>Strengths</h3>
-                              {prompt.analysis?.strengths.length ? (
-                                <ul>
-                                  {prompt.analysis.strengths.map((item) => (
-                                    <li key={item}>{item}</li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p className="v2-empty">No strengths recorded yet.</p>
-                              )}
-                            </section>
-                            <section>
-                              <h3>Missing or weak</h3>
-                              {prompt.analysis?.weaknesses.length ? (
-                                <ul>
-                                  {prompt.analysis.weaknesses.map((item) => (
-                                    <li key={item}>{item}</li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p className="v2-empty">No gaps identified.</p>
-                              )}
-                            </section>
-                            <section className="v2-suggestions">
-                              <div className="v2-section-title">
-                                <div>
-                                  <p className="v2-kicker">Action plan</p>
-                                  <h3>Recommendations</h3>
-                                </div>
-                                <span className="v2-chip">
-                                  {prompt.analysis?.suggestions.length ?? 0}
-                                </span>
-                              </div>
-                              {prompt.analysis?.suggestions.length ? (
-                                <ul>
-                                  {prompt.analysis.suggestions.map((item, index) => (
-                                    <li key={item}>
-                                      <span className="v2-bullet">{index + 1}</span>
-                                      <span>{item}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p className="v2-empty">No recommendations available yet.</p>
-                              )}
-                            </section>
-                            <section>
-                              <h3>Improved prompt</h3>
-                              <pre>
-                                {prompt.analysis?.improvedPrompt ?? 'Analysis is still running.'}
-                              </pre>
-                              {prompt.analysis?.improvedPrompt ? (
-                                <button
-                                  className="v2-action"
-                                  type="button"
-                                  onClick={() =>
-                                    void navigator.clipboard.writeText(
-                                      prompt.analysis?.improvedPrompt ?? '',
-                                    )
-                                  }
-                                >
-                                  Copy improved prompt
-                                </button>
-                              ) : null}
-                              <button
-                                className="v2-action"
-                                type="button"
-                                onClick={() => void reanalyze(prompt.id)}
-                              >
-                                Run analysis again
-                              </button>
-                            </section>
+                          <div className="v2-prompt-actions">
+                            <span className={`v2-status v2-status-${status}`}>
+                              {prompt.analysis?.status ?? 'QUEUED'}
+                            </span>
+                            <button
+                              className="v2-action"
+                              type="button"
+                              aria-expanded={selectedPromptId === prompt.id}
+                              onClick={() => selectPrompt(prompt.id)}
+                            >
+                              {selectedPromptId === prompt.id ? 'Selected' : 'Inspect'}
+                            </button>
+                            <button
+                              className="v2-danger pl-delete-action"
+                              type="button"
+                              disabled={pendingAction === `delete-${prompt.id}`}
+                              onClick={() => void deletePrompt(prompt.id)}
+                            >
+                              <span aria-hidden="true">×</span>
+                              <span className="pl-delete-label">Delete</span>
+                            </button>
                           </div>
-                        ) : null}
-                      </article>
-                    );
-                  })
-                )}
+                        </article>
+                      );
+                    })
+                  )}
+                </div>
+                <PromptAnalysisPanel
+                  prompt={selectedPrompt}
+                  pendingAction={pendingAction}
+                  onBack={() => selectedPrompt && selectPrompt(selectedPrompt.id)}
+                  onCopy={copyImprovedPrompt}
+                  onDelete={deletePrompt}
+                  onReanalyze={reanalyze}
+                />
               </div>
             </section>
           )
@@ -1189,7 +1556,7 @@ export function DashboardClient() {
                   <span className="v2-chip">{projects.length} total</span>
                 </div>
                 <div className="v2-project-grid">
-                  {projects.map((project, index) => (
+                  {prioritizedProjects.map((project, index) => (
                     <article className="v2-project-card pl-project-card" key={project.id}>
                       <div className="pl-project-card-top">
                         <span className="pl-project-index">
@@ -1211,6 +1578,20 @@ export function DashboardClient() {
                           year: 'numeric',
                         })}
                       </small>
+                      <div
+                        className="pl-project-metrics"
+                        aria-label={`${project.name} quality metrics`}
+                      >
+                        <span>
+                          <strong>{project.promptCount ?? 0}</strong> prompts
+                        </span>
+                        <span>
+                          <strong>{project.averageScore ?? '—'}</strong> avg.
+                        </span>
+                        <span className={(project.lowScoreCount ?? 0) > 0 ? 'attention' : ''}>
+                          <strong>{project.lowScoreCount ?? 0}</strong> low
+                        </span>
+                      </div>
                       <div className="pl-project-actions">
                         <button
                           className="v2-action"
@@ -1222,11 +1603,16 @@ export function DashboardClient() {
                         <button
                           className="v2-ghost"
                           type="button"
+                          disabled={pendingAction === `project-${project.id}`}
                           onClick={() =>
                             void toggleProject(project.id, project.status !== 'ARCHIVED')
                           }
                         >
-                          {project.status === 'ARCHIVED' ? 'Restore' : 'Archive'}
+                          {pendingAction === `project-${project.id}`
+                            ? 'Saving…'
+                            : project.status === 'ARCHIVED'
+                              ? 'Restore'
+                              : 'Archive'}
                         </button>
                       </div>
                     </article>
@@ -1253,8 +1639,13 @@ export function DashboardClient() {
                       maxLength={1000}
                     />
                   </label>
-                  <button type="submit" className="pl-primary-action">
-                    Create project <span aria-hidden="true">↗</span>
+                  <button
+                    type="submit"
+                    className="pl-primary-action"
+                    disabled={pendingAction === 'create-project'}
+                  >
+                    {pendingAction === 'create-project' ? 'Creating…' : 'Create project'}{' '}
+                    <span aria-hidden="true">↗</span>
                   </button>
                 </form>
               </aside>
@@ -1263,6 +1654,139 @@ export function DashboardClient() {
         ) : null}
       </main>
     </div>
+  );
+}
+
+function PromptAnalysisPanel({
+  prompt,
+  pendingAction,
+  onBack,
+  onCopy,
+  onDelete,
+  onReanalyze,
+}: {
+  readonly prompt: PromptRow | null;
+  readonly pendingAction: string | null;
+  readonly onBack: () => void;
+  readonly onCopy: (content: string) => Promise<void>;
+  readonly onDelete: (promptId: string) => Promise<void>;
+  readonly onReanalyze: (promptId: string) => Promise<void>;
+}) {
+  if (!prompt) {
+    return (
+      <aside className="pl-prompt-detail pl-prompt-detail-empty">
+        <span aria-hidden="true">⌁</span>
+        <h3>Select a prompt</h3>
+        <p>Choose an item from the log to inspect its quality signals and improved version.</p>
+      </aside>
+    );
+  }
+
+  const analysis = prompt.analysis;
+  const status = (analysis?.status ?? 'QUEUED').toLowerCase();
+  const copying = pendingAction === 'copy-prompt';
+  const analyzing = pendingAction === `reanalyze-${prompt.id}`;
+  const deleting = pendingAction === `delete-${prompt.id}`;
+
+  return (
+    <aside className="pl-prompt-detail" aria-label="Prompt analysis">
+      <button className="v2-ghost pl-prompt-back" type="button" onClick={onBack}>
+        ← Back to prompts
+      </button>
+      <header className="pl-detail-head">
+        <div>
+          <p className="v2-kicker">Analysis detail</p>
+          <h2>{prompt.projectName}</h2>
+        </div>
+        <div className="pl-detail-score">
+          <strong>{analysis?.score ?? '—'}</strong>
+          <span className={`v2-status v2-status-${status}`}>{analysis?.status ?? 'QUEUED'}</span>
+        </div>
+      </header>
+      <section className="pl-original-prompt">
+        <span>Original prompt</span>
+        <p>{prompt.content}</p>
+      </section>
+      <div className="pl-analysis-columns">
+        <section>
+          <h3>What works</h3>
+          {analysis?.strengths.length ? (
+            <ul>
+              {analysis.strengths.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="v2-empty">No strengths recorded yet.</p>
+          )}
+        </section>
+        <section>
+          <h3>Needs attention</h3>
+          {analysis?.weaknesses.length ? (
+            <ul>
+              {analysis.weaknesses.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="v2-empty">No gaps identified.</p>
+          )}
+        </section>
+      </div>
+      <section className="pl-recommendations">
+        <div className="v2-section-title">
+          <div>
+            <p className="v2-kicker">Action plan</p>
+            <h3>Recommendations</h3>
+          </div>
+          <span className="v2-chip">{analysis?.suggestions.length ?? 0}</span>
+        </div>
+        {analysis?.suggestions.length ? (
+          <ol>
+            {analysis.suggestions.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ol>
+        ) : (
+          <p className="v2-empty">No recommendations available yet.</p>
+        )}
+      </section>
+      <section className="pl-improved-prompt">
+        <div>
+          <p className="v2-kicker">Ready to use</p>
+          <h3>Improved prompt</h3>
+        </div>
+        <pre>{analysis?.improvedPrompt ?? 'Analysis is still running.'}</pre>
+        <div className="pl-detail-actions">
+          {analysis?.improvedPrompt ? (
+            <button
+              className="pl-primary-action"
+              type="button"
+              disabled={copying}
+              onClick={() => void onCopy(analysis.improvedPrompt ?? '')}
+            >
+              {copying ? 'Copying…' : 'Copy improved prompt'}
+            </button>
+          ) : null}
+          <button
+            className="v2-action"
+            type="button"
+            disabled={analyzing}
+            onClick={() => void onReanalyze(prompt.id)}
+          >
+            {analyzing ? 'Queuing…' : 'Run analysis again'}
+          </button>
+          <button
+            className="v2-danger"
+            type="button"
+            disabled={deleting}
+            onClick={() => void onDelete(prompt.id)}
+          >
+            {deleting ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
+      </section>
+    </aside>
   );
 }
 
@@ -1314,7 +1838,7 @@ function PromptRowSkeleton() {
 
 function PromptsPanelSkeleton() {
   return (
-    <section className="v2-panel" id="prompts">
+    <section className="v2-panel" id="prompts" aria-hidden="true">
       <div className="v2-panel-head">
         <div>
           <p className="v2-kicker">
@@ -1349,7 +1873,7 @@ function PromptsPanelSkeleton() {
 
 function ProjectsPanelSkeleton() {
   return (
-    <section className="v2-panel">
+    <section className="v2-panel" aria-hidden="true">
       <div className="v2-panel-head">
         <div>
           <p className="v2-kicker">
@@ -1403,7 +1927,7 @@ function DistributionPanelSkeleton() {
 function OverviewPanelSkeleton() {
   return (
     <>
-      <section className="v2-kpi-grid" aria-label="Loading workspace statistics">
+      <section className="v2-kpi-grid" aria-hidden="true">
         {Array.from({ length: 4 }).map((_, index) => (
           <article className="v2-kpi" key={index}>
             <p>
@@ -1418,7 +1942,7 @@ function OverviewPanelSkeleton() {
           </article>
         ))}
       </section>
-      <section className="v2-panels" aria-label="Loading prompt analytics">
+      <section className="v2-panels" aria-hidden="true">
         <article className="v2-panel">
           <p className="v2-kicker">
             <span className="v2-skeleton v2-skeleton-line" style={{ width: '35%' }} />
@@ -1445,7 +1969,7 @@ function OverviewPanelSkeleton() {
         <DistributionPanelSkeleton />
         <DistributionPanelSkeleton />
       </section>
-      <section className="v2-panel">
+      <section className="v2-panel" aria-hidden="true">
         <p className="v2-kicker">
           <span className="v2-skeleton v2-skeleton-line" style={{ width: '38%' }} />
         </p>

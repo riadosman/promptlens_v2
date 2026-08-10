@@ -17,6 +17,10 @@ export const projectResponseSchema = z.object({
   status: z.enum(['ACTIVE', 'ARCHIVED']),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
+  promptCount: z.number().int().nonnegative().optional(),
+  averageScore: z.number().nullable().optional(),
+  lowScoreCount: z.number().int().nonnegative().optional(),
+  lastActivityAt: z.iso.datetime().nullable().optional(),
 });
 
 export type CreateProjectRequest = z.infer<typeof createProjectRequestSchema>;

@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import Link from 'next/link';
 import { apiRequest } from '../lib/api';
+import { WorkspaceShell } from './workspace-shell';
 
 interface AdminOverview {
   tenant: {
@@ -239,305 +239,316 @@ export function AdminClient() {
   }
 
   return (
-    <main className="dashboard-main admin-main">
-      <header className="dashboard-header">
-        <div>
-          <p className="eyebrow">Administration</p>
-          <h1>System control</h1>
-        </div>
-        <Link className="button-link" href="/dashboard">
-          Back to dashboard
-        </Link>
-      </header>
-      {error ? <p className="form-error">{error}</p> : null}
-      <section className="metric-grid">
-        <AdminMetric label="Users" value={overview?.tenant.users ?? '—'} />
-        <AdminMetric label="Projects" value={overview?.tenant.projects ?? '—'} />
-        <AdminMetric label="Prompts" value={overview?.tenant.prompts ?? '—'} />
-        <AdminMetric label="Connectors" value={overview?.tenant.connectors ?? '—'} />
-      </section>
-      {overview?.instance ? (
-        <section className="panel">
-          <p className="eyebrow">Instance health</p>
-          <div className="metric-grid compact">
-            <AdminMetric label="Tenants" value={overview.instance.tenants} />
-            <AdminMetric label="All users" value={overview.instance.users} />
-            <AdminMetric label="Queued analyses" value={overview.instance.queuedAnalyses} />
-            <AdminMetric label="Pending outbox" value={overview.instance.unpublishedEvents} />
-          </div>
-        </section>
-      ) : null}
-      {settings ? (
-        <section className="panel">
-          <p className="eyebrow">Workspace policy</p>
-          <h2>AI and data lifecycle</h2>
-          <form className="settings-form" onSubmit={updateSettings}>
-            <label>
-              Retention days
-              <input
-                name="retentionDays"
-                type="number"
-                min="1"
-                max="3650"
-                defaultValue={settings.retentionDays}
-                required
-              />
-            </label>
-            <label>
-              AI provider
-              <select name="aiProvider" defaultValue={settings.aiProvider}>
-                <option value="fake">Deterministic local</option>
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Anthropic</option>
-              </select>
-            </label>
-            <label>
-              Model
-              <input name="aiModel" defaultValue={settings.aiModel} maxLength={160} required />
-            </label>
-            <label>
-              Monthly token budget
-              <input
-                name="aiMonthlyTokenBudget"
-                type="number"
-                min="1000"
-                max="2000000000"
-                defaultValue={settings.aiMonthlyTokenBudget}
-                required
-              />
-            </label>
-            <button type="submit">Save policy</button>
-          </form>
-          <div className="inline-actions">
-            <button type="button" className="quiet" onClick={() => void exportWorkspace()}>
-              Export all workspace data
+    <WorkspaceShell
+      eyebrow="Administration"
+      title="System control"
+      description="Workspace policy, access, operations, and audit signals in one control plane."
+      badge={overview?.instance ? 'Instance admin' : 'Workspace admin'}
+    >
+      <div className="pl-admin-content">
+        {error ? (
+          <div className="v2-error" role="alert">
+            <p>{error}</p>
+            <button type="button" className="v2-action" onClick={() => load()}>
+              Try again
             </button>
-            {settings.deletionScheduledAt ? (
-              <button type="button" onClick={() => void cancelDeletion()}>
-                Cancel deletion scheduled for{' '}
-                {new Date(settings.deletionScheduledAt).toLocaleDateString()}
-              </button>
-            ) : (
-              <button type="button" className="danger" onClick={() => void scheduleDeletion()}>
-                Schedule workspace deletion
-              </button>
-            )}
           </div>
+        ) : null}
+        <section
+          className="metric-grid pl-admin-metrics"
+          aria-label="Workspace administration metrics"
+        >
+          <AdminMetric label="Users" value={overview?.tenant.users ?? '—'} />
+          <AdminMetric label="Projects" value={overview?.tenant.projects ?? '—'} />
+          <AdminMetric label="Prompts" value={overview?.tenant.prompts ?? '—'} />
+          <AdminMetric label="Connectors" value={overview?.tenant.connectors ?? '—'} />
         </section>
-      ) : null}
-      <section className="panel">
-        <p className="eyebrow">Privacy-preserving support</p>
-        <h2>Time-limited support access</h2>
-        <p className="muted">
-          Approved access expires after one hour and exposes operational metadata only—never prompt
-          or analysis content.
-        </p>
         {overview?.instance ? (
-          <form className="inline-form" onSubmit={requestSupport}>
-            <input name="tenantId" placeholder="Target workspace UUID" required />
-            <input name="reason" placeholder="Support reason (minimum 10 characters)" required />
-            <button type="submit">Request support access</button>
-          </form>
+          <section className="panel">
+            <p className="eyebrow">Instance health</p>
+            <div className="metric-grid compact">
+              <AdminMetric label="Tenants" value={overview.instance.tenants} />
+              <AdminMetric label="All users" value={overview.instance.users} />
+              <AdminMetric label="Queued analyses" value={overview.instance.queuedAnalyses} />
+              <AdminMetric label="Pending outbox" value={overview.instance.unpublishedEvents} />
+            </div>
+          </section>
         ) : null}
-        <div className="data-list">
-          {supportGrants.map((grant) => {
-            const active =
-              grant.approvedById &&
-              grant.expiresAt &&
-              !grant.revokedAt &&
-              new Date(grant.expiresAt) > new Date();
-            return (
-              <article key={grant.id}>
-                <div>
-                  <strong>{grant.reason}</strong>
-                  <small>
-                    {active
-                      ? `Expires ${new Date(grant.expiresAt!).toLocaleString()}`
-                      : 'Pending or expired'}
-                  </small>
-                </div>
-                {!grant.approvedById && !grant.revokedAt ? (
-                  <button type="button" onClick={() => void approveSupport(grant.id)}>
-                    Approve for one hour
-                  </button>
-                ) : null}
-                {!grant.revokedAt ? (
-                  <button
-                    type="button"
-                    className="danger"
-                    onClick={() => void revokeSupport(grant.id)}
-                  >
-                    Revoke
-                  </button>
-                ) : null}
-              </article>
-            );
-          })}
-        </div>
-        {overview?.instance && settings ? (
-          <button
-            type="button"
-            className="quiet"
-            onClick={() => void viewSupportMetadata(settings.id)}
-          >
-            View approved metadata for this workspace
-          </button>
-        ) : null}
-        {supportMetadata ? (
-          <pre className="metadata-preview">{JSON.stringify(supportMetadata, null, 2)}</pre>
-        ) : null}
-      </section>
-      {queue ? (
-        <section className="panel">
-          <p className="eyebrow">Analysis queue</p>
-          <div className="metric-grid compact">
-            <AdminMetric label="Waiting" value={queue.counts.waiting ?? 0} />
-            <AdminMetric label="Active" value={queue.counts.active ?? 0} />
-            <AdminMetric label="Delayed" value={queue.counts.delayed ?? 0} />
-            <AdminMetric label="Failed / DLQ" value={queue.counts.failed ?? 0} />
-          </div>
-          <div className="data-list">
-            {queue.failed.map((job) => (
-              <article key={job.id}>
-                <div>
-                  <strong>Job {job.id}</strong>
-                  <small>
-                    Tenant {job.tenantId ?? 'unknown'} · attempts {job.attemptsMade}
-                  </small>
-                </div>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await apiRequest(`/admin/operations/queue/${job.id}/retry`, { method: 'POST' });
-                    load();
-                  }}
-                >
-                  Retry
-                </button>
-              </article>
-            ))}
-          </div>
-        </section>
-      ) : null}
-      {overview?.instance ? (
-        <section className="panel">
-          <p className="eyebrow">Instance access</p>
-          <h2>Users</h2>
-          <div className="data-list">
-            {instanceUsers.map((user) => (
-              <article key={user.id}>
-                <div>
-                  <strong>{user.displayName}</strong>
-                  <small>
-                    {user.email} · {user._count.memberships} workspace(s)
-                  </small>
-                </div>
-                <span>
-                  {user.status}
-                  {user.isInstanceAdmin ? ' · instance admin' : ''}
-                </span>
-                {!user.isInstanceAdmin ? (
-                  <button
-                    className={user.status === 'ACTIVE' ? 'danger' : 'quiet'}
-                    type="button"
-                    onClick={() => void changeUserStatus(user)}
-                  >
-                    {user.status === 'ACTIVE' ? 'Suspend' : 'Reactivate'}
-                  </button>
-                ) : null}
-              </article>
-            ))}
-          </div>
-        </section>
-      ) : null}
-      <div className="admin-columns">
-        <section className="panel">
-          <p className="eyebrow">Access</p>
-          <h2>Members</h2>
-          <div className="data-list">
-            {members.map((member) => (
-              <article key={member.user.id}>
-                <div>
-                  <strong>{member.user.displayName}</strong>
-                  <small>{member.user.email}</small>
-                </div>
-                <select
-                  aria-label={`Role for ${member.user.displayName}`}
-                  value={member.role}
-                  onChange={(event) => void changeRole(member.user.id, event.target.value)}
-                >
-                  <option value="OWNER">Owner</option>
-                  <option value="ADMIN">Admin</option>
-                  <option value="MEMBER">Member</option>
-                  <option value="VIEWER">Viewer</option>
+        {settings ? (
+          <section className="panel">
+            <p className="eyebrow">Workspace policy</p>
+            <h2>AI and data lifecycle</h2>
+            <form className="settings-form" onSubmit={(event) => void updateSettings(event)}>
+              <label>
+                Retention days
+                <input
+                  name="retentionDays"
+                  type="number"
+                  min="1"
+                  max="3650"
+                  defaultValue={settings.retentionDays}
+                  required
+                />
+              </label>
+              <label>
+                AI provider
+                <select name="aiProvider" defaultValue={settings.aiProvider}>
+                  <option value="fake">Deterministic local</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="anthropic">Anthropic</option>
                 </select>
-                <button
-                  className="quiet"
-                  type="button"
-                  onClick={() => void removeMember(member.user.id)}
-                >
-                  Remove
+              </label>
+              <label>
+                Model
+                <input name="aiModel" defaultValue={settings.aiModel} maxLength={160} required />
+              </label>
+              <label>
+                Monthly token budget
+                <input
+                  name="aiMonthlyTokenBudget"
+                  type="number"
+                  min="1000"
+                  max="2000000000"
+                  defaultValue={settings.aiMonthlyTokenBudget}
+                  required
+                />
+              </label>
+              <button type="submit">Save policy</button>
+            </form>
+            <div className="inline-actions">
+              <button type="button" className="quiet" onClick={() => void exportWorkspace()}>
+                Export all workspace data
+              </button>
+              {settings.deletionScheduledAt ? (
+                <button type="button" onClick={() => void cancelDeletion()}>
+                  Cancel deletion scheduled for{' '}
+                  {new Date(settings.deletionScheduledAt).toLocaleDateString()}
                 </button>
-              </article>
-            ))}
-          </div>
-          <form className="inline-form" onSubmit={addMember}>
-            <input name="email" type="email" placeholder="Existing user email" required />
-            <select name="role" defaultValue="MEMBER" aria-label="New member role">
-              <option value="ADMIN">Admin</option>
-              <option value="MEMBER">Member</option>
-              <option value="VIEWER">Viewer</option>
-            </select>
-            <button type="submit">Add member</button>
-          </form>
-        </section>
+              ) : (
+                <button type="button" className="danger" onClick={() => void scheduleDeletion()}>
+                  Schedule workspace deletion
+                </button>
+              )}
+            </div>
+          </section>
+        ) : null}
         <section className="panel">
-          <p className="eyebrow">Security</p>
-          <h2>Audit trail</h2>
+          <p className="eyebrow">Privacy-preserving support</p>
+          <h2>Time-limited support access</h2>
+          <p className="muted">
+            Approved access expires after one hour and exposes operational metadata only—never
+            prompt or analysis content.
+          </p>
+          {overview?.instance ? (
+            <form className="inline-form" onSubmit={(event) => void requestSupport(event)}>
+              <input name="tenantId" placeholder="Target workspace UUID" required />
+              <input name="reason" placeholder="Support reason (minimum 10 characters)" required />
+              <button type="submit">Request support access</button>
+            </form>
+          ) : null}
           <div className="data-list">
-            {audit.map((event) => (
-              <article key={event.id}>
-                <div>
-                  <strong>{event.action}</strong>
-                  <small>{new Date(event.createdAt).toLocaleString()}</small>
-                </div>
-                <span>{event.result}</span>
-              </article>
-            ))}
+            {supportGrants.map((grant) => {
+              const active =
+                grant.approvedById &&
+                grant.expiresAt &&
+                !grant.revokedAt &&
+                new Date(grant.expiresAt) > new Date();
+              return (
+                <article key={grant.id}>
+                  <div>
+                    <strong>{grant.reason}</strong>
+                    <small>
+                      {active
+                        ? `Expires ${new Date(grant.expiresAt!).toLocaleString()}`
+                        : 'Pending or expired'}
+                    </small>
+                  </div>
+                  {!grant.approvedById && !grant.revokedAt ? (
+                    <button type="button" onClick={() => void approveSupport(grant.id)}>
+                      Approve for one hour
+                    </button>
+                  ) : null}
+                  {!grant.revokedAt ? (
+                    <button
+                      type="button"
+                      className="danger"
+                      onClick={() => void revokeSupport(grant.id)}
+                    >
+                      Revoke
+                    </button>
+                  ) : null}
+                </article>
+              );
+            })}
           </div>
+          {overview?.instance && settings ? (
+            <button
+              type="button"
+              className="quiet"
+              onClick={() => void viewSupportMetadata(settings.id)}
+            >
+              View approved metadata for this workspace
+            </button>
+          ) : null}
+          {supportMetadata ? (
+            <pre className="metadata-preview">{JSON.stringify(supportMetadata, null, 2)}</pre>
+          ) : null}
         </section>
-      </div>
-      <section className="panel">
-        <p className="eyebrow">Integrations</p>
-        <h2>Connectors</h2>
-        <div className="data-list">
-          {connectors.length === 0 ? (
-            <p className="empty">No connectors installed.</p>
-          ) : (
-            connectors.map((connector) => (
-              <article key={connector.id}>
-                <div>
-                  <strong>{connector.displayName}</strong>
-                  <small>
-                    {connector.platform} · protocol {connector.protocolVersion}
-                  </small>
-                </div>
-                <span>{connector.status}</span>
-                {connector.status !== 'REVOKED' ? (
+        {queue ? (
+          <section className="panel">
+            <p className="eyebrow">Analysis queue</p>
+            <div className="metric-grid compact">
+              <AdminMetric label="Waiting" value={queue.counts.waiting ?? 0} />
+              <AdminMetric label="Active" value={queue.counts.active ?? 0} />
+              <AdminMetric label="Delayed" value={queue.counts.delayed ?? 0} />
+              <AdminMetric label="Failed / DLQ" value={queue.counts.failed ?? 0} />
+            </div>
+            <div className="data-list">
+              {queue.failed.map((job) => (
+                <article key={job.id}>
+                  <div>
+                    <strong>Job {job.id}</strong>
+                    <small>
+                      Tenant {job.tenantId ?? 'unknown'} · attempts {job.attemptsMade}
+                    </small>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void apiRequest(`/admin/operations/queue/${job.id}/retry`, { method: 'POST' })
+                        .then(() => load())
+                        .catch((cause: unknown) =>
+                          setError(cause instanceof Error ? cause.message : 'Job retry failed.'),
+                        );
+                    }}
+                  >
+                    Retry
+                  </button>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
+        {overview?.instance ? (
+          <section className="panel">
+            <p className="eyebrow">Instance access</p>
+            <h2>Users</h2>
+            <div className="data-list">
+              {instanceUsers.map((user) => (
+                <article key={user.id}>
+                  <div>
+                    <strong>{user.displayName}</strong>
+                    <small>
+                      {user.email} · {user._count.memberships} workspace(s)
+                    </small>
+                  </div>
+                  <span>
+                    {user.status}
+                    {user.isInstanceAdmin ? ' · instance admin' : ''}
+                  </span>
+                  {!user.isInstanceAdmin ? (
+                    <button
+                      className={user.status === 'ACTIVE' ? 'danger' : 'quiet'}
+                      type="button"
+                      onClick={() => void changeUserStatus(user)}
+                    >
+                      {user.status === 'ACTIVE' ? 'Suspend' : 'Reactivate'}
+                    </button>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
+        <div className="admin-columns">
+          <section className="panel">
+            <p className="eyebrow">Access</p>
+            <h2>Members</h2>
+            <div className="data-list">
+              {members.map((member) => (
+                <article key={member.user.id}>
+                  <div>
+                    <strong>{member.user.displayName}</strong>
+                    <small>{member.user.email}</small>
+                  </div>
+                  <select
+                    aria-label={`Role for ${member.user.displayName}`}
+                    value={member.role}
+                    onChange={(event) => void changeRole(member.user.id, event.target.value)}
+                  >
+                    <option value="OWNER">Owner</option>
+                    <option value="ADMIN">Admin</option>
+                    <option value="MEMBER">Member</option>
+                    <option value="VIEWER">Viewer</option>
+                  </select>
                   <button
                     className="quiet"
                     type="button"
-                    onClick={() => void revokeConnector(connector.id)}
+                    onClick={() => void removeMember(member.user.id)}
                   >
-                    Revoke
+                    Remove
                   </button>
-                ) : null}
-              </article>
-            ))
-          )}
+                </article>
+              ))}
+            </div>
+            <form className="inline-form" onSubmit={(event) => void addMember(event)}>
+              <input name="email" type="email" placeholder="Existing user email" required />
+              <select name="role" defaultValue="MEMBER" aria-label="New member role">
+                <option value="ADMIN">Admin</option>
+                <option value="MEMBER">Member</option>
+                <option value="VIEWER">Viewer</option>
+              </select>
+              <button type="submit">Add member</button>
+            </form>
+          </section>
+          <section className="panel">
+            <p className="eyebrow">Security</p>
+            <h2>Audit trail</h2>
+            <div className="data-list">
+              {audit.map((event) => (
+                <article key={event.id}>
+                  <div>
+                    <strong>{event.action}</strong>
+                    <small>{new Date(event.createdAt).toLocaleString()}</small>
+                  </div>
+                  <span>{event.result}</span>
+                </article>
+              ))}
+            </div>
+          </section>
         </div>
-      </section>
-    </main>
+        <section className="panel">
+          <p className="eyebrow">Integrations</p>
+          <h2>Connectors</h2>
+          <div className="data-list">
+            {connectors.length === 0 ? (
+              <p className="empty">No connectors installed.</p>
+            ) : (
+              connectors.map((connector) => (
+                <article key={connector.id}>
+                  <div>
+                    <strong>{connector.displayName}</strong>
+                    <small>
+                      {connector.platform} · protocol {connector.protocolVersion}
+                    </small>
+                  </div>
+                  <span>{connector.status}</span>
+                  {connector.status !== 'REVOKED' ? (
+                    <button
+                      className="quiet"
+                      type="button"
+                      onClick={() => void revokeConnector(connector.id)}
+                    >
+                      Revoke
+                    </button>
+                  ) : null}
+                </article>
+              ))
+            )}
+          </div>
+        </section>
+      </div>
+    </WorkspaceShell>
   );
 }
 
@@ -549,8 +560,11 @@ function AdminMetric({
   readonly value: string | number;
 }) {
   return (
-    <article className="metric">
-      <p>{label}</p>
+    <article className="metric pl-admin-metric">
+      <div className="pl-kpi-label">
+        <p>{label}</p>
+        <span aria-hidden="true">◇</span>
+      </div>
       <strong>{value}</strong>
     </article>
   );

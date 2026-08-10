@@ -30,25 +30,6 @@ services:
       retries: 10
     restart: unless-stopped
 
-  minio:
-    image: minio/minio:RELEASE.2025-07-23T15-54-02Z
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: promptlens
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-local-development-only}
-    ports:
-      - '127.0.0.1:9000:9000'
-      - '127.0.0.1:9001:9001'
-    volumes:
-      - minio-data:/data
-    healthcheck:
-      test: ['CMD', 'mc', 'ready', 'local']
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-
 volumes:
   postgres-data:
   redis-data:
-  minio-data:

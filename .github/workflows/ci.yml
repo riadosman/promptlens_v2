@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm test:coverage
+      - run: pnpm build
+
+  integration:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_PASSWORD: ci-owner-password
+      POSTGRES_APP_PASSWORD: ci-app-password
+      POSTGRES_WORKER_PASSWORD: ci-worker-password
+      SESSION_HASH_SECRET: ci-session-secret-that-is-at-least-32-characters
+      PROMPTLENS_CONNECTORS: none
+      PROMPTLENS_CONNECTOR_LOGIN: never
+      E2E_FULL_BROWSER_MATRIX: ${{ github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - if: github.ref == 'refs/heads/main'
+        run: pnpm exec playwright install --with-deps firefox webkit
+      - run: docker compose -f infra/compose/compose.full.yaml up -d postgres redis
+      - run: docker compose -f infra/compose/compose.full.yaml --profile tools run --rm migrate
+      - run: docker compose -f infra/compose/compose.full.yaml up -d --build --wait api worker web
+      - run: pnpm acceptance
+      - run: pnpm security:rls
+      - run: pnpm e2e
+      - if: always()
+        run: docker compose -f infra/compose/compose.full.yaml logs --no-color
+      - if: always()
+        run: docker compose -f infra/compose/compose.full.yaml down -v

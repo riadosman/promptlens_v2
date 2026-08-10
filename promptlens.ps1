@@ -29,6 +29,8 @@ function Initialize-Environment {
   if (-not (Test-Path -LiteralPath $EnvironmentFile)) {
     $content = @(
     'NODE_ENV=production'
+    'DEPLOYMENT_MODE=local'
+    'TRUST_PROXY=false'
     'WEB_ORIGIN=http://localhost:3000'
     'PUBLIC_API_URL=http://localhost:4000/v1'
     'WEB_PORT=3000'
@@ -38,8 +40,6 @@ function Initialize-Environment {
     "POSTGRES_APP_PASSWORD=$(New-Secret)"
     "POSTGRES_WORKER_PASSWORD=$(New-Secret)"
     "SESSION_HASH_SECRET=$(New-Secret)"
-    'S3_ACCESS_KEY=promptlens'
-    "S3_SECRET_KEY=$(New-Secret)"
     'AI_PROVIDER=fake'
     'AI_MODEL=gpt-5.6-luna'
     'OPENAI_API_KEY='
@@ -157,7 +157,7 @@ switch ($Command) {
   { $_ -in 'install', 'upgrade' } {
     docker compose -p $ComposeProject --profile tools --env-file $EnvironmentFile -f $ComposeFile build
     if ($LASTEXITCODE -ne 0) { throw 'Container build failed.' }
-    docker compose -p $ComposeProject --env-file $EnvironmentFile -f $ComposeFile up -d --wait postgres redis minio
+    docker compose -p $ComposeProject --env-file $EnvironmentFile -f $ComposeFile up -d --wait postgres redis
     if ($LASTEXITCODE -ne 0) { throw 'Infrastructure failed to become healthy.' }
     docker compose -p $ComposeProject --env-file $EnvironmentFile -f $ComposeFile exec -T postgres sh /docker-entrypoint-initdb.d/10-app-role.sh
     if ($LASTEXITCODE -ne 0) { throw 'Database runtime role setup failed.' }

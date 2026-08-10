@@ -1,6 +1,6 @@
 # PromptLens — Sıfırdan Kurulum Rehberi
 
-Bu belge, PromptLens'i temiz bir bilgisayarda kurup çalıştırmak için adım adım kılavuzdur. Yerel kurulum Docker Compose ile yapılır; PostgreSQL, Redis ve MinIO'yu ayrıca kurmanız gerekmez.
+Bu belge, PromptLens'i temiz bir bilgisayarda kurup çalıştırmak için adım adım kılavuzdur. Yerel kurulum Docker Compose ile yapılır; PostgreSQL ve Redis'i ayrıca kurmanız gerekmez.
 
 ## 1. Gereksinimler
 
@@ -13,7 +13,7 @@ Bu belge, PromptLens'i temiz bir bilgisayarda kurup çalıştırmak için adım 
 | Docker Desktop | Docker Engine + Compose v2 | Docker açık olmalıdır        |
 | Git            | 2.40+                      | Repository için              |
 
-Docker servisleri: PostgreSQL 17 (veri), Redis 8 (kuyruk/rate limit), MinIO (S3 obje depolama), API, worker ve Next.js web.
+Docker servisleri: PostgreSQL 17 (veri), Redis 8 (kuyruk/rate limit), API, worker ve Next.js web.
 
 Doğrulama:
 
@@ -43,7 +43,7 @@ Set-Location promptlens
 
 ### Önerilen tek komut
 
-Installer ilk çalıştırmada .env oluşturur ve PostgreSQL, uygulama rolleri, oturum ve MinIO sırlarını üretir.
+Installer ilk çalıştırmada .env oluşturur ve PostgreSQL, uygulama rolleri ve oturum sırlarını üretir.
 
 Windows:
 
@@ -68,7 +68,9 @@ Production-benzeri compose için güçlü ve benzersiz değerler zorunludur:
 
 ```dotenv
 NODE_ENV=production
+DEPLOYMENT_MODE=local
 WEB_ORIGIN=http://localhost:3000
+TRUST_PROXY=false
 PUBLIC_API_URL=http://localhost:4000/v1
 WEB_PORT=3000
 API_PORT=4000
@@ -77,8 +79,6 @@ POSTGRES_PASSWORD=<owner-secret>
 POSTGRES_APP_PASSWORD=<api-secret>
 POSTGRES_WORKER_PASSWORD=<worker-secret>
 SESSION_HASH_SECRET=<32-byte-random-secret>
-S3_ACCESS_KEY=promptlens
-S3_SECRET_KEY=<minio-secret>
 AI_PROVIDER=fake
 AI_MODEL=gpt-5.6-luna
 OPENAI_API_KEY=
@@ -100,6 +100,7 @@ SMTP_FROM=PromptLens <noreply@localhost>
 Değişken özeti:
 
 - WEB_ORIGIN: API'nin izin verdiği web origin'i.
+- DEPLOYMENT_MODE ve TRUST_PROXY: internet-facing kurulumlarda `public` ve `true` olmalıdır; public mod HTTPS, SMTP, email verification ve benzersiz session secret olmadan başlamaz.
 - PUBLIC_API_URL: tarayıcıya gömülen API adresi.
 - WEB_PORT, API_PORT, POSTGRES_PORT: host portları.
 - POSTGRES_*: owner, API ve worker için ayrı least-privilege sırlar.
@@ -108,7 +109,6 @@ Değişken özeti:
 - OPENAI_API_KEY, ANTHROPIC_API_KEY: gerçek AI sağlayıcı anahtarları.
 - AI_MODEL, ANTHROPIC_MODEL: analiz modelleri.
 - AI_TENANT_MONTHLY_TOKEN_BUDGET, AI_TENANT_REQUESTS_PER_MINUTE: tenant limitleri.
-- S3_*: MinIO/S3 erişimi.
 - EMAIL_VERIFICATION_REQUIRED ve SMTP_*: doğrulama/parola sıfırlama e-postaları.
 
 .env dosyasını commit etmeyin.
@@ -125,7 +125,7 @@ Installer connector seçildiğinde bu adımı otomatik yapar.
 
 ## 5. Veritabanının hazırlanması
 
-Installer otomatik olarak PostgreSQL, Redis ve MinIO'yu başlatır, roller oluşturur ve migration'ları uygular. İlk kurulum seed gerektirmez; kullanıcı ve workspace web'den oluşturulur.
+Installer otomatik olarak PostgreSQL ve Redis'i başlatır, roller oluşturur ve migration'ları uygular. İlk kurulum seed gerektirmez; kullanıcı ve workspace web'den oluşturulur.
 
 Manuel migration:
 

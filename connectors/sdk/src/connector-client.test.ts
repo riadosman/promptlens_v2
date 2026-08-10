@@ -228,4 +228,86 @@ describe('ConnectorClient', () => {
     expect(pending).toBe(false);
     expect(storage.tokens).toBeNull();
   });
+
+  it('reports authentication and oldest queued prompt health', async () => {
+    const storage = new MemoryStorage({
+      accessToken: 'access',
+      refreshToken: 'refresh',
+      expiresAt: 99_999,
+      installationId: 'installation-1',
+      projectId: prompt.projectId,
+    });
+    storage.queue = [
+      {
+        prompt: { ...prompt, occurredAt: '2026-07-31T01:00:00.000Z' },
+        attempts: 0,
+        nextAttemptAt: 0,
+      },
+      { prompt, attempts: 0, nextAttemptAt: 0 },
+    ];
+    const client = new ConnectorClient({ apiUrl: 'http://api/v1', storage });
+
+    await expect(client.health()).resolves.toEqual({
+      authenticated: true,
+      installationId: 'installation-1',
+      queuedPrompts: 2,
+      oldestQueuedAt: prompt.occurredAt,
+    });
+  });
+
+  it('retains events whose retry time has not arrived', async () => {
+    const storage = new MemoryStorage(null);
+    storage.queue = [{ prompt, attempts: 2, nextAttemptAt: 2_000 }];
+    const fetcher = vi.fn();
+    const client = new ConnectorClient({
+      apiUrl: 'http://api/v1',
+      storage,
+      fetch: fetcher,
+      now: () => 1_000,
+    });
+
+    await client.flush();
+
+    expect(storage.queue).toHaveLength(1);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it('refreshes once and retries ingest after an unauthorized response', async () => {
+    const storage = new MemoryStorage({
+      accessToken: 'old-access',
+      refreshToken: 'refresh',
+      expiresAt: 99_999,
+      installationId: 'id',
+      projectId: prompt.projectId,
+    });
+    let ingestAttempts = 0;
+    const client = new ConnectorClient({
+      apiUrl: 'http://api/v1',
+      storage,
+      now: () => 1_000,
+      fetch: async (url) => {
+        if (String(url).includes('/token/refresh')) {
+          return new Response(
+            JSON.stringify({
+              accessToken: 'new-access',
+              refreshToken: 'new-refresh',
+              expiresIn: 900,
+              installationId: 'id',
+              projectId: prompt.projectId,
+            }),
+            { status: 200 },
+          );
+        }
+        ingestAttempts += 1;
+        return new Response('{}', { status: ingestAttempts === 1 ? 401 : 202 });
+      },
+    });
+
+    await client.enqueue(prompt);
+    await client.flush();
+
+    expect(ingestAttempts).toBe(2);
+    expect(storage.queue).toHaveLength(0);
+    expect(storage.tokens?.accessToken).toBe('new-access');
+  });
 });

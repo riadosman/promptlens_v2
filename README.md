@@ -2,7 +2,7 @@
 
 PromptLens captures prompts from authorized AI connectors, assigns every prompt to a project, analyzes quality asynchronously, and keeps the original, recommendations, score, and professionally improved version in a tenant-isolated workspace.
 
-The project is an Apache-2.0 licensed, self-hostable TypeScript platform. It contains the web application, API, analysis worker, PostgreSQL schema, Redis queue, object storage, connector SDK, and administration surfaces in one repository.
+The project is an Apache-2.0 licensed, self-hostable TypeScript platform. It contains the web application, API, analysis worker, PostgreSQL schema, Redis queue, connector SDK, and administration surfaces in one repository.
 
 ## What works
 
@@ -22,7 +22,7 @@ The authoritative scope and remaining release gates are tracked in [the roadmap]
 Requirements:
 
 - Docker Desktop or Docker Engine with Compose v2.
-- At least 4 GB free memory and ports `3000`, `4000`, `55435`, `6379`, `9000`, and `9001` available on loopback.
+- At least 4 GB free memory and ports `3000`, `4000`, `55435`, and `6379` available on loopback.
 - On Linux/macOS, OpenSSL and a POSIX shell.
 
 Clone the repository and run one command.
@@ -54,7 +54,6 @@ Open:
 - API liveness: <http://localhost:4000/v1/health/live>
 - API readiness (PostgreSQL + Redis): <http://localhost:4000/v1/health/ready>
 - OpenAPI 3.1 JSON: <http://localhost:4000/v1/openapi.json>
-- MinIO console: <http://localhost:9001>
 
 Operational commands:
 
@@ -111,7 +110,9 @@ The installer-generated `.env` is ignored by Git. Important options:
 
 | Variable                                  | Default                    | Purpose                                                            |
 | ----------------------------------------- | -------------------------- | ------------------------------------------------------------------ |
+| `DEPLOYMENT_MODE`                         | `local`                    | Use `public` to enable internet-facing configuration safeguards    |
 | `WEB_ORIGIN`                              | `http://localhost:3000`    | Exact browser origin used by CORS, CSRF, cookies, and action links |
+| `TRUST_PROXY`                             | `false`                    | Trust reverse-proxy client IP headers; required in public mode     |
 | `PUBLIC_API_URL`                          | `http://localhost:4000/v1` | API URL embedded in the web build                                  |
 | `AI_PROVIDER`                             | `fake`                     | `fake`, `openai`, or `anthropic`                                   |
 | `AI_MODEL`                                | `gpt-5.6-luna`             | Provider model identifier                                          |
@@ -127,12 +128,17 @@ The installer-generated `.env` is ignored by Git. Important options:
 For an internet-facing deployment:
 
 - Put web and API behind a TLS reverse proxy and set HTTPS `WEB_ORIGIN`/`PUBLIC_API_URL` values before building.
+- Set `DEPLOYMENT_MODE=public` and `TRUST_PROXY=true`; unsafe public configuration fails at startup.
 - Set `EMAIL_VERIFICATION_REQUIRED=true` and configure SMTP.
 - Replace local `.env` storage with the deployment platform’s secret manager.
-- Configure encrypted PostgreSQL/object-store backups and restrict infrastructure ports.
+- Configure encrypted PostgreSQL backups and restrict infrastructure ports.
 - Use a real AI provider only after reviewing its retention and regional policies.
 
 Never commit `.env`, database dumps, provider keys, connector tokens, or prompt exports.
+
+For the complete server, DNS, HTTPS, SMTP, AI provider, migration, backup, monitoring,
+update, and rollback procedure, follow the
+[production deployment guide](docs/PRODUCTION_DEPLOYMENT.md).
 
 ## Development
 
@@ -155,12 +161,9 @@ pnpm validate
 pnpm acceptance
 pnpm e2e
 pnpm restore:drill
-pnpm audit --prod --audit-level high
-pnpm security:secrets
-pnpm sbom
 ```
 
-`validate` runs formatting, lint, strict TypeScript checks, tests, and optimized builds for all workspaces. The additional commands exercise the live critical path, browser accessibility, isolated backup/restore, dependency and secret gates, and SPDX inventory used by release CI.
+`validate` runs formatting, lint, strict TypeScript checks, tests, and optimized builds for all workspaces. The additional commands exercise the live critical path, browser accessibility, and isolated backup/restore flow.
 
 ## Repository layout
 

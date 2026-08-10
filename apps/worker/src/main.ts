@@ -1,5 +1,6 @@
 import { Queue, UnrecoverableError, Worker, type Job } from 'bullmq';
 import { Redis } from 'ioredis';
+import { randomUUID } from 'node:crypto';
 import { parseRuntimeConfig } from '@promptlens/config';
 import {
   AnalysisStatus,
@@ -33,6 +34,12 @@ const database = createPrismaClient(config.DATABASE_URL);
 const redis = new Redis(config.REDIS_URL, { maxRetriesPerRequest: null });
 const queue = new Queue<AnalysisJobData>('prompt-analysis', { connection: redis });
 const providerCache = new Map<string, AnalysisProvider>();
+const WORKER_HEARTBEAT_KEY = 'promptlens:worker:heartbeat';
+const LIFECYCLE_LOCK_KEY = 'promptlens:lifecycle:lock';
+
+async function heartbeat(): Promise<void> {
+  await redis.set(WORKER_HEARTBEAT_KEY, new Date().toISOString(), 'EX', 45);
+}
 
 function provider(name: string, model: string): AnalysisProvider {
   const cacheKey = `${name}:${model}`;
@@ -197,31 +204,47 @@ const dispatchTimer = setInterval(() => {
 }, 1_000);
 
 async function enforceDataLifecycle(): Promise<void> {
-  const tenants = await database.tenant.findMany({
-    select: { id: true, retentionDays: true, deletionScheduledAt: true },
-  });
-  for (const tenant of tenants) {
-    if (tenant.deletionScheduledAt && tenant.deletionScheduledAt <= new Date()) {
-      await database.tenant.delete({ where: { id: tenant.id } });
-      logger.warn({ tenantId: tenant.id }, 'Scheduled tenant deletion completed');
-      continue;
-    }
-    const cutoff = new Date(Date.now() - tenant.retentionDays * 24 * 60 * 60 * 1_000);
-    const context = {
-      tenantId: tenant.id,
-      userId: '00000000-0000-0000-0000-000000000000',
-    };
-    const deleted = await withTenantContext(database, context, (transaction) =>
-      transaction.prompt.deleteMany({
-        where: { tenantId: tenant.id, occurredAt: { lt: cutoff } },
-      }),
-    );
-    if (deleted.count > 0) {
-      logger.info(
-        { tenantId: tenant.id, count: deleted.count, retentionDays: tenant.retentionDays },
-        'Retention policy deleted expired prompts',
+  const lockToken = randomUUID();
+  const acquired = await redis.set(LIFECYCLE_LOCK_KEY, lockToken, 'EX', 55 * 60, 'NX');
+  if (!acquired) {
+    logger.info('Data lifecycle enforcement skipped because another worker owns the lock');
+    return;
+  }
+
+  try {
+    const tenants = await database.tenant.findMany({
+      select: { id: true, retentionDays: true, deletionScheduledAt: true },
+    });
+    for (const tenant of tenants) {
+      if (tenant.deletionScheduledAt && tenant.deletionScheduledAt <= new Date()) {
+        await database.tenant.delete({ where: { id: tenant.id } });
+        logger.warn({ tenantId: tenant.id }, 'Scheduled tenant deletion completed');
+        continue;
+      }
+      const cutoff = new Date(Date.now() - tenant.retentionDays * 24 * 60 * 60 * 1_000);
+      const context = {
+        tenantId: tenant.id,
+        userId: '00000000-0000-0000-0000-000000000000',
+      };
+      const deleted = await withTenantContext(database, context, (transaction) =>
+        transaction.prompt.deleteMany({
+          where: { tenantId: tenant.id, occurredAt: { lt: cutoff } },
+        }),
       );
+      if (deleted.count > 0) {
+        logger.info(
+          { tenantId: tenant.id, count: deleted.count, retentionDays: tenant.retentionDays },
+          'Retention policy deleted expired prompts',
+        );
+      }
     }
+  } finally {
+    await redis.eval(
+      "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
+      1,
+      LIFECYCLE_LOCK_KEY,
+      lockToken,
+    );
   }
 }
 
@@ -234,6 +257,11 @@ const lifecycleTimer = setInterval(
   60 * 60 * 1_000,
 );
 
+const heartbeatTimer = setInterval(() => {
+  heartbeat().catch((error: unknown) => logger.error({ err: error }, 'Worker heartbeat failed'));
+}, 15_000);
+
+await heartbeat();
 await dispatchOutbox();
 await enforceDataLifecycle();
 logger.info({ defaultProvider: config.AI_PROVIDER }, 'Worker started');
@@ -241,9 +269,11 @@ logger.info({ defaultProvider: config.AI_PROVIDER }, 'Worker started');
 async function shutdown(signal: string): Promise<void> {
   clearInterval(dispatchTimer);
   clearInterval(lifecycleTimer);
+  clearInterval(heartbeatTimer);
   logger.info({ signal }, 'Worker stopping');
   await analysisWorker.close();
   await queue.close();
+  await redis.del(WORKER_HEARTBEAT_KEY).catch(() => undefined);
   await redis.quit();
   await database.$disconnect();
   await stopTelemetry();

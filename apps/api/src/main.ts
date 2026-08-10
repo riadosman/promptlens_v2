@@ -20,6 +20,7 @@ import {
 import { createLogger, startTelemetry } from '@promptlens/observability';
 import { z } from 'zod';
 import { AppModule } from './app.module.js';
+import { ApiExceptionFilter } from './http/api-exception.filter.js';
 
 const config = parseRuntimeConfig(process.env);
 const logger = createLogger('api', config.LOG_LEVEL);
@@ -52,11 +53,16 @@ async function bootstrap(): Promise<void> {
   });
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ bodyLimit: 256 * 1024, requestIdHeader: 'x-request-id' }),
+    new FastifyAdapter({
+      bodyLimit: 256 * 1024,
+      requestIdHeader: 'x-request-id',
+      trustProxy: config.TRUST_PROXY,
+    }),
     { bufferLogs: true },
   );
 
   app.enableShutdownHooks();
+  app.useGlobalFilters(new ApiExceptionFilter(logger));
   await app.register(cookie);
   await app.register(helmet);
   const redis = new Redis(config.REDIS_URL, { maxRetriesPerRequest: 1, enableOfflineQueue: false });

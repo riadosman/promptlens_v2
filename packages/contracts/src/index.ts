@@ -1,4 +1,5 @@
 export { healthResponseSchema, type HealthResponse } from './system/health.js';
+export { apiErrorResponseSchema, type ApiErrorResponse } from './system/error.js';
 export {
   loginRequestSchema,
   requestPasswordResetSchema,

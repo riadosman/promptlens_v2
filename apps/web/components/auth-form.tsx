@@ -28,35 +28,59 @@ export function AuthForm({ mode }: { readonly mode: 'login' | 'register' }) {
   }
 
   return (
-    <form className="auth-form" onSubmit={submit}>
+    <form className="auth-form pl-auth-form" onSubmit={(event) => void submit(event)}>
       {mode === 'register' ? (
         <>
           <label>
             Your name
-            <input name="displayName" autoComplete="name" required maxLength={120} />
+            <input
+              name="displayName"
+              autoComplete="name"
+              placeholder="Ada Lovelace"
+              required
+              maxLength={120}
+            />
           </label>
           <label>
             Workspace name
-            <input name="tenantName" autoComplete="organization" required maxLength={120} />
+            <input
+              name="tenantName"
+              autoComplete="organization"
+              placeholder="Core engineering"
+              required
+              maxLength={120}
+            />
           </label>
         </>
       ) : null}
       <label>
         Email
-        <input name="email" type="email" autoComplete="email" required maxLength={320} />
+        <input
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="user@domain.com"
+          required
+          maxLength={320}
+        />
       </label>
       <label>
         Password
         <input
           name="password"
           type="password"
+          placeholder="••••••••••••"
           autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
           required
           minLength={mode === 'register' ? 12 : 1}
           maxLength={128}
         />
       </label>
-      {error ? <p className="form-error">{error}</p> : null}
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
       <button type="submit" disabled={pending}>
         {pending ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
       </button>

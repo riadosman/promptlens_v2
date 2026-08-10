@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { DashboardStats, ProjectResponse, PromptListResponse } from '@promptlens/contracts';
 import { apiDownload, apiRequest } from '../lib/api';
+import { readDashboardUrlState, writeDashboardUrlState } from '../lib/dashboard-url';
+import { WorkspaceSidebar } from './workspace-shell';
 
 type DashboardSection = 'overview' | 'prompts' | 'projects';
 
@@ -279,6 +281,7 @@ function buildMockStats(prompts: PromptListResponse['items']): DashboardStats {
 
 function stripMockPromptOwner(prompt: MockPromptRow): PromptListResponse['items'][number] {
   const { ownerId, ...rest } = prompt;
+  void ownerId;
   return rest;
 }
 
@@ -334,27 +337,30 @@ export function DashboardClient() {
   const section = currentSection(pathname);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const serializedSearchParams = searchParams.toString();
   const demoMode = searchParams.get('mock') === '1' || searchParams.get('demo') === '1';
   const mockProfile = searchParams.get('mockRole') === 'user' ? 'USER' : 'OWNER';
   const mockConfig = demoMode ? mockUsers[mockProfile] : emptyMockMode;
+  const initialUrlState = readDashboardUrlState(serializedSearchParams);
 
   const [actor, setActor] = useState<ActorContext | null>(null);
   const [stats, setStats] = useState(emptyStats);
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [prompts, setPrompts] = useState<PromptListResponse['items']>([]);
-  const [query, setQuery] = useState('');
-  const [projectFilter, setProjectFilter] = useState('');
-  const [platformFilter, setPlatformFilter] = useState('');
-  const [modelFilter, setModelFilter] = useState('');
-  const [minScoreFilter, setMinScoreFilter] = useState('');
-  const [memberFilter, setMemberFilter] = useState('');
+  const [query, setQuery] = useState(initialUrlState.query);
+  const [projectFilter, setProjectFilter] = useState(initialUrlState.projectId);
+  const [platformFilter, setPlatformFilter] = useState(initialUrlState.platform);
+  const [modelFilter, setModelFilter] = useState(initialUrlState.model);
+  const [minScoreFilter, setMinScoreFilter] = useState(initialUrlState.minScore);
+  const [memberFilter, setMemberFilter] = useState(initialUrlState.userId);
   const [tenantMembers, setTenantMembers] = useState<MemberOption[]>([]);
   const [tenants, setTenants] = useState<
     Array<{ role: string; tenant: { id: string; name: string } }>
   >([]);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
+  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(initialUrlState.promptId);
   const [sectionLoading, setSectionLoading] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [sessions, setSessions] = useState<
     Array<{ id: string; userAgent: string | null; createdAt: string; current: boolean }>
   >([]);
@@ -381,6 +387,17 @@ export function DashboardClient() {
     setSectionLoading(false);
     return undefined;
   }, [demoMode, mockConfig.actor, router]);
+
+  useEffect(() => {
+    const state = readDashboardUrlState(serializedSearchParams);
+    setQuery(state.query);
+    setProjectFilter(state.projectId);
+    setPlatformFilter(state.platform);
+    setModelFilter(state.model);
+    setMinScoreFilter(state.minScore);
+    setMemberFilter(state.userId);
+    setSelectedPromptId(state.promptId);
+  }, [serializedSearchParams]);
 
   const promptParameters = useCallback(() => {
     const parameters = new URLSearchParams();
@@ -517,8 +534,10 @@ export function DashboardClient() {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
-    const name = String(data.get('name') ?? '').trim();
-    const description = String(data.get('description') ?? '').trim();
+    const nameValue = data.get('name');
+    const descriptionValue = data.get('description');
+    const name = typeof nameValue === 'string' ? nameValue.trim() : '';
+    const description = typeof descriptionValue === 'string' ? descriptionValue.trim() : '';
     if (!name) return;
     if (demoMode) {
       setProjects((current) => [
@@ -545,8 +564,46 @@ export function DashboardClient() {
 
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (demoMode) return;
-    await load();
+    const nextQuery = writeDashboardUrlState(
+      serializedSearchParams,
+      {
+        query,
+        projectId: projectFilter,
+        platform: platformFilter,
+        model: modelFilter,
+        minScore: minScoreFilter,
+        userId: memberFilter,
+        promptId: null,
+      },
+      adminLinksVisible,
+    );
+    router.push(`${pathname ?? '/dashboard/prompts'}${nextQuery ? `?${nextQuery}` : ''}`);
+    if (!demoMode) await load();
+  }
+
+  function selectPrompt(promptId: string): void {
+    const nextPromptId = selectedPromptId === promptId ? null : promptId;
+    setSelectedPromptId(nextPromptId);
+    const nextQuery = writeDashboardUrlState(
+      serializedSearchParams,
+      {
+        query,
+        projectId: projectFilter,
+        platform: platformFilter,
+        model: modelFilter,
+        minScore: minScoreFilter,
+        userId: memberFilter,
+        promptId: nextPromptId,
+      },
+      adminLinksVisible,
+    );
+    router.replace(`${pathname ?? '/dashboard/prompts'}${nextQuery ? `?${nextQuery}` : ''}`);
+  }
+
+  function openProjectPrompts(projectId: string): void {
+    const parameters = new URLSearchParams();
+    parameters.set('projectId', projectId);
+    router.push(`/dashboard/prompts?${parameters.toString()}`);
   }
 
   async function toggleProject(projectId: string, archived: boolean) {
@@ -666,18 +723,12 @@ export function DashboardClient() {
   const activeTenantName =
     tenants.find((entry) => entry.tenant.id === actor?.tenantId)?.tenant.name ??
     'Current workspace';
-  const navLinkClass = (target: string) =>
-    target === '/dashboard/overview' && pathname === '/dashboard'
-      ? 'active'
-      : pathname === target || pathname?.startsWith(`${target}/`)
-        ? 'active'
-        : '';
   const sectionTitle =
     section === 'prompts'
       ? 'Prompt history'
       : section === 'projects'
-        ? 'Project control'
-        : 'Prompt overview';
+        ? 'Projects'
+        : 'Workspace overview';
   const sectionCaption =
     section === 'prompts'
       ? 'Prompt analysis'
@@ -687,77 +738,36 @@ export function DashboardClient() {
 
   return (
     <div className="dashboard-shell-v2">
-      <aside className="v2-rail">
-        <Link className="v2-wordmark" href="/dashboard">
-          PromptLens
-        </Link>
-        {actor ? (
-          <div className="v2-panel v2-tenant">
-            <p className="v2-kicker v2-tenant-kicker">Active workspace</p>
-            <strong className="v2-tenant-name">{activeTenantName}</strong>
-            <span className="v2-tenant-role">{actorRole.toUpperCase()}</span>
-            <small className="v2-tenant-id v2-id">Tenant {actor.tenantId.slice(0, 7)}</small>
-          </div>
-        ) : null}
-        <nav aria-label="Main navigation" className="v2-nav">
-          <Link
-            className={`v2-nav-link ${navLinkClass('/dashboard/overview')}`}
-            href="/dashboard/overview"
-          >
-            Overview
-          </Link>
-          <Link
-            className={`v2-nav-link ${navLinkClass('/dashboard/prompts')}`}
-            href="/dashboard/prompts"
-          >
-            Prompt log
-          </Link>
-          <Link
-            className={`v2-nav-link ${navLinkClass('/dashboard/projects')}`}
-            href="/dashboard/projects"
-          >
-            Projects
-          </Link>
-          <Link
-            className={`v2-nav-link ${pathname?.startsWith('/connect') ? 'active' : ''}`}
-            href="/connect"
-          >
-            Connect device
-          </Link>
-          {adminLinksVisible ? (
-            <Link
-              className={`v2-nav-link ${pathname?.startsWith('/admin') ? 'active' : ''}`}
-              href="/admin"
-            >
-              Administration
-            </Link>
-          ) : null}
-        </nav>
-        {tenants.length > 1 ? (
-          <label className="v2-switch">
-            Workspace
-            <select
-              aria-label="Active workspace"
-              defaultValue=""
-              onChange={(event) => {
-                if (event.target.value) void switchTenant(event.target.value);
-              }}
-            >
-              <option value="" disabled>
-                Switch workspace
-              </option>
-              {tenants.map(({ tenant, role }) => (
-                <option key={tenant.id} value={tenant.id}>
-                  {tenant.name} - {role}
+      <WorkspaceSidebar
+        tenantName={activeTenantName}
+        role={actorRole || 'Workspace'}
+        tenantId={actor?.tenantId}
+        adminVisible={adminLinksVisible}
+        onSignOut={() => void logout()}
+        workspaceControl={
+          tenants.length > 1 ? (
+            <label className="v2-switch">
+              Workspace
+              <select
+                aria-label="Active workspace"
+                defaultValue=""
+                onChange={(event) => {
+                  if (event.target.value) void switchTenant(event.target.value);
+                }}
+              >
+                <option value="" disabled>
+                  Switch workspace
                 </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-        <button className="v2-ghost" onClick={() => void logout()}>
-          Sign out
-        </button>
-      </aside>
+                {tenants.map(({ tenant, role }) => (
+                  <option key={tenant.id} value={tenant.id}>
+                    {tenant.name} - {role}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null
+        }
+      />
       <main className="v2-main">
         <header className="v2-header">
           <div className="v2-header-copy">
@@ -774,47 +784,75 @@ export function DashboardClient() {
                   : 'Organize work by projects and status.'}
             </p>
           </div>
-          <div className="v2-hero-ribbon" aria-hidden="true">
-            <span>Live workspace control plane</span>
-            <span>●</span>
-            <span>{new Date().toLocaleTimeString()}</span>
-          </div>
-          <div className="v2-metadata">
-            {demoMode ? <span className="v2-chip v2-chip-demo">Demo dataset</span> : null}
-            <span className="v2-chip">Session {actor?.sessionId?.slice(0, 8) ?? 'offline'}</span>
+          <div className="pl-header-actions">
+            <span className="pl-live-status">
+              <i /> Systems operational
+            </span>
+            <div className="v2-metadata">
+              {demoMode ? <span className="v2-chip v2-chip-demo">Demo dataset</span> : null}
+              <span className="v2-chip">Session {actor?.sessionId?.slice(0, 8) ?? 'offline'}</span>
+            </div>
           </div>
         </header>
-        {error ? <p className="form-error">{error}</p> : null}
+        {error ? (
+          <div className="v2-error" role="alert">
+            <p>{error}</p>
+            <button className="v2-action" type="button" onClick={() => void load()}>
+              Try again
+            </button>
+          </div>
+        ) : null}
         {section === 'overview' ? (
           sectionLoading ? (
             <OverviewPanelSkeleton />
           ) : (
             <>
               <section className="v2-kpi-grid" aria-label="Workspace statistics">
-                <article className="v2-kpi">
-                  <p>Average score</p>
+                <article className="v2-kpi pl-kpi-featured">
+                  <div className="pl-kpi-label">
+                    <p>Average quality</p>
+                    <span aria-hidden="true">◎</span>
+                  </div>
                   <strong>
                     {stats.averageScore ?? 'N/A'}
                     <small>/100</small>
                   </strong>
+                  <small className="pl-kpi-foot">Completed prompt analyses</small>
                 </article>
                 <article className="v2-kpi">
-                  <p>Prompts</p>
+                  <div className="pl-kpi-label">
+                    <p>Total prompts</p>
+                    <span aria-hidden="true">⌁</span>
+                  </div>
                   <strong>{stats.prompts}</strong>
+                  <small className="pl-kpi-foot">Across {stats.projects} projects</small>
                 </article>
                 <article className="v2-kpi">
-                  <p>Last 7 days</p>
+                  <div className="pl-kpi-label">
+                    <p>Last 7 days</p>
+                    <span aria-hidden="true">↗</span>
+                  </div>
                   <strong>{stats.promptsLast7Days}</strong>
+                  <small className="pl-kpi-foot">Recently captured prompts</small>
                 </article>
                 <article className="v2-kpi">
-                  <p>Analyses</p>
+                  <div className="pl-kpi-label">
+                    <p>Analyses</p>
+                    <span aria-hidden="true">◇</span>
+                  </div>
                   <strong>{stats.analysesCompleted}</strong>
+                  <small className="pl-kpi-foot">Successfully completed</small>
                 </article>
               </section>
-              <section className="v2-panels" aria-label="Prompt analytics">
-                <article className="v2-panel">
-                  <p className="v2-kicker">Score trend</p>
-                  <h2>Last 14 days</h2>
+              <section className="v2-panels pl-analytics-grid" aria-label="Prompt analytics">
+                <article className="v2-panel pl-trend-panel">
+                  <div className="v2-panel-head">
+                    <div>
+                      <p className="v2-kicker">Quality signal</p>
+                      <h2>Score trend</h2>
+                    </div>
+                    <span className="v2-chip">14 days</span>
+                  </div>
                   {stats.scoreTrend.length ? (
                     <ol className="v2-stat-list">
                       {stats.scoreTrend.map((point) => (
@@ -828,8 +866,8 @@ export function DashboardClient() {
                     <p className="v2-empty">No completed analyses yet.</p>
                   )}
                 </article>
-                <Distribution title="Models" items={stats.modelDistribution} compact />
-                <Distribution title="Projects" items={stats.projectDistribution} compact />
+                <Distribution title="Model usage" items={stats.modelDistribution} compact />
+                <Distribution title="Project activity" items={stats.projectDistribution} compact />
               </section>
               <section className="v2-panel">
                 <p className="v2-kicker">Active sessions</p>
@@ -868,81 +906,128 @@ export function DashboardClient() {
                 </div>
                 <span className="v2-chip">Total: {prompts.length}</span>
               </div>
-              <form className="v2-filter-bar" onSubmit={search}>
-                <input
-                  aria-label="Search prompts"
-                  placeholder="Search prompt content"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                />
-                <select
-                  aria-label="Filter by project"
-                  value={projectFilter}
-                  onChange={(event) => setProjectFilter(event.target.value)}
+              <form
+                className="v2-filter-bar pl-prompt-filters"
+                onSubmit={(event) => void search(event)}
+              >
+                <label className="v2-field pl-filter-search">
+                  <span>Search</span>
+                  <input
+                    placeholder="Search prompt content"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                  />
+                </label>
+                <button
+                  className="v2-ghost pl-filter-toggle"
+                  type="button"
+                  aria-expanded={filtersExpanded}
+                  aria-controls="prompt-filter-options"
+                  onClick={() => setFiltersExpanded((current) => !current)}
                 >
-                  <option value="">All projects</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
-                {adminLinksVisible ? (
-                  <select
-                    aria-label="Filter by user"
-                    value={memberFilter}
-                    onChange={(event) => {
-                      const next = event.target.value;
-                      setMemberFilter(next);
-                      void load();
-                    }}
-                  >
-                    <option value="">All users</option>
-                    {tenantMembers.map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.displayName} - {member.email}
-                      </option>
-                    ))}
-                  </select>
-                ) : null}
-                <input
-                  aria-label="Filter by platform"
-                  placeholder="Platform"
-                  value={platformFilter}
-                  onChange={(event) => setPlatformFilter(event.target.value)}
-                  maxLength={80}
-                />
-                <input
-                  aria-label="Filter by model"
-                  placeholder="Model"
-                  value={modelFilter}
-                  onChange={(event) => setModelFilter(event.target.value)}
-                  maxLength={160}
-                />
-                <input
-                  aria-label="Minimum score"
-                  type="number"
-                  min="0"
-                  max="100"
-                  placeholder="Min score"
-                  value={minScoreFilter}
-                  onChange={(event) => setMinScoreFilter(event.target.value)}
-                />
-                <button className="v2-chip" type="submit">
-                  Search
+                  {filtersExpanded ? 'Hide filters' : 'More filters'}
+                </button>
+                <div
+                  className={`pl-filter-options ${filtersExpanded ? 'open' : ''}`}
+                  id="prompt-filter-options"
+                >
+                  <label className="v2-field">
+                    <span>Project</span>
+                    <select
+                      value={projectFilter}
+                      onChange={(event) => setProjectFilter(event.target.value)}
+                    >
+                      <option value="">All projects</option>
+                      {projects.map((project) => (
+                        <option key={project.id} value={project.id}>
+                          {project.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {adminLinksVisible ? (
+                    <label className="v2-field">
+                      <span>User</span>
+                      <select
+                        value={memberFilter}
+                        onChange={(event) => {
+                          setMemberFilter(event.target.value);
+                        }}
+                      >
+                        <option value="">All users</option>
+                        {tenantMembers.map((member) => (
+                          <option key={member.id} value={member.id}>
+                            {member.displayName} - {member.email}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+                  <label className="v2-field">
+                    <span>Platform</span>
+                    <input
+                      placeholder="Platform"
+                      value={platformFilter}
+                      onChange={(event) => setPlatformFilter(event.target.value)}
+                      maxLength={80}
+                    />
+                  </label>
+                  <label className="v2-field">
+                    <span>Model</span>
+                    <input
+                      placeholder="Model"
+                      value={modelFilter}
+                      onChange={(event) => setModelFilter(event.target.value)}
+                      maxLength={160}
+                    />
+                  </label>
+                  <label className="v2-field">
+                    <span>Minimum score</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      placeholder="Min score"
+                      value={minScoreFilter}
+                      onChange={(event) => setMinScoreFilter(event.target.value)}
+                    />
+                  </label>
+                </div>
+                <button className="pl-primary-action pl-filter-submit" type="submit">
+                  Apply filters
                 </button>
               </form>
-              <div className="v2-export-strip">
+              <div className="v2-export-strip pl-export-strip">
+                <span>Export current result</span>
                 <button className="v2-ghost" type="button" onClick={() => void download('json')}>
-                  Export JSON
+                  JSON
                 </button>
                 <button className="v2-ghost" type="button" onClick={() => void download('csv')}>
-                  Export CSV
+                  CSV
                 </button>
               </div>
               <div className="v2-prompts">
                 {prompts.length === 0 ? (
-                  <p className="v2-empty">No prompts yet. Connect a device to start syncing.</p>
+                  <div className="v2-empty">
+                    <p>
+                      {query || projectFilter || platformFilter || modelFilter || minScoreFilter
+                        ? 'No prompts match the current filters.'
+                        : 'No prompts yet. Connect a device to start syncing.'}
+                    </p>
+                    {query || projectFilter || platformFilter || modelFilter || minScoreFilter ? (
+                      <button
+                        className="v2-action"
+                        type="button"
+                        onClick={() => router.push('/dashboard/prompts')}
+                      >
+                        Clear filters
+                      </button>
+                    ) : (
+                      <Link className="v2-action" href="/connect">
+                        Connect a device
+                      </Link>
+                    )}
+                  </div>
                 ) : (
                   prompts.map((prompt) => {
                     const status = (prompt.analysis?.status ?? 'QUEUED').toLowerCase();
@@ -957,8 +1042,13 @@ export function DashboardClient() {
                             <span className="v2-mini-chip">{prompt.model}</span>
                           </div>
                           <small className="v2-prompt-meta">
-                            {new Date(prompt.occurredAt).toLocaleString()}{' '}
-                            <span>{prompt.analysis?.status ?? 'Queued'}</span>
+                            Captured{' '}
+                            {new Date(prompt.occurredAt).toLocaleString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
                           </small>
                         </div>
                         <div className="v2-prompt-actions">
@@ -969,18 +1059,17 @@ export function DashboardClient() {
                             className="v2-action"
                             type="button"
                             aria-expanded={selectedPromptId === prompt.id}
-                            onClick={() =>
-                              setSelectedPromptId(selectedPromptId === prompt.id ? null : prompt.id)
-                            }
+                            onClick={() => selectPrompt(prompt.id)}
                           >
                             {selectedPromptId === prompt.id ? 'Hide analysis' : 'View analysis'}
                           </button>
                           <button
-                            className="v2-danger"
+                            className="v2-danger pl-delete-action"
                             type="button"
                             onClick={() => void deletePrompt(prompt.id)}
                           >
-                            Delete
+                            <span aria-hidden="true">×</span>
+                            <span className="pl-delete-label">Delete</span>
                           </button>
                         </div>
                         {selectedPromptId === prompt.id ? (
@@ -1072,38 +1161,103 @@ export function DashboardClient() {
           sectionLoading ? (
             <ProjectsPanelSkeleton />
           ) : (
-            <section className="v2-panel">
-              <div className="v2-panel-head">
-                <div>
-                  <p className="v2-kicker">Organization</p>
-                  <h2>Projects</h2>
+            <section className="pl-project-layout">
+              <div className="pl-project-content">
+                <div className="pl-project-summary">
+                  <article>
+                    <span>All projects</span>
+                    <strong>{projects.length}</strong>
+                  </article>
+                  <article>
+                    <span>Active</span>
+                    <strong>
+                      {projects.filter((project) => project.status === 'ACTIVE').length}
+                    </strong>
+                  </article>
+                  <article>
+                    <span>Archived</span>
+                    <strong>
+                      {projects.filter((project) => project.status === 'ARCHIVED').length}
+                    </strong>
+                  </article>
+                </div>
+                <div className="v2-panel-head pl-project-heading">
+                  <div>
+                    <p className="v2-kicker">Organization</p>
+                    <h2>Workspace projects</h2>
+                  </div>
+                  <span className="v2-chip">{projects.length} total</span>
+                </div>
+                <div className="v2-project-grid">
+                  {projects.map((project, index) => (
+                    <article className="v2-project-card pl-project-card" key={project.id}>
+                      <div className="pl-project-card-top">
+                        <span className="pl-project-index">
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                        <span className={`v2-mini-chip ${project.status.toLowerCase()}`}>
+                          {project.status}
+                        </span>
+                      </div>
+                      <div>
+                        <h3>{project.name}</h3>
+                        <p>{project.description ?? 'No project description yet.'}</p>
+                      </div>
+                      <small className="pl-project-updated">
+                        Updated{' '}
+                        {new Date(project.updatedAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </small>
+                      <div className="pl-project-actions">
+                        <button
+                          className="v2-action"
+                          type="button"
+                          onClick={() => openProjectPrompts(project.id)}
+                        >
+                          View prompts <span aria-hidden="true">↗</span>
+                        </button>
+                        <button
+                          className="v2-ghost"
+                          type="button"
+                          onClick={() =>
+                            void toggleProject(project.id, project.status !== 'ARCHIVED')
+                          }
+                        >
+                          {project.status === 'ARCHIVED' ? 'Restore' : 'Archive'}
+                        </button>
+                      </div>
+                    </article>
+                  ))}
                 </div>
               </div>
-              <div className="v2-project-grid">
-                {projects.map((project) => (
-                  <article className="v2-project-card" key={project.id}>
-                    <h3>{project.name}</h3>
-                    <p>{project.description ?? 'No description'}</p>
-                    <span className={`v2-mini-chip ${project.status.toLowerCase()}`}>
-                      {project.status}
-                    </span>
-                    <button
-                      className="v2-action"
-                      type="button"
-                      onClick={() => void toggleProject(project.id, project.status !== 'ARCHIVED')}
-                    >
-                      {project.status === 'ARCHIVED' ? 'Restore' : 'Archive'}
-                    </button>
-                  </article>
-                ))}
-              </div>
-              <form className="v2-inline-form" onSubmit={createProject}>
-                <input name="name" placeholder="New project name" required maxLength={120} />
-                <input name="description" placeholder="Description" maxLength={1000} />
-                <button type="submit" className="v2-chip">
-                  Create project
-                </button>
-              </form>
+              <aside className="v2-panel pl-create-project">
+                <span className="pl-panel-icon" aria-hidden="true">
+                  ＋
+                </span>
+                <p className="v2-kicker">New workspace unit</p>
+                <h2>Create project</h2>
+                <p className="v2-subline">Group related prompts, members, and analysis history.</p>
+                <form className="v2-inline-form" onSubmit={(event) => void createProject(event)}>
+                  <label className="v2-field">
+                    <span>Project name</span>
+                    <input name="name" placeholder="e.g. Product launch" required maxLength={120} />
+                  </label>
+                  <label className="v2-field">
+                    <span>Description</span>
+                    <input
+                      name="description"
+                      placeholder="What belongs in this project?"
+                      maxLength={1000}
+                    />
+                  </label>
+                  <button type="submit" className="pl-primary-action">
+                    Create project <span aria-hidden="true">↗</span>
+                  </button>
+                </form>
+              </aside>
             </section>
           )
         ) : null}

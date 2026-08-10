@@ -17,7 +17,7 @@
     "lint": "eslint src",
     "rls:audit": "node scripts/rls-audit.mjs",
     "test": "vitest run --exclude dist/** --passWithNoTests",
-    "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.9.1",

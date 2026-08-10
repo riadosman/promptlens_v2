@@ -10,6 +10,7 @@ import { DatabaseService } from '../database/database.service.js';
 
 @Injectable()
 export class ReadinessService implements OnModuleDestroy {
+  private static readonly WORKER_HEARTBEAT_KEY = 'promptlens:worker:heartbeat';
   private readonly redis: Redis;
 
   constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {
@@ -24,7 +25,7 @@ export class ReadinessService implements OnModuleDestroy {
 
   async check(): Promise<{
     status: 'ready';
-    checks: { postgres: 'ok'; redis: 'ok' };
+    checks: { postgres: 'ok'; redis: 'ok'; worker: 'ok' };
     timestamp: string;
   }> {
     try {
@@ -33,6 +34,9 @@ export class ReadinessService implements OnModuleDestroy {
         Promise.all([
           this.database.client.$queryRaw<Array<{ ok: number }>>`SELECT 1 AS ok`,
           this.redis.ping(),
+          this.redis.get(ReadinessService.WORKER_HEARTBEAT_KEY).then((heartbeat) => {
+            if (!heartbeat) throw new Error('Worker heartbeat is stale.');
+          }),
         ]),
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Readiness check timed out.')), 2_000),
@@ -40,7 +44,7 @@ export class ReadinessService implements OnModuleDestroy {
       ]);
       return {
         status: 'ready',
-        checks: { postgres: 'ok', redis: 'ok' },
+        checks: { postgres: 'ok', redis: 'ok', worker: 'ok' },
         timestamp: new Date().toISOString(),
       };
     } catch {

@@ -38,7 +38,7 @@ Başlıca tehditler:
 - Repository sorguları tenant scope olmadan çağrılamayacak API ile tasarlanır.
 - PostgreSQL RLS ikinci savunma katmanıdır; request transaction'ında doğrulanmış tenant context set edilir.
 - Background job payload'ı actor/tenant/resource kimliğini taşır; worker yeniden yetki ve varlık ilişkisi doğrular.
-- Prompt ve analiz kayıtları tenant-scope PostgreSQL tablolarında tutulur. MinIO yalnız ileride eklenecek artifact/export nesneleri için ayrılmıştır; uygulama bugün signed object URL üretmez.
+- Prompt ve analiz kayıtları tenant-scope PostgreSQL tablolarında tutulur. Uygulama bugün ayrı bir object storage veya signed object URL kullanmaz.
 - Instance admin prompt içeriğini varsayılan olarak göremez.
 
 ### API ve uygulama güvenliği
@@ -67,7 +67,7 @@ Başlıca tehditler:
 - Production secret'ları environment dosyasında commit edilmez; Vault/KMS/secret manager referansları kullanılır.
 - Self-host installer yüksek entropili anahtar üretir ve minimum dosya ACL uygular. Rotasyon kontrollü bakım penceresinde [key rotation runbook](runbooks/key-rotation.md) ile yürütülür.
 - TLS 1.2+ dış ve servisler arası iletişimde zorunludur; managed ortamda TLS 1.3 tercih edilir.
-- Disk, DB backup ve object storage at-rest encryption kullanır.
+- Disk ve DB backup katmanlarında at-rest encryption kullanılır.
 - Provider API anahtarları veritabanına yazılmaz; deployment secret manager/environment üzerinden yalnız worker'a verilir.
 - Session/IP HMAC anahtar rotasyonu mevcut oturumları sonlandıran kontrollü bir bakım işlemidir. Provider anahtarları secret manager üzerinden rotate edilir; uygulama veritabanında provider ciphertext saklamaz.
 

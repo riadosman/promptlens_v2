@@ -8,6 +8,7 @@ import { ApiError, apiRequest } from '../lib/api';
 export function ConnectDevice() {
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageKind, setMessageKind] = useState<'success' | 'error'>('success');
   const [userCode, setUserCode] = useState('');
   const [needsAuthentication, setNeedsAuthentication] = useState(false);
 
@@ -17,6 +18,7 @@ export function ConnectDevice() {
       .then(setProjects)
       .catch((error: unknown) => {
         setNeedsAuthentication(error instanceof ApiError && error.status === 401);
+        setMessageKind('error');
         setMessage(error instanceof Error ? error.message : 'Could not load projects.');
       });
   }, []);
@@ -29,14 +31,16 @@ export function ConnectDevice() {
         method: 'POST',
         body: JSON.stringify({ userCode: data.get('userCode'), projectId: data.get('projectId') }),
       });
+      setMessageKind('success');
       setMessage('Device connected. You can return to your AI tool.');
     } catch (error: unknown) {
+      setMessageKind('error');
       setMessage(error instanceof Error ? error.message : 'Device could not be connected.');
     }
   }
 
   return (
-    <form className="auth-form" onSubmit={approve}>
+    <form className="auth-form pl-connect-form" onSubmit={(event) => void approve(event)}>
       <label>
         Device code
         <input
@@ -45,13 +49,17 @@ export function ConnectDevice() {
           minLength={8}
           maxLength={12}
           autoCapitalize="characters"
+          placeholder="ABCD-EFGH"
           value={userCode}
           onChange={(event) => setUserCode(event.target.value.toUpperCase())}
         />
       </label>
       <label>
         Project
-        <select name="projectId" required>
+        <select name="projectId" required defaultValue="">
+          <option value="" disabled>
+            Select an active project
+          </option>
           {projects
             .filter((project) => project.status === 'ACTIVE')
             .map((project) => (
@@ -61,7 +69,14 @@ export function ConnectDevice() {
             ))}
         </select>
       </label>
-      {message ? <p className="form-message">{message}</p> : null}
+      {message ? (
+        <p
+          className={`form-message pl-inline-status ${messageKind === 'error' ? 'pl-inline-error' : ''}`}
+          role={messageKind === 'error' ? 'alert' : 'status'}
+        >
+          {message}
+        </p>
+      ) : null}
       {needsAuthentication ? (
         <p className="muted">
           Sign in before approving this device.{' '}

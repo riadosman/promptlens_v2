@@ -44,7 +44,6 @@ Sistemin temel işi, desteklenen AI istemcilerinden gelen prompt olaylarını g�
 | Ana veri deposu    | PostgreSQL                                                 | Transaction, RLS, JSONB, olgun operasyon araçları                               |
 | ORM/migration      | Prisma                                                     | Tip güvenliği ve anlaşılır migration süreci; özel SQL migration desteği korunur |
 | Queue/cache        | Redis + BullMQ                                             | Retry, delayed jobs, concurrency ve rate control                                |
-| Nesne deposu       | S3 uyumlu API (yerelde MinIO)                              | Büyük export/import ve ileride attachment desteği                               |
 | Arama              | İlk sürüm PostgreSQL FTS + trigram                         | Ek servis olmadan güvenilir başlangıç                                           |
 | Gözlemlenebilirlik | OpenTelemetry + Prometheus + Grafana + Loki/Tempo          | Vendor-neutral telemetri                                                        |
 | Kimlik             | Uygulama içi auth katmanı; Argon2id, OIDC ve passkey-ready | Self-host kolaylığı, dış IdP entegrasyonu                                       |
@@ -80,7 +79,6 @@ AI Client / Browser / IDE
 - `worker`: Analiz, yeniden deneme, kullanım ölçümü, veri export ve retention işleri.
 - `postgres`: Sistem kaydı (system of record).
 - `redis`: Queue, kısa ömürlü cache, dağıtık kilit ve rate-limit sayaçları.
-- `object-store`: Büyük veya geçici artifact'ler; prompt metninin ana kaydı değildir.
 
 API ve worker aynı domain paketlerini kullanabilir ancak birbirlerinin private modüllerine doğrudan erişmez. İş sınırları versioned command/event payload'larıdır.
 
@@ -170,7 +168,7 @@ Ana varlıklar:
 3. Servisler health check ile başlatılır ve migration tek seferlik job olarak çalışır.
 4. Bootstrap URL tek kullanımlık, kısa ömürlü token ile açılır.
 5. İlk kullanıcı owner ve instance administrator olur.
-6. Kurulum doğrulaması DB, queue, object storage, mail ve callback URL'lerini test eder.
+6. Kurulum doğrulaması DB, queue, mail ve callback URL'lerini test eder.
 
 Kurulum idempotent olmalı; tekrar çalıştırmak veri kaybına yol açmamalıdır.
 
@@ -264,14 +262,14 @@ Instance admin ile tenant admin ayrıdır. Destek erişimi süreli, gerekçeli, 
 ### SaaS / Kubernetes
 
 - API ve worker ayrı HPA metrikleriyle yatay ölçeklenir.
-- Managed PostgreSQL, Redis ve object storage tercih edilir.
+- Managed PostgreSQL ve Redis tercih edilir.
 - Multi-AZ, point-in-time recovery ve düzenli restore tatbikatı uygulanır.
 - Deployment rolling/canary; migration ayrı kontrollü job'dur.
 
 ### Health uçları
 
 - `/health/live`: süreç yaşıyor mu; bağımlılık çağırmaz.
-- `/health/ready`: DB/Redis ve migration uyumluluğu.
+- `/health/ready`: DB/Redis erişimi ve güncel worker heartbeat'i.
 - `/health/startup`: uzun başlangıçlar için.
 
 ## 13. Gözlemlenebilirlik

@@ -339,12 +339,6 @@ li::before {
   margin: 2rem 0;
 }
 
-.auth-shell,
-.auth-shell * {
-  color: #e5ecff !important;
-  -webkit-text-fill-color: #e5ecff !important;
-}
-
 label {
   display: grid;
   gap: 0.45rem;
@@ -1150,11 +1144,6 @@ select:focus {
   margin: 0.2rem 0 0;
   font-size: clamp(1.8rem, 4.8vw, 3rem);
   line-height: 1;
-}
-
-.auth-form,
-.auth-form * {
-  color: #e5ecff;
 }
 
 .v2-hero-ribbon {
@@ -2377,5 +2366,212 @@ body:has(.landing-shell) {
     grid-column: 1;
     grid-row: auto;
     margin-top: 1.25rem;
+  }
+}
+
+/* Auth refresh: carry the landing page signal into account flows. */
+body:has(.auth-shell) {
+  color-scheme: light;
+  background: #f5f7f4;
+  color: #14231b;
+}
+
+.auth-shell {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.82fr) minmax(24rem, 1.18fr);
+  width: 100%;
+  min-height: 100svh;
+  margin: 0;
+  padding: 0;
+  place-items: stretch;
+  background: #f5f7f4;
+}
+
+.auth-brand-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100svh;
+  background: #14231b;
+  color: #f5f7f4;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.auth-brand-panel .wordmark {
+  margin: 0;
+  color: #f5f7f4;
+}
+
+.auth-brand-panel .wordmark::before {
+  background: linear-gradient(135deg, #2ca35f, #a1d4ad);
+  box-shadow: 0 0 1.5rem rgba(44, 163, 95, 0.22);
+}
+
+.auth-brand-copy {
+  max-width: 29rem;
+  margin-block: auto;
+  padding-block: 4rem;
+}
+
+.auth-brand-copy .eyebrow,
+.auth-form-panel .eyebrow {
+  color: #2ca35f;
+}
+
+.auth-brand-copy h2 {
+  max-width: 9ch;
+  margin: 1rem 0 1.25rem;
+  color: #f5f7f4;
+  font-size: clamp(2.8rem, 6vw, 5.8rem);
+  letter-spacing: -0.075em;
+  line-height: 0.92;
+}
+
+.auth-brand-copy > p:last-child {
+  max-width: 24rem;
+  margin: 0;
+  color: #b8cbbd;
+  line-height: 1.65;
+}
+
+.auth-brand-note {
+  color: #8ca696;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+}
+
+.auth-form-panel {
+  display: grid;
+  align-content: center;
+  width: min(100%, 42rem);
+  margin-inline: auto;
+  padding: clamp(2rem, 7vw, 6rem);
+}
+
+.auth-card {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.auth-card h1 {
+  max-width: 13ch;
+  margin: 0.9rem 0 1rem;
+  color: #14231b;
+  font-size: clamp(2.25rem, 5vw, 4.5rem);
+  letter-spacing: -0.075em;
+  line-height: 0.94;
+}
+
+.auth-form {
+  gap: 1.05rem;
+  margin: 2rem 0 1.5rem;
+}
+
+.auth-form label {
+  color: #14231b;
+}
+
+.auth-form input,
+.auth-form select {
+  border-color: #cbd8ce;
+  border-radius: 0.55rem;
+  background: #ffffff;
+  color: #14231b;
+  -webkit-text-fill-color: #14231b;
+}
+
+.auth-form input:hover,
+.auth-form select:hover {
+  border-color: #9dbba5;
+}
+
+.auth-form input:focus,
+.auth-form select:focus {
+  border-color: #167448;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(22, 116, 72, 0.14);
+}
+
+.auth-form button {
+  border: 0;
+  border-radius: 0.55rem;
+  background: #14231b;
+  color: #f5f7f4;
+  padding: 0.8rem 1rem;
+}
+
+.auth-form button:hover {
+  background: #1d3a2a;
+  box-shadow: 0 0.7rem 1.5rem rgba(20, 35, 27, 0.16);
+}
+
+.auth-card .muted {
+  margin: 0.75rem 0;
+  color: #74847a;
+}
+
+.auth-card .muted a {
+  color: #167448;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.auth-card .muted a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.auth-form .muted {
+  color: #74847a;
+}
+
+.auth-form .form-error {
+  border-color: #e5b7b4;
+  border-radius: 0.55rem;
+  background: #fff1ef;
+  color: #a33c35;
+  -webkit-text-fill-color: #a33c35;
+}
+
+.auth-shell a:focus-visible,
+.auth-shell input:focus-visible,
+.auth-shell select:focus-visible,
+.auth-shell button:focus-visible {
+  outline: 3px solid rgba(22, 116, 72, 0.38);
+  outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-brand-panel {
+    min-height: 0;
+    gap: 2.5rem;
+    padding: 1.5rem clamp(1.25rem, 6vw, 2.5rem) 2.25rem;
+  }
+
+  .auth-brand-copy {
+    margin: 0;
+    padding: 0;
+  }
+
+  .auth-brand-copy h2 {
+    max-width: 12ch;
+    font-size: clamp(2.6rem, 12vw, 4.4rem);
+  }
+
+  .auth-brand-copy > p:last-child {
+    display: none;
+  }
+
+  .auth-form-panel {
+    width: 100%;
+    padding: 3.5rem clamp(1.25rem, 6vw, 2.5rem) 4rem;
   }
 }

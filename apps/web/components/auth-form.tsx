@@ -8,6 +8,7 @@ export function AuthForm({ mode }: { readonly mode: 'login' | 'register' }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,14 +48,39 @@ export function AuthForm({ mode }: { readonly mode: 'login' | 'register' }) {
       </label>
       <label>
         Password
-        <input
-          name="password"
-          type="password"
-          autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-          required
-          minLength={mode === 'register' ? 12 : 1}
-          maxLength={128}
-        />
+        <span className="password-field">
+          <input
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            required
+            minLength={mode === 'register' ? 12 : 1}
+            maxLength={128}
+          />
+          <button
+            className="password-toggle"
+            type="button"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-pressed={showPassword}
+            onClick={() => setShowPassword((visible) => !visible)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              {showPassword ? (
+                <>
+                  <path d="M3 3l18 18" />
+                  <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+                  <path d="M9.9 5.2A10.7 10.7 0 0 1 12 5c5 0 8.5 4 9.5 7a11.8 11.8 0 0 1-3.2 4.8" />
+                  <path d="M6.2 6.2A11.9 11.9 0 0 0 2.5 12c1 3 4.5 7 9.5 7a10.6 10.6 0 0 0 3.2-.5" />
+                </>
+              ) : (
+                <>
+                  <path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z" />
+                  <circle cx="12" cy="12" r="2.5" />
+                </>
+              )}
+            </svg>
+          </button>
+        </span>
       </label>
       {error ? <p className="form-error">{error}</p> : null}
       <button type="submit" disabled={pending}>

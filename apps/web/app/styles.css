@@ -2403,8 +2403,7 @@ body:has(.auth-shell) {
 }
 
 .auth-brand-panel .wordmark::before {
-  background: linear-gradient(135deg, #2ca35f, #a1d4ad);
-  box-shadow: 0 0 1.5rem rgba(44, 163, 95, 0.22);
+  display: none;
 }
 
 .auth-brand-copy {
@@ -2496,6 +2495,50 @@ body:has(.auth-shell) {
   box-shadow: 0 0 0 3px rgba(22, 116, 72, 0.14);
 }
 
+.password-field {
+  position: relative;
+  display: block;
+}
+
+.password-field input {
+  padding-right: 3rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: #74847a;
+  padding: 0;
+  transform: translateY(-50%);
+}
+
+.password-toggle:hover {
+  background: #e8f2eb;
+  box-shadow: none;
+  color: #167448;
+  filter: none;
+  transform: translateY(-50%);
+}
+
+.password-toggle svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
 .auth-form button {
   border: 0;
   border-radius: 0.55rem;
@@ -2574,4 +2617,19 @@ body:has(.auth-shell) {
     width: 100%;
     padding: 3.5rem clamp(1.25rem, 6vw, 2.5rem) 4rem;
   }
+}
+
+.auth-form .password-toggle {
+  background: transparent;
+  color: #74847a;
+  padding: 0;
+  transform: translateY(-50%);
+}
+
+.auth-form .password-toggle:hover {
+  background: #e8f2eb;
+  box-shadow: none;
+  color: #167448;
+  filter: none;
+  transform: translateY(-50%);
 }

@@ -358,6 +358,17 @@ export function DashboardClient() {
   const [sessions, setSessions] = useState<
     Array<{ id: string; userAgent: string | null; createdAt: string; current: boolean }>
   >([]);
+  const [sessionsPage, setSessionsPage] = useState(1);
+  const sessionsPerPage = 3;
+  const sessionsPageCount = Math.max(1, Math.ceil(sessions.length / sessionsPerPage));
+  const visibleSessions = sessions.slice(
+    (sessionsPage - 1) * sessionsPerPage,
+    sessionsPage * sessionsPerPage,
+  );
+
+  useEffect(() => {
+    setSessionsPage((page) => Math.min(page, sessionsPageCount));
+  }, [sessionsPageCount]);
 
   useEffect(() => {
     if (!demoMode) {
@@ -677,13 +688,13 @@ export function DashboardClient() {
       ? 'Prompt history'
       : section === 'projects'
         ? 'Project control'
-        : 'Prompt overview';
+        : 'Signal analytics';
   const sectionCaption =
     section === 'prompts'
       ? 'Prompt analysis'
       : section === 'projects'
         ? 'Workspace'
-        : 'Workspace intelligence';
+        : 'Workspace health';
 
   return (
     <div className="dashboard-shell-v2">
@@ -790,52 +801,44 @@ export function DashboardClient() {
             <OverviewPanelSkeleton />
           ) : (
             <>
-              <section className="v2-kpi-grid" aria-label="Workspace statistics">
-                <article className="v2-kpi">
-                  <p>Average score</p>
-                  <strong>
-                    {stats.averageScore ?? 'N/A'}
-                    <small>/100</small>
-                  </strong>
-                </article>
-                <article className="v2-kpi">
-                  <p>Prompts</p>
-                  <strong>{stats.prompts}</strong>
-                </article>
-                <article className="v2-kpi">
-                  <p>Last 7 days</p>
-                  <strong>{stats.promptsLast7Days}</strong>
-                </article>
-                <article className="v2-kpi">
-                  <p>Analyses</p>
-                  <strong>{stats.analysesCompleted}</strong>
-                </article>
-              </section>
-              <section className="v2-panels" aria-label="Prompt analytics">
-                <article className="v2-panel">
-                  <p className="v2-kicker">Score trend</p>
-                  <h2>Last 14 days</h2>
+              <section className="v2-analytics-overview" aria-label="Prompt analytics">
+                <div className="v2-analytics-score-panel">
+                  <div className="v2-analytics-score-copy">
+                    <p className="v2-kicker">Prompt health · last 30 days</p>
+                    <h2>Signal quality</h2>
+                    <strong>{stats.averageScore ?? 'N/A'}<small>/100</small></strong>
+                    <span className="v2-score-change">Workspace average score</span>
+                  </div>
+                  <div className="v2-score-bar"><i style={{ width: `${stats.averageScore ?? 0}%` }} /></div>
+                </div>
+                <div className="v2-analytics-kpis">
+                  <article><p>Prompts</p><strong>{stats.prompts}</strong><span>Total captured</span></article>
+                  <article><p>Last 7 days</p><strong>{stats.promptsLast7Days}</strong><span>Recent activity</span></article>
+                  <article><p>Analyses</p><strong>{stats.analysesCompleted}</strong><span>Completed reviews</span></article>
+                </div>
+                <article className="v2-analytics-chart v2-panel">
+                  <div className="v2-panel-head"><div><p className="v2-kicker">Performance</p><h2>Score trend</h2></div><span className="v2-chip">14 days</span></div>
                   {stats.scoreTrend.length ? (
-                    <ol className="v2-stat-list">
-                      {stats.scoreTrend.map((point) => (
-                        <li key={point.date}>
-                          <span>{point.date}</span>
-                          <strong>{point.score}</strong>
-                        </li>
-                      ))}
-                    </ol>
-                  ) : (
-                    <p className="v2-empty">No completed analyses yet.</p>
-                  )}
+                    <div className="v2-bar-chart" aria-label="Score trend chart">
+                      {stats.scoreTrend.map((point) => <div key={point.date} style={{ height: `${Math.max(point.score, 8)}%` }}><span>{point.score}</span><i /></div>)}
+                    </div>
+                  ) : <p className="v2-empty">No completed analyses yet.</p>}
                 </article>
-                <Distribution title="Models" items={stats.modelDistribution} compact />
-                <Distribution title="Projects" items={stats.projectDistribution} compact />
+                <div className="v2-analytics-insights">
+                  <Distribution title="Models" items={stats.modelDistribution} compact />
+                  <Distribution title="Projects" items={stats.projectDistribution} compact />
+                </div>
               </section>
-              <section className="v2-panel">
-                <p className="v2-kicker">Active sessions</p>
-                <h2>Security</h2>
+              <section className="v2-panel v2-activity-panel">
+                <div className="v2-panel-head">
+                  <div>
+                    <p className="v2-kicker">Workspace activity</p>
+                    <h2>Recent sessions</h2>
+                  </div>
+                  <span className="v2-chip">{sessions.length} devices</span>
+                </div>
                 <div className="v2-session-grid">
-                  {sessions.map((session) => (
+                  {visibleSessions.map((session) => (
                     <article className="v2-session-card" key={session.id}>
                       <div>
                         <h3>{session.current ? 'Current session' : 'Signed-in device'}</h3>
@@ -851,6 +854,27 @@ export function DashboardClient() {
                       </button>
                     </article>
                   ))}
+                </div>
+                <div className="v2-pagination" aria-label="Session pagination">
+                  <span>{sessionsPage} / {sessionsPageCount}</span>
+                  <div>
+                    <button
+                      type="button"
+                      aria-label="Previous sessions page"
+                      disabled={sessionsPage === 1}
+                      onClick={() => setSessionsPage((page) => Math.max(1, page - 1))}
+                    >
+                      ←
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Next sessions page"
+                      disabled={sessionsPage === sessionsPageCount}
+                      onClick={() => setSessionsPage((page) => Math.min(sessionsPageCount, page + 1))}
+                    >
+                      →
+                    </button>
+                  </div>
                 </div>
               </section>
             </>

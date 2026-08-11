@@ -30,6 +30,21 @@ The result should feel like a calm command center: quick to scan, easy to act on
 
 ## Information architecture
 
+### Route structure
+
+Administration is split into focused routes while sharing one shell:
+
+- `/admin` — overview and system control center.
+- `/admin/members` — members and roles.
+- `/admin/settings` — workspace policy and lifecycle settings.
+- `/admin/connectors` — connector inventory and revocation.
+- `/admin/audit` — audit trail.
+- `/admin/support` — support access requests and metadata.
+- `/admin/operations` — instance queue and operational actions.
+- `/admin/instance-users` — instance user access.
+
+The active route is highlighted in the sidebar. The shell, landing palette, content gutter, responsive behavior, and back-to-dashboard action remain shared across all admin routes. Existing API calls and action handlers move with their corresponding route; no new permission behavior is introduced.
+
 ### Primary navigation
 
 The left rail contains:

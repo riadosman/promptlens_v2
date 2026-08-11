@@ -1897,6 +1897,135 @@ select optgroup {
   }
 }
 
+/* Landing polish: align the nav to the wordmark and give the first workflow steps room. */
+.landing-nav .wordmark,
+.landing-footer .wordmark {
+  gap: 0;
+  margin: 0;
+}
+
+.landing-nav .wordmark::before,
+.landing-footer .wordmark::before {
+  display: none;
+}
+
+.landing-nav {
+  padding-inline: 0;
+}
+
+.landing-nav-links {
+  margin-left: auto;
+}
+
+.workflow-grid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.workflow-card {
+  grid-column: span 3;
+}
+
+.workflow-card-featured {
+  grid-column: span 6;
+  min-height: 13rem;
+  border: 1px solid #cbd9ce;
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 1.35rem;
+}
+
+.workflow-card-featured h3 {
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+  letter-spacing: -0.04em;
+}
+
+.workflow-card-featured p {
+  max-width: 28rem;
+  font-size: 1rem;
+}
+
+.workflow-detail {
+  display: inline-block;
+  margin-top: 2.2rem;
+  color: var(--landing-green);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+.landing-footer > div {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.footer-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.footer-nav a {
+  color: #68766e;
+  text-decoration: none;
+}
+
+.footer-nav a:hover {
+  color: var(--landing-green);
+}
+
+@media (max-width: 900px) {
+  .workflow-card,
+  .workflow-card-featured {
+    grid-column: span 6;
+  }
+}
+
+@media (max-width: 560px) {
+  .workflow-card,
+  .workflow-card-featured {
+    grid-column: span 12;
+  }
+
+  .workflow-detail {
+    margin-top: 1.5rem;
+  }
+
+  .landing-footer > div,
+  .footer-nav {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+}
+
+/* Three-column header: logo left, primary link centered, actions right. */
+.landing-shell {
+  width: min(100%, 78rem);
+  margin-inline: auto;
+}
+
+.landing-nav {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  width: 100%;
+  max-width: 78rem;
+  margin-inline: auto;
+}
+
+.landing-nav-center {
+  justify-self: center;
+}
+
+.landing-nav-actions {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: clamp(0.8rem, 2vw, 1.5rem);
+  margin-left: 0;
+}
+
 /* Landing-only visual system: keep auth and dashboard surfaces unchanged. */
 body:has(.landing-shell) {
   color-scheme: light;
@@ -2037,5 +2166,122 @@ body:has(.landing-shell) {
     transition-duration:.01ms !important;
     animation-duration:.01ms !important;
     animation-iteration-count:1 !important;
+  }
+}
+
+.landing-final-cta {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(15rem, 0.85fr);
+  align-items: center;
+  min-height: 0;
+  border-top: 1px solid var(--landing-line);
+  border-right: 0;
+  border-bottom: 1px solid var(--landing-line);
+  border-left: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: clamp(4rem, 8vw, 7rem) 0;
+}
+
+.landing-final-cta::before {
+  display: none;
+}
+
+.landing-final-cta > div {
+  position: static;
+}
+
+.landing-final-cta h2 {
+  max-width: 12ch;
+  margin-top: 0.8rem;
+  font-size: clamp(2.6rem, 5.6vw, 5rem);
+}
+
+.final-cta-action {
+  justify-self: end;
+  max-width: 21rem;
+}
+
+.final-cta-action p {
+  margin: 0 0 1.35rem;
+  color: var(--landing-muted);
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 560px) {
+  .landing-final-cta {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 3.5rem 0;
+  }
+
+  .final-cta-action {
+    justify-self: stretch;
+    max-width: none;
+  }
+
+  .final-cta-action .button-link {
+    display: block;
+    text-align: center;
+  }
+}
+
+.landing-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: 100%;
+  max-width: 78rem;
+  row-gap: 2.25rem;
+  margin-inline: auto;
+  padding: 2.75rem 0 1.25rem;
+}
+
+.landing-footer .footer-brand {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.landing-footer .footer-brand .wordmark {
+  margin: 0;
+}
+
+.landing-footer .footer-brand > span {
+  color: #89968d;
+  font-size: 0.8rem;
+}
+
+.landing-footer .footer-nav {
+  justify-self: end;
+}
+
+.landing-footer .footer-bottom {
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid var(--landing-line);
+  padding-top: 1rem;
+  color: #a0aaa3;
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 560px) {
+  .landing-footer {
+    grid-template-columns: 1fr;
+    row-gap: 1.75rem;
+  }
+
+  .landing-footer .footer-nav {
+    justify-self: start;
+    align-items: flex-start;
+  }
+
+  .landing-footer .footer-bottom {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

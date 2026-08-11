@@ -18,10 +18,12 @@ export default function HomePage() {
         <a className="wordmark" href="/">
           PromptLens
         </a>
-        <div className="landing-nav-links">
+        <div className="landing-nav-center">
           <a className="landing-nav-anchor" href="#how-it-works">
             How it works
           </a>
+        </div>
+        <div className="landing-nav-actions">
           <a className="text-link" href="/login">
             Sign in
           </a>
@@ -101,10 +103,15 @@ export default function HomePage() {
         </div>
         <div className="workflow-grid">
           {workflow.map(([label, description], index) => (
-            <article className="workflow-card" key={label}>
+            <article className={`workflow-card ${index < 2 ? 'workflow-card-featured' : ''}`} key={label}>
               <span className="workflow-marker">0{index + 1}</span>
               <h3>{label}</h3>
               <p>{description}</p>
+              {index < 2 ? (
+                <span className="workflow-detail">
+                  {index === 0 ? 'Project · prompt · decision' : 'Strengths · gaps · next move'}
+                </span>
+              ) : null}
             </article>
           ))}
         </div>
@@ -133,16 +140,30 @@ export default function HomePage() {
           <p className="eyebrow">Keep the signal</p>
           <h2 id="final-cta-title">Your next great prompt shouldn’t disappear.</h2>
         </div>
-        <a className="button-link" href="/register">
-          Create your workspace
-        </a>
+        <div className="final-cta-action">
+          <p>Give your team one place to keep the work that gets better with every iteration.</p>
+          <a className="button-link" href="/register">
+            Create your workspace
+          </a>
+        </div>
       </section>
 
       <footer className="landing-footer">
-        <a className="wordmark" href="/">
-          PromptLens
-        </a>
-        <span>Prompt intelligence for thoughtful teams.</span>
+        <div className="footer-brand">
+          <a className="wordmark" href="/">
+            PromptLens
+          </a>
+          <span>Prompt intelligence for thoughtful teams.</span>
+        </div>
+        <nav className="footer-nav" aria-label="Footer navigation">
+          <a href="#how-it-works">How it works</a>
+          <a href="/login">Sign in</a>
+          <a href="/register">Create your workspace</a>
+        </nav>
+        <div className="footer-bottom">
+          <span>© 2026 PromptLens</span>
+          <span>Open source prompt intelligence</span>
+        </div>
       </footer>
     </main>
   );

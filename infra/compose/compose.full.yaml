@@ -67,6 +67,7 @@ services:
     cap_drop: [ALL]
 
   api:
+    image: ghcr.io/riadosman/promptlens_v2/api:latest
     build:
       context: ../..
       dockerfile: Dockerfile
@@ -113,6 +114,7 @@ services:
     cap_drop: [ALL]
 
   worker:
+    image: ghcr.io/riadosman/promptlens_v2/worker:latest
     build:
       context: ../..
       dockerfile: Dockerfile
@@ -149,6 +151,7 @@ services:
     cap_drop: [ALL]
 
   web:
+    image: ghcr.io/riadosman/promptlens_v2/web:latest
     build:
       context: ../..
       dockerfile: Dockerfile
@@ -172,3 +175,4 @@ volumes:
   postgres-data:
   redis-data:
   minio-data:
+

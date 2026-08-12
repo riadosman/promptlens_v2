@@ -981,31 +981,40 @@ export function DashboardClient() {
                   Export CSV
                 </button>
               </div>
-              <div className="v2-prompts">
+              <div className="v2-prompt-table" role="table" aria-label="Prompt history">
+                <div className="v2-prompt-table-head" role="row">
+                  <span role="columnheader">Prompt</span>
+                  <span role="columnheader">Score</span>
+                  <span role="columnheader">Status</span>
+                  <span role="columnheader">Project</span>
+                  <span role="columnheader">Model</span>
+                  <span role="columnheader">Time</span>
+                  <span role="columnheader" aria-label="Actions" />
+                </div>
                 {prompts.length === 0 ? (
                   <p className="v2-empty">No prompts yet. Connect a device to start syncing.</p>
                 ) : (
                   prompts.map((prompt) => {
                     const status = (prompt.analysis?.status ?? 'QUEUED').toLowerCase();
                     return (
-                      <article className="v2-prompt-card" key={prompt.id}>
-                        <div className="v2-score">{prompt.analysis?.score ?? '--'}</div>
-                        <div className="v2-prompt-copy">
+                      <article className="v2-prompt-row" role="row" key={prompt.id}>
+                        <div className="v2-prompt-main" role="cell">
                           <p>{prompt.content}</p>
-                          <div className="v2-chip-row">
-                            <span className="v2-mini-chip">{prompt.projectName}</span>
-                            <span className="v2-mini-chip">{prompt.platform}</span>
-                            <span className="v2-mini-chip">{prompt.model}</span>
-                          </div>
-                          <small className="v2-prompt-meta">
-                            {new Date(prompt.occurredAt).toLocaleString()}{' '}
-                            <span>{prompt.analysis?.status ?? 'Queued'}</span>
-                          </small>
                         </div>
-                        <div className="v2-prompt-actions">
+                        <div className={`v2-table-score v2-table-score-${prompt.analysis?.score == null ? 'empty' : prompt.analysis.score >= 80 ? 'high' : prompt.analysis.score >= 60 ? 'medium' : 'low'}`} role="cell">
+                          {prompt.analysis?.score ?? '--'}
+                        </div>
+                        <div role="cell">
                           <span className={`v2-status v2-status-${status}`}>
                             {prompt.analysis?.status ?? 'QUEUED'}
                           </span>
+                        </div>
+                        <span className="v2-table-meta" role="cell">{prompt.projectName}</span>
+                        <span className="v2-table-meta" role="cell">{prompt.model}</span>
+                        <time className="v2-table-meta" role="cell" dateTime={prompt.occurredAt}>
+                          {new Date(prompt.occurredAt).toLocaleDateString()}
+                        </time>
+                        <div className="v2-prompt-actions" role="cell">
                           <button
                             className="v2-action"
                             type="button"

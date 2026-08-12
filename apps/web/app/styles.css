@@ -4712,11 +4712,6 @@ body:has(.auth-shell) {
   stroke: #fffdf8;
 }
 
-.dashboard-shell-v2 .v2-search-button:hover {
-  border-color: #167448 !important;
-  background: #167448 !important;
-}
-
 .dashboard-shell-v2 .v2-export-strip {
   justify-content: flex-end;
   margin: 0.9rem 0 1.2rem;

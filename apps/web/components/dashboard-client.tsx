@@ -343,6 +343,13 @@ export function DashboardClient() {
   const [stats, setStats] = useState(emptyStats);
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [prompts, setPrompts] = useState<PromptListResponse['items']>([]);
+  const [promptPage, setPromptPage] = useState(1);
+  const promptsPerPage = 8;
+  const promptPageCount = Math.max(1, Math.ceil(prompts.length / promptsPerPage));
+  const visiblePrompts = prompts.slice(
+    (promptPage - 1) * promptsPerPage,
+    promptPage * promptsPerPage,
+  );
   const [query, setQuery] = useState('');
   const [projectFilter, setProjectFilter] = useState('');
   const [platformFilter, setPlatformFilter] = useState('');
@@ -370,6 +377,10 @@ export function DashboardClient() {
   useEffect(() => {
     setSessionsPage((page) => Math.min(page, sessionsPageCount));
   }, [sessionsPageCount]);
+
+  useEffect(() => {
+    setPromptPage((page) => Math.min(page, promptPageCount));
+  }, [promptPageCount]);
 
   useEffect(() => {
     if (!demoMode) {
@@ -557,6 +568,7 @@ export function DashboardClient() {
 
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setPromptPage(1);
     if (demoMode) return;
     await load();
   }
@@ -908,7 +920,10 @@ export function DashboardClient() {
                   <p className="v2-kicker">Prompt log</p>
                   <h2>Recent prompts</h2>
                 </div>
-                <span className="v2-chip">Total: {prompts.length}</span>
+                <div className="v2-prompt-head-actions">
+                  <Link className="v2-secondary-action" href="/connect">Connect a device <span aria-hidden="true">→</span></Link>
+                  <span className="v2-chip">Total: {prompts.length}</span>
+                </div>
               </div>
               <form className="v2-filter-bar" onSubmit={search}>
                 <input
@@ -1004,12 +1019,10 @@ export function DashboardClient() {
                       <EmptyTitle>No prompts yet</EmptyTitle>
                       <EmptyDescription>Connect a device to start syncing prompts into this workspace.</EmptyDescription>
                     </EmptyHeader>
-                    <EmptyContent>
-                      <Link className="v2-primary-action" href="/connect">Connect a device <span aria-hidden="true">→</span></Link>
-                    </EmptyContent>
+                      <EmptyContent />
                   </Empty>
                 ) : (
-                  prompts.map((prompt) => {
+                  visiblePrompts.map((prompt) => {
                     const status = (prompt.analysis?.status ?? 'QUEUED').toLowerCase();
                     return (
                       <article className="v2-prompt-row" role="row" key={prompt.id}>
@@ -1129,6 +1142,13 @@ export function DashboardClient() {
                     );
                   })
                 )}
+              </div>
+              <div className="v2-pagination v2-prompt-pagination" aria-label="Prompt pagination">
+                <span className="v2-pagination-label">Page <strong>{promptPage}</strong><span aria-hidden="true">/</span>{promptPageCount}</span>
+                <div>
+                  <button type="button" aria-label="Previous prompts page" disabled={promptPage === 1} onClick={() => setPromptPage((page) => Math.max(1, page - 1))}>←</button>
+                  <button type="button" aria-label="Next prompts page" disabled={promptPage === promptPageCount} onClick={() => setPromptPage((page) => Math.min(promptPageCount, page + 1))}>→</button>
+                </div>
               </div>
             </section>
           )

@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 
-type EmptyProps = HTMLAttributes<HTMLDivElement> & { children: ReactNode };
+type EmptyProps = HTMLAttributes<HTMLDivElement> & { children?: ReactNode };
 
 const slot = (name: string, className = '') => `v2-empty-${name}${className ? ` ${className}` : ''}`;
 

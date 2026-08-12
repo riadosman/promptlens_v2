@@ -367,6 +367,11 @@ export function DashboardClient() {
   const [memberFilter, setMemberFilter] = useState('');
   const [tenantMembers, setTenantMembers] = useState<MemberOption[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<
+    | { type: 'prompt'; promptId: string }
+    | { type: 'session'; sessionId: string; current: boolean }
+    | null
+  >(null);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const [sectionLoading, setSectionLoading] = useState(true);
   const [sessions, setSessions] = useState<
@@ -652,7 +657,10 @@ export function DashboardClient() {
   }
 
   async function deletePrompt(promptId: string) {
-    if (!window.confirm('Delete this prompt and hide it from all workspace views?')) return;
+    setConfirmation({ type: 'prompt', promptId });
+  }
+
+  async function confirmDeletePrompt(promptId: string) {
     if (demoMode) {
       setPrompts((current) => current.filter((item) => item.id !== promptId));
       setSelectedPromptId((current) => (current === promptId ? null : current));
@@ -664,6 +672,10 @@ export function DashboardClient() {
   }
 
   async function revokeSession(sessionId: string, current: boolean) {
+    setConfirmation({ type: 'session', sessionId, current });
+  }
+
+  async function confirmRevokeSession(sessionId: string, current: boolean) {
     if (demoMode) {
       if (current) {
         setSessions([]);
@@ -675,8 +687,6 @@ export function DashboardClient() {
       }
       return;
     }
-    if (!window.confirm(current ? 'Sign out this current session?' : 'Revoke this session?'))
-      return;
     await apiRequest(`/auth/sessions/${sessionId}`, { method: 'DELETE' });
     if (current) router.push('/login');
     else await load();
@@ -1213,6 +1223,49 @@ export function DashboardClient() {
               )}
             </section>
           )
+        ) : null}
+        {confirmation ? (
+          <div className="v2-modal-backdrop" role="presentation" onMouseDown={() => setConfirmation(null)}>
+            <section
+              className="v2-confirm-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="confirmation-title"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <p className="v2-kicker">Confirm action</p>
+              <h2 id="confirmation-title">
+                {confirmation.type === 'session' && confirmation.current
+                  ? 'Sign out this session?'
+                  : confirmation.type === 'session'
+                    ? 'Revoke this session?'
+                    : 'Delete this prompt?'}
+              </h2>
+              <p>
+                {confirmation.type === 'session'
+                  ? 'This device will lose access to the workspace.'
+                  : 'This prompt will be hidden from workspace views.'}
+              </p>
+              <div className="v2-modal-actions">
+                <button className="v2-secondary-action" type="button" onClick={() => setConfirmation(null)}>
+                  Cancel
+                </button>
+                <button
+                  className="v2-danger"
+                  type="button"
+                  onClick={() => {
+                    const pending = confirmation;
+                    setConfirmation(null);
+                    void (pending.type === 'session'
+                      ? confirmRevokeSession(pending.sessionId, pending.current)
+                      : confirmDeletePrompt(pending.promptId));
+                  }}
+                >
+                  {confirmation.type === 'session' && confirmation.current ? 'Sign out' : confirmation.type === 'session' ? 'Revoke' : 'Delete'}
+                </button>
+              </div>
+            </section>
+          </div>
         ) : null}
         </>}
       </main>

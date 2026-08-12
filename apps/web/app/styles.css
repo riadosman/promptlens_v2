@@ -4305,6 +4305,30 @@ body:has(.auth-shell) {
   background: #14231b;
 }
 
+.v2-modal-backdrop {
+  position:fixed;
+  inset:0;
+  z-index:100;
+  display:grid;
+  place-items:center;
+  padding:1rem;
+  background:rgba(20,35,27,.42);
+  backdrop-filter:blur(4px);
+}
+.v2-confirm-modal {
+  width:min(100%,28rem);
+  border:1px solid #d4dfd7;
+  border-radius:1rem;
+  background:#fffdf8;
+  padding:1.5rem;
+  box-shadow:0 1.5rem 4rem rgba(20,35,27,.2);
+}
+.v2-confirm-modal h2 { margin:.35rem 0 .7rem; }
+.v2-confirm-modal > p:not(.v2-kicker) { color:#6e7f76; line-height:1.55; }
+.v2-modal-actions { display:flex; justify-content:flex-end; gap:.7rem; margin-top:1.4rem; }
+.v2-modal-actions .v2-secondary-action,
+.v2-modal-actions .v2-danger { min-height:2.5rem; padding:.65rem 1rem; }
+
 .dashboard-shell-v2 .v2-header h1,
 .dashboard-shell-v2 .v2-header .v2-subline {
   color: #fffdf8 !important;

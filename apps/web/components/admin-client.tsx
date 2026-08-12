@@ -98,6 +98,9 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
   const [supportGrants, setSupportGrants] = useState<SupportGrant[]>([]);
   const [supportMetadata, setSupportMetadata] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [deletionModalOpen, setDeletionModalOpen] = useState(false);
+  const [deletionConfirmation, setDeletionConfirmation] = useState('');
   const [auditQuery, setAuditQuery] = useState('');
   const [auditResult, setAuditResult] = useState('ALL');
   const [auditPage, setAuditPage] = useState(1);
@@ -233,7 +236,8 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
   async function updateSettings(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const fields = new FormData(event.currentTarget);
-    await apiRequest<TenantSettings>('/admin/settings', {
+    try {
+      await apiRequest<TenantSettings>('/admin/settings', {
       method: 'PATCH',
       body: JSON.stringify({
         retentionDays: Number(fields.get('retentionDays')),
@@ -241,8 +245,12 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
         aiModel: fields.get('aiModel'),
         aiMonthlyTokenBudget: Number(fields.get('aiMonthlyTokenBudget')),
       }),
-    });
-    load();
+      });
+      setToast('Settings saved successfully.');
+      load();
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : 'Settings could not be saved.');
+    }
   }
 
   async function exportWorkspace() {
@@ -254,23 +262,29 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
     anchor.download = `promptlens-${settings?.slug ?? 'workspace'}-export.json`;
     anchor.click();
     URL.revokeObjectURL(url);
+    setToast('Workspace export downloaded.');
   }
 
-  async function scheduleDeletion() {
+  function scheduleDeletion() {
     if (!settings) return;
-    const confirmation = window.prompt(
-      `This schedules permanent deletion after seven days. Type: delete ${settings.slug}`,
-    );
-    if (!confirmation) return;
+    setDeletionConfirmation('');
+    setDeletionModalOpen(true);
+  }
+
+  async function confirmScheduleDeletion() {
+    if (!settings || deletionConfirmation !== `delete ${settings.slug}`) return;
     await apiRequest('/admin/deletion', {
       method: 'POST',
-      body: JSON.stringify({ confirmation }),
+      body: JSON.stringify({ confirmation: deletionConfirmation }),
     });
+    setDeletionModalOpen(false);
+    setToast('Workspace deletion has been scheduled.');
     load();
   }
 
   async function cancelDeletion() {
     await apiRequest('/admin/deletion', { method: 'DELETE' });
+    setToast('Scheduled deletion cancelled.');
     load();
   }
 
@@ -994,6 +1008,21 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
           </section>
         </div>
       ) : null}
+      {deletionModalOpen && settings ? (
+        <div className="admin-modal-backdrop" role="presentation" onMouseDown={() => setDeletionModalOpen(false)}>
+          <section className="admin-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="deletion-title" onMouseDown={(event) => event.stopPropagation()}>
+            <p className="eyebrow">Data controls</p>
+            <h2 id="deletion-title">Schedule workspace deletion?</h2>
+            <p>This permanently deletes the workspace after seven days. Type <strong>delete {settings.slug}</strong> to confirm.</p>
+            <input value={deletionConfirmation} onChange={(event) => setDeletionConfirmation(event.target.value)} placeholder={`delete ${settings.slug}`} autoFocus />
+            <div className="admin-modal-actions">
+              <button className="quiet" type="button" onClick={() => setDeletionModalOpen(false)}>Cancel</button>
+              <button className="danger" type="button" disabled={deletionConfirmation !== `delete ${settings.slug}`} onClick={() => void confirmScheduleDeletion()}>Schedule deletion</button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+      {toast ? <div className="dashboard-toast" role="status" onClick={() => setToast(null)}>{toast}</div> : null}
     </main>
   );
 }

@@ -1232,6 +1232,7 @@ export function DashboardClient() {
             </section>
           )
         ) : null}
+        {feedback ? <div className="dashboard-toast" role="status" onClick={() => setFeedback(null)}>{feedback}</div> : null}
         {confirmation ? (
           <div className="v2-modal-backdrop" role="presentation" onMouseDown={() => setConfirmation(null)}>
             <section

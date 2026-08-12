@@ -4493,6 +4493,21 @@ body:has(.auth-shell) {
   margin-bottom: 1.1rem;
 }
 
+.dashboard-shell-v2 .v2-activity-panel .v2-panel-head .v2-chip {
+  display: inline-flex;
+  min-width: 5.5rem;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.75rem;
+  border-color: #b7cbbd;
+  background: #e4f1e7;
+  color: #167448 !important;
+  -webkit-text-fill-color: #167448 !important;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
 .dashboard-shell-v2 .v2-activity-panel .v2-session-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }

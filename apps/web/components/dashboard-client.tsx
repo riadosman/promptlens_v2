@@ -1295,15 +1295,7 @@ function DashboardLoadingShell({ section }: { section: DashboardSection }) {
     return (
       <section className="v2-dashboard-loading" aria-busy="true" aria-label="Loading projects">
         <LoadingHeader />
-        <div className="v2-panel v2-project-create">
-          <span className="v2-skeleton v2-skeleton-line" style={{ width: '8rem' }} />
-          <span className="v2-skeleton v2-skeleton-input" />
-          <span className="v2-skeleton v2-skeleton-input" />
-          <span className="v2-skeleton v2-skeleton-button" style={{ width: '9rem' }} />
-        </div>
-        <div className="v2-project-grid">
-          {Array.from({ length: 3 }).map((_, index) => <ProjectCardSkeleton key={index} />)}
-        </div>
+        <ProjectsPanelSkeleton />
       </section>
     );
   }
@@ -1352,21 +1344,6 @@ function LoadingHeader() {
       </div>
       <span className="v2-skeleton v2-skeleton-button" style={{ width: '8rem' }} />
     </div>
-  );
-}
-
-function ProjectCardSkeleton() {
-  return (
-    <article className="v2-project-card v2-project-card-skeleton">
-      <h3>
-        <span className="v2-skeleton v2-skeleton-title" />
-      </h3>
-      <p>
-        <span className="v2-skeleton v2-skeleton-line" />
-      </p>
-      <span className="v2-skeleton v2-skeleton-chip" />
-      <span className="v2-skeleton v2-skeleton-button" />
-    </article>
   );
 }
 
@@ -1493,15 +1470,48 @@ function ProjectsPanelSkeleton() {
         </div>
         <span className="v2-skeleton v2-skeleton-line" style={{ width: '6.5rem' }} />
       </div>
-      <div className="v2-project-grid">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <ProjectCardSkeleton key={index} />
-        ))}
+      <div className="v2-project-create">
+        <div>
+          <span className="v2-skeleton v2-skeleton-line" style={{ width: '8rem' }} />
+          <span className="v2-skeleton v2-skeleton-title" style={{ width: '10rem' }} />
+        </div>
+        <div className="v2-project-create-fields">
+          <span className="v2-skeleton v2-skeleton-input" />
+          <span className="v2-skeleton v2-skeleton-input" />
+          <span className="v2-skeleton v2-skeleton-button" style={{ minWidth: '9rem' }} />
+        </div>
       </div>
-      <div className="v2-inline-form">
-        <span className="v2-skeleton v2-skeleton-input" />
-        <span className="v2-skeleton v2-skeleton-input" />
-        <span className="v2-skeleton v2-skeleton-button" style={{ minWidth: '8.5rem' }} />
+      <article className="v2-project-featured v2-project-featured-skeleton">
+        <div>
+          <span className="v2-skeleton v2-skeleton-line" style={{ width: '7rem' }} />
+          <span className="v2-skeleton v2-skeleton-title" style={{ width: '13rem', height: '2.2rem' }} />
+          <span className="v2-skeleton v2-skeleton-line" style={{ width: '10rem' }} />
+        </div>
+        <div className="v2-project-featured-actions">
+          <span className="v2-skeleton v2-skeleton-chip" />
+          <span className="v2-skeleton v2-skeleton-button" style={{ width: '8rem' }} />
+          <span className="v2-skeleton v2-skeleton-button" style={{ width: '5rem' }} />
+        </div>
+      </article>
+      <div className="v2-project-list v2-project-list-skeleton">
+        <div className="v2-section-title">
+          <div>
+            <span className="v2-skeleton v2-skeleton-line" style={{ width: '9rem' }} />
+            <span className="v2-skeleton v2-skeleton-title" style={{ width: '8rem' }} />
+          </div>
+          <span className="v2-skeleton v2-skeleton-chip" />
+        </div>
+        {Array.from({ length: 2 }).map((_, index) => (
+          <article className="v2-project-list-row" key={index}>
+            <div>
+              <span className="v2-skeleton v2-skeleton-title" style={{ width: '9rem' }} />
+              <span className="v2-skeleton v2-skeleton-line" style={{ width: '12rem' }} />
+            </div>
+            <span className="v2-skeleton v2-skeleton-chip" />
+            <span className="v2-skeleton v2-skeleton-button" style={{ width: '5rem' }} />
+          </article>
+        ))}
+        <DashboardPagination label="Project" page={1} pageCount={1} onChange={() => undefined} />
       </div>
     </section>
   );

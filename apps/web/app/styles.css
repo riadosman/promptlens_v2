@@ -5174,5 +5174,10 @@ body:has(.auth-shell) {
 .dashboard-shell-v2 .v2-connect-field select option {
   color: #10251c !important;
   -webkit-text-fill-color: #10251c !important;
-  background: #fffdf8;
+  background: #fffdf8 !important;
+  color-scheme: light;
+}
+
+.dashboard-shell-v2 .v2-connect-field select {
+  appearance: auto;
 }

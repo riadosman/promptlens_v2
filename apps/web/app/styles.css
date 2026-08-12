@@ -2201,6 +2201,21 @@ select optgroup {
   .control-center.admin-main .control-center-content {
     width: auto;
     margin-left: 15rem;
+    min-width: 0;
+    max-width: none;
+    overflow-x: clip;
+    padding: 1.25rem;
+    box-sizing: border-box;
+  }
+
+  .control-center.admin-main .control-center-topbar {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .control-center.admin-main .control-center-section,
+  .control-center.admin-main .control-center-detail-hero {
+    min-width: 0;
   }
 
   .control-center.admin-main .control-center-nav,
@@ -2209,6 +2224,18 @@ select optgroup {
     max-width: none;
     overflow: visible;
   }
+}
+
+.dashboard-shell-v2 .v2-filter-bar select,
+.dashboard-shell-v2 .v2-filter-bar select option,
+.dashboard-shell-v2 .v2-filter-bar select optgroup,
+.dashboard-shell-v2 .v2-switch select,
+.dashboard-shell-v2 .v2-switch select option,
+.dashboard-shell-v2 .v2-switch select optgroup {
+  color: #14231b !important;
+  -webkit-text-fill-color: #14231b !important;
+  background: #fffdf8 !important;
+  color-scheme: light;
 }
 
 @media (max-width: 760px) {

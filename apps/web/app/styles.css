@@ -5912,6 +5912,12 @@ body:has(.auth-shell) {
   justify-content: flex-end !important;
 }
 
+/* Keep technical session chrome out of the user-facing page header. */
+.dashboard-shell-v2 .v2-hero-ribbon,
+.dashboard-shell-v2 .v2-metadata {
+  display: none !important;
+}
+
 .dashboard-shell-v2 .v2-pagination .v2-pagination-controls > button {
   align-items: center;
   justify-items: center;

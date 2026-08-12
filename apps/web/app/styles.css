@@ -2027,6 +2027,73 @@ select optgroup {
   }
 }
 
+/* Keep the administration shell usable before the compact phone layout. */
+@media (max-width: 1024px) {
+  .control-center.admin-main {
+    display: block;
+    width: 100%;
+    min-height: 100vh;
+  }
+
+  .control-center.admin-main .control-center-rail {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    padding: 1rem;
+  }
+
+  .control-center.admin-main .control-center-content {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .control-center.admin-main .control-center-nav,
+  .control-center.admin-main .control-center-instance-links {
+    display: flex;
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+.admin-skeleton {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: linear-gradient(90deg, #e2ece5 25%, #f5faf6 50%, #e2ece5 75%);
+  background-size: 200% 100%;
+  animation: admin-skeleton-shimmer 1.2s linear infinite;
+}
+
+@keyframes admin-skeleton-shimmer {
+  to { background-position: -200% 0; }
+}
+
+.admin-skeleton-wordmark { width: 7rem; height: 1.25rem; }
+.admin-skeleton-label { width: 9rem; height: 2.5rem; margin-top: 1.5rem; }
+.admin-skeleton-nav { width: 6rem; height: 2.25rem; }
+.admin-skeleton-eyebrow { width: 7rem; height: 0.75rem; }
+.admin-skeleton-heading { width: 13rem; height: 2.5rem; margin-top: 0.75rem; }
+.admin-skeleton-scope { width: 13rem; height: 2.5rem; }
+.admin-skeleton-panel { min-height: 12rem; }
+.admin-skeleton-title { width: 11rem; height: 2rem; margin-top: 0.75rem; }
+.admin-skeleton-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; margin-top: 1.25rem; }
+.admin-skeleton-metric { height: 5rem; border: 1px solid #d4dfd7; }
+.admin-skeleton-list { display: grid; gap: 0.75rem; }
+.admin-skeleton-row { height: 2.75rem; border: 1px solid #d4dfd7; }
+
+@media (max-width: 760px) {
+  .admin-skeleton-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 480px) {
+  .admin-skeleton-metrics { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 560px) {
   .workflow-card,
   .workflow-card-featured {

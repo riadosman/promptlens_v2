@@ -87,6 +87,7 @@ interface SupportGrant {
 }
 
 export function AdminClient({ section = 'overview' }: { readonly section?: AdminSection }) {
+  const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [members, setMembers] = useState<MemberRecord[]>([]);
   const [audit, setAudit] = useState<AuditRecord[]>([]);
@@ -169,12 +170,15 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
           void apiRequest<InstanceUser[]>('/admin/instance/users').then(setInstanceUsers);
         }
       })
-      .catch((cause: unknown) =>
+    .catch((cause: unknown) =>
         setError(cause instanceof Error ? cause.message : 'Admin data could not be loaded.'),
-      );
+      )
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => load(), [load]);
+
+  if (loading) return <AdminLoadingSkeleton />;
 
   async function addMember(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -968,6 +972,36 @@ function AdminMetric({
       <p>{label}</p>
       <strong>{value}</strong>
     </article>
+  );
+}
+
+function AdminLoadingSkeleton() {
+  return (
+    <main className="control-center admin-main admin-loading-shell" aria-busy="true" aria-label="Loading administration">
+      <aside className="control-center-rail" aria-hidden="true">
+        <span className="admin-skeleton admin-skeleton-wordmark" />
+        <span className="admin-skeleton admin-skeleton-label" />
+        <nav className="control-center-nav">
+          {Array.from({ length: 6 }).map((_, index) => <span className="admin-skeleton admin-skeleton-nav" key={index} />)}
+        </nav>
+      </aside>
+      <div className="control-center-content">
+        <header className="control-center-topbar">
+          <div><span className="admin-skeleton admin-skeleton-eyebrow" /><span className="admin-skeleton admin-skeleton-heading" /></div>
+          <span className="admin-skeleton admin-skeleton-scope" />
+        </header>
+        <section className="control-center-section admin-skeleton-panel">
+          <span className="admin-skeleton admin-skeleton-eyebrow" />
+          <span className="admin-skeleton admin-skeleton-title" />
+          <div className="admin-skeleton-metrics">
+            {Array.from({ length: 4 }).map((_, index) => <span className="admin-skeleton admin-skeleton-metric" key={index} />)}
+          </div>
+        </section>
+        <section className="control-center-section admin-skeleton-panel admin-skeleton-list">
+          {Array.from({ length: 5 }).map((_, index) => <span className="admin-skeleton admin-skeleton-row" key={index} />)}
+        </section>
+      </div>
+    </main>
   );
 }
 

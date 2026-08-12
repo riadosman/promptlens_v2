@@ -4303,8 +4303,36 @@ body:has(.auth-shell) {
 }
 
 .dashboard-shell-v2 .v2-command-kpis article {
-  min-height: 18rem;
-  align-content: end;
+  min-height: 11rem;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto auto;
+  align-content: start;
+  align-items: start;
+  gap: 0;
+  padding: 1.35rem 1.4rem;
+}
+
+.dashboard-shell-v2 .v2-command-kpis article p {
+  margin: 0;
+  color: #496057 !important;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.dashboard-shell-v2 .v2-command-kpis article strong {
+  grid-row: auto;
+  margin-top: 0.85rem;
+  color: #14231b !important;
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
+  line-height: 0.85;
+  letter-spacing: -0.08em;
+}
+
+.dashboard-shell-v2 .v2-command-kpis article span {
+  margin-top: 0.75rem;
+  color: #6e7f76 !important;
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
 .dashboard-shell-v2 .v2-command-trend {
@@ -4337,7 +4365,7 @@ body:has(.auth-shell) {
   }
 
   .dashboard-shell-v2 .v2-command-kpis article {
-    min-height: 7rem;
+    min-height: 8.5rem;
   }
 }
 

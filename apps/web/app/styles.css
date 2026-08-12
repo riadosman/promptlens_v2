@@ -4450,6 +4450,24 @@ body:has(.auth-shell) {
   }
 }
 
+/* Shared content rail: every Overview section starts on the same line */
+.dashboard-shell-v2 .v2-main {
+  padding-inline: clamp(1rem, 4vw, 4rem);
+}
+
+.dashboard-shell-v2 .v2-header,
+.dashboard-shell-v2 .v2-overview-welcome,
+.dashboard-shell-v2 .v2-analytics-overview,
+.dashboard-shell-v2 .v2-activity-panel {
+  width: 100%;
+  margin-inline: 0;
+}
+
+.dashboard-shell-v2 .v2-overview-welcome,
+.dashboard-shell-v2 .v2-activity-panel {
+  box-sizing: border-box;
+}
+
 .dashboard-shell-v2 .v2-bar-chart > div > i {
   background: #9a8cff;
 }

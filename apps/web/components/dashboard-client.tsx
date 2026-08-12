@@ -371,7 +371,7 @@ export function DashboardClient() {
   >([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
-  const [sectionLoading, setSectionLoading] = useState(false);
+  const [sectionLoading, setSectionLoading] = useState(true);
   const [sessions, setSessions] = useState<
     Array<{ id: string; userAgent: string | null; createdAt: string; current: boolean }>
   >([]);
@@ -801,6 +801,7 @@ export function DashboardClient() {
         </button>
       </aside>
       <main className="v2-main">
+        {sectionLoading || !actor ? <DashboardLoadingShell /> : <>
         <header className="v2-header">
           <div className="v2-header-copy">
             <p className="v2-kicker">{sectionCaption}</p>
@@ -1238,8 +1239,36 @@ export function DashboardClient() {
             </section>
           )
         ) : null}
+        </>}
       </main>
     </div>
+  );
+}
+
+function DashboardLoadingShell() {
+  return (
+    <section className="v2-dashboard-loading" aria-busy="true" aria-label="Loading dashboard">
+      <div className="v2-dashboard-loading-header">
+        <div>
+          <span className="v2-skeleton v2-skeleton-line" style={{ width: '8rem' }} />
+          <span className="v2-skeleton v2-skeleton-title" style={{ width: '18rem', height: '3rem' }} />
+          <span className="v2-skeleton v2-skeleton-line" style={{ width: '24rem', maxWidth: '80%' }} />
+        </div>
+        <span className="v2-skeleton v2-skeleton-button" style={{ width: '8rem' }} />
+      </div>
+      <div className="v2-dashboard-loading-hero">
+        <span className="v2-skeleton v2-skeleton-line" style={{ width: '9rem' }} />
+        <span className="v2-skeleton v2-skeleton-title" style={{ width: '70%', height: '3.8rem' }} />
+        <span className="v2-skeleton v2-skeleton-line" style={{ width: '42%' }} />
+      </div>
+      <div className="v2-dashboard-loading-grid">
+        <span className="v2-skeleton v2-dashboard-loading-score" />
+        {Array.from({ length: 3 }).map((_, index) => (
+          <span className="v2-skeleton v2-dashboard-loading-kpi" key={index} />
+        ))}
+      </div>
+      <span className="v2-skeleton v2-dashboard-loading-panel" />
+    </section>
   );
 }
 

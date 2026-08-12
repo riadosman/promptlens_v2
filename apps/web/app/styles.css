@@ -5004,8 +5004,13 @@ body:has(.auth-shell) {
 .dashboard-shell-v2 .v2-search-button svg {
   width: 1.1rem;
   height: 1.1rem;
-  color: #fffdf8;
-  stroke: #fffdf8;
+  color: #fff !important;
+  stroke: #fff !important;
+}
+
+.dashboard-shell-v2 .v2-search-button svg circle,
+.dashboard-shell-v2 .v2-search-button svg path {
+  stroke: #fff !important;
 }
 
 .dashboard-shell-v2 .v2-export-strip {

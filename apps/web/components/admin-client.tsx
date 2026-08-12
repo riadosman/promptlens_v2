@@ -354,12 +354,6 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
             <p className="eyebrow">Administration</p>
             <h1>Control center</h1>
           </div>
-          <div className="control-center-scope">
-            <span>{settings?.name ?? 'Workspace'}</span>
-            <span className="control-center-role">
-              {overview?.instance ? 'Instance admin' : 'Workspace admin'}
-            </span>
-          </div>
       </header>
       {error ? <p className="form-error">{error}</p> : null}
       {section === 'overview' && overview ? (

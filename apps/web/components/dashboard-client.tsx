@@ -366,9 +366,6 @@ export function DashboardClient() {
   const [minScoreFilter, setMinScoreFilter] = useState('');
   const [memberFilter, setMemberFilter] = useState('');
   const [tenantMembers, setTenantMembers] = useState<MemberOption[]>([]);
-  const [tenants, setTenants] = useState<
-    Array<{ role: string; tenant: { id: string; name: string } }>
-  >([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const [sectionLoading, setSectionLoading] = useState(true);
@@ -462,7 +459,6 @@ export function DashboardClient() {
     setStats(buildMockStats(rows));
     setProjects(mockProjects);
     setPrompts(rows);
-    setTenants(mockConfig.tenants);
     setSessions(mockSessions);
     setTenantMembers(mockConfig.tenantMembers);
     setError(null);
@@ -478,7 +474,6 @@ export function DashboardClient() {
         setStats(buildMockStats(rows));
         setProjects(mockProjects);
         setPrompts(rows);
-        setTenants(mockConfig.tenants);
         setSessions(mockSessions);
         setTenantMembers(mockConfig.tenantMembers);
         setError(null);
@@ -486,15 +481,12 @@ export function DashboardClient() {
         const tenantAdmin = isTenantAdmin(actor.role);
         const scope = tenantAdmin ? 'tenant' : 'mine';
         const parameters = promptParameters();
-        const [nextStats, nextProjects, nextPrompts, nextTenants, nextSessions, nextMembers] =
+        const [nextStats, nextProjects, nextPrompts, nextSessions, nextMembers] =
           await Promise.all([
             apiRequest<DashboardStats>(`/dashboard/stats?scope=${scope}`),
             apiRequest<ProjectResponse[]>('/projects'),
             apiRequest<PromptListResponse>(
               `/prompts${parameters.size ? `?${parameters.toString()}` : ''}`,
-            ),
-            apiRequest<Array<{ role: string; tenant: { id: string; name: string } }>>(
-              '/auth/tenants',
             ),
             apiRequest<
               Array<{ id: string; userAgent: string | null; createdAt: string; current: boolean }>
@@ -507,7 +499,6 @@ export function DashboardClient() {
         setStats(nextStats);
         setProjects(nextProjects);
         setPrompts(nextPrompts.items);
-        setTenants(nextTenants);
         setSessions(nextSessions);
         setTenantMembers(
           tenantAdmin
@@ -537,7 +528,6 @@ export function DashboardClient() {
   }, [
     actor,
     demoMode,
-    mockConfig.tenants,
     mockConfig.tenantMembers,
     mockRows,
     promptParameters,
@@ -615,12 +605,6 @@ export function DashboardClient() {
     }
     await apiRequest('/auth/logout', { method: 'POST' });
     router.push('/login');
-  }
-
-  async function switchTenant(tenantId: string) {
-    if (demoMode) return;
-    await apiRequest('/auth/tenant/switch', { method: 'POST', body: JSON.stringify({ tenantId }) });
-    window.location.reload();
   }
 
   async function download(format: 'json' | 'csv') {
@@ -764,27 +748,6 @@ export function DashboardClient() {
             </Link>
           ) : null}
         </nav>
-        {tenants.length > 1 ? (
-          <label className="v2-switch">
-            Workspace
-            <select
-              aria-label="Active workspace"
-              defaultValue=""
-              onChange={(event) => {
-                if (event.target.value) void switchTenant(event.target.value);
-              }}
-            >
-              <option value="" disabled>
-                Switch workspace
-              </option>
-              {tenants.map(({ tenant, role }) => (
-                <option key={tenant.id} value={tenant.id}>
-                  {tenant.name} - {role}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
         <button className="v2-ghost" onClick={() => void logout()}>
           Sign out
         </button>

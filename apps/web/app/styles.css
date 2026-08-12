@@ -5703,6 +5703,15 @@ body:has(.auth-shell) {
   font-family: inherit;
 }
 
+.dashboard-shell-v2 .v2-pagination-page {
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  line-height: 1;
+  text-align: center;
+  font-family: inherit;
+}
+
 @media (max-width: 560px) {
   .dashboard-shell-v2 .v2-pagination {
     flex-direction: row;

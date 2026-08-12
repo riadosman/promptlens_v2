@@ -6007,6 +6007,77 @@ body:has(.auth-shell) {
   .v2-dashboard-loading-grid { grid-template-columns: 1fr; }
 }
 
+/* Final responsive pass: keep the dashboard airy when cards have no data. */
+.dashboard-shell-v2 .v2-overview-review-action,
+.dashboard-shell-v2 .v2-overview-review-action span {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+.dashboard-shell-v2 .v2-pagination button {
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 0.5rem;
+  font-size: 0.72rem;
+}
+
+.dashboard-shell-v2 .v2-pagination .v2-pagination-page {
+  min-width: 1.7rem;
+  padding-inline: 0.3rem;
+}
+
+@media (max-width: 760px) {
+  .dashboard-shell-v2 .v2-project-create,
+  .dashboard-shell-v2 .v2-project-create-fields,
+  .dashboard-shell-v2 .v2-project-featured {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-shell-v2 .v2-project-create-fields > * {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .dashboard-shell-v2 .v2-project-featured-actions {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .dashboard-shell-v2 .v2-project-featured-actions > * {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .control-center-instance-users-section .control-center-section-heading {
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .control-center-instance-users-section .control-center-status {
+    align-self: flex-start;
+  }
+
+  .control-center-instance-users-list,
+  .control-center-instance-users-list article,
+  .control-center-instance-users-list article > div {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .control-center-instance-users-list article > div strong,
+  .control-center-instance-users-list article > div small {
+    display: block;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .control-center-instance-users-list article > span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+}
+
 .dashboard-shell-v2 .v2-pagination .v2-pagination-controls > button {
   align-items: center;
   justify-items: center;

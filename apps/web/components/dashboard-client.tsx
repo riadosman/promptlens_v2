@@ -700,9 +700,6 @@ export function DashboardClient() {
 
   const actorRole = actor?.role ?? '';
   const adminLinksVisible = isTenantAdmin(actorRole);
-  const activeTenantName =
-    tenants.find((entry) => entry.tenant.id === actor?.tenantId)?.tenant.name ??
-    'Current workspace';
   const navLinkClass = (target: string) =>
     target === '/dashboard/overview' && pathname === '/dashboard'
       ? 'active'
@@ -733,14 +730,6 @@ export function DashboardClient() {
         <Link className="v2-wordmark" href="/dashboard">
           PromptLens
         </Link>
-        {actor ? (
-          <div className="v2-panel v2-tenant">
-            <p className="v2-kicker v2-tenant-kicker">Active workspace</p>
-            <strong className="v2-tenant-name">{activeTenantName}</strong>
-            <span className="v2-tenant-role">{actorRole.toUpperCase()}</span>
-            <small className="v2-tenant-id v2-id">Tenant {actor.tenantId.slice(0, 7)}</small>
-          </div>
-        ) : null}
         <nav aria-label="Main navigation" className="v2-nav">
           <Link
             className={`v2-nav-link ${navLinkClass('/dashboard/overview')}`}
@@ -839,7 +828,7 @@ export function DashboardClient() {
               <p>See what is working, spot the gaps, and keep improving your team&apos;s AI practice.</p>
             </div>
             <div className="v2-overview-actions">
-              <Link className="v2-primary-action" href="/dashboard/prompts">
+              <Link className="v2-primary-action v2-overview-review-action" href="/dashboard/prompts">
                 Review prompt log <span aria-hidden="true">→</span>
               </Link>
               <Link className="v2-secondary-action" href="/connect">
@@ -858,7 +847,7 @@ export function DashboardClient() {
                   <div className="v2-analytics-score-copy">
                     <p className="v2-kicker">Prompt health · last 30 days</p>
                     <h2>Signal quality</h2>
-                    <strong>{stats.averageScore ?? 'N/A'}<small>/100</small></strong>
+                    <strong>{stats.averageScore ?? 0}<small>/100</small></strong>
                     <span className="v2-score-change">Workspace average score</span>
                   </div>
                   <div className="v2-score-bar"><i style={{ width: `${stats.averageScore ?? 0}%` }} /></div>
@@ -874,7 +863,14 @@ export function DashboardClient() {
                     <div className="v2-bar-chart" aria-label="Score trend chart">
                       {stats.scoreTrend.map((point) => <div key={point.date} style={{ height: `${Math.max(point.score, 8)}%` }}><span>{point.score}</span><i /></div>)}
                     </div>
-                  ) : <p className="v2-empty">No completed analyses yet.</p>}
+                  ) : (
+                    <Empty>
+                      <EmptyHeader>
+                        <EmptyTitle>No completed analyses yet</EmptyTitle>
+                        <EmptyDescription>Complete an analysis to see your score trend.</EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  )}
                 </article>
                 <div className="v2-analytics-insights v2-command-insights">
                   <Distribution title="Models" items={stats.modelDistribution} compact />
@@ -890,7 +886,14 @@ export function DashboardClient() {
                   <span className="v2-chip">{sessions.length} devices</span>
                 </div>
                 <div className="v2-session-grid">
-                  {visibleSessions.map((session) => (
+                  {visibleSessions.length === 0 ? (
+                    <Empty>
+                      <EmptyHeader>
+                        <EmptyTitle>No recent sessions</EmptyTitle>
+                        <EmptyDescription>Connect a device to start tracking workspace activity.</EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  ) : visibleSessions.map((session) => (
                     <article className="v2-session-card" key={session.id}>
                       <div>
                         <h3>{session.current ? 'Current session' : 'Signed-in device'}</h3>
@@ -1550,7 +1553,12 @@ function Distribution({
           ))}
         </ol>
       ) : (
-        <p className="v2-empty">No data yet.</p>
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>No data yet</EmptyTitle>
+            <EmptyDescription>New activity will appear here when it is available.</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       )}
     </div>
   );

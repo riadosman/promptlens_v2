@@ -4958,6 +4958,12 @@ body:has(.auth-shell) {
   -webkit-text-fill-color: #14231b !important;
 }
 
+.dashboard-shell-v2 .v2-project-create-fields .v2-primary-action,
+.dashboard-shell-v2 .v2-project-create-fields .v2-primary-action span {
+  color: #fffdf8 !important;
+  -webkit-text-fill-color: #fffdf8 !important;
+}
+
 .dashboard-shell-v2 .v2-project-featured {
   display: flex;
   min-height: 13rem;

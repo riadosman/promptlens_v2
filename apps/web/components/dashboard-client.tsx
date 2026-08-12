@@ -1237,8 +1237,24 @@ export function DashboardClient() {
                       ))}
                       <div className="v2-pagination v2-project-pagination" aria-label="Project pagination">
                         <span className="v2-pagination-label">Page <strong>{projectPage}</strong><span aria-hidden="true">/</span>{projectPageCount}</span>
-                        <div>
+                        <div className="v2-pagination-controls">
                           <button type="button" aria-label="Previous projects page" disabled={projectPage === 1} onClick={() => setProjectPage((page) => Math.max(1, page - 1))}>←</button>
+                          <div className="v2-pagination-pages">
+                            {paginationItems(projectPage, projectPageCount).map((item, index) => item === 'ellipsis' ? (
+                              <span className="v2-pagination-ellipsis" key={`ellipsis-${index}`} aria-hidden="true">…</span>
+                            ) : (
+                              <button
+                                className="v2-pagination-page"
+                                type="button"
+                                aria-label={`Go to projects page ${item}`}
+                                aria-current={item === projectPage ? 'page' : undefined}
+                                key={item}
+                                onClick={() => setProjectPage(item)}
+                              >
+                                {item}
+                              </button>
+                            ))}
+                          </div>
                           <button type="button" aria-label="Next projects page" disabled={projectPage === projectPageCount} onClick={() => setProjectPage((page) => Math.min(projectPageCount, page + 1))}>→</button>
                         </div>
                       </div>
@@ -1333,6 +1349,13 @@ function PromptsPanelSkeleton() {
       </div>
     </section>
   );
+}
+
+function paginationItems(page: number, pageCount: number): Array<number | 'ellipsis'> {
+  if (pageCount <= 5) return Array.from({ length: pageCount }, (_, index) => index + 1);
+  if (page <= 3) return [1, 2, 3, 'ellipsis', pageCount];
+  if (page >= pageCount - 2) return [1, 'ellipsis', pageCount - 2, pageCount - 1, pageCount];
+  return [1, 'ellipsis', page, 'ellipsis', pageCount];
 }
 
 function ProjectsPanelSkeleton() {

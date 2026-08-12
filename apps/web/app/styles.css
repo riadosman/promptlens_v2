@@ -5548,3 +5548,86 @@ body:has(.auth-shell) {
   .control-center-topbar h1 { font-size: 2.2rem; }
   .control-center-section { border-radius: 0.65rem; }
 }
+
+@media (max-width: 760px) {
+  .dashboard-shell-v2 .v2-project-list {
+    padding: 0.85rem;
+  }
+
+  .dashboard-shell-v2 .v2-project-list-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.7rem;
+    padding: 1rem 0;
+  }
+
+  .dashboard-shell-v2 .v2-project-list-row .v2-status {
+    align-self: flex-start;
+  }
+
+  .dashboard-shell-v2 .v2-project-list-row .v2-action {
+    width: 100%;
+  }
+
+  .dashboard-shell-v2 .v2-project-pagination {
+    align-items: center;
+  }
+
+  .dashboard-shell-v2 .v2-project-pagination .v2-pagination-controls {
+    gap: 0.35rem;
+  }
+
+  .dashboard-shell-v2 .v2-project-pagination .v2-pagination-pages {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+  }
+}
+
+.dashboard-shell-v2 .v2-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  border: 1px solid #d4dfd7;
+  border-radius: 999px;
+  background: #f6faf5;
+}
+
+.dashboard-shell-v2 .v2-pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.dashboard-shell-v2 .v2-pagination-page,
+.dashboard-shell-v2 .v2-pagination-ellipsis {
+  display: grid;
+  width: 2.05rem;
+  height: 2.05rem;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #6e7f76 !important;
+  -webkit-text-fill-color: #6e7f76 !important;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.dashboard-shell-v2 .v2-pagination-page[aria-current='page'] {
+  background: #167448;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+.dashboard-shell-v2 .v2-pagination-page:not([aria-current='page']):hover {
+  background: #dceee1;
+  color: #167448 !important;
+  -webkit-text-fill-color: #167448 !important;
+}
+
+.dashboard-shell-v2 .v2-pagination-ellipsis {
+  width: 1.35rem;
+}

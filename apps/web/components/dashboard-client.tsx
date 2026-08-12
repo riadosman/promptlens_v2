@@ -866,6 +866,11 @@ export function DashboardClient() {
                   ) : (
                     <Empty>
                       <EmptyHeader>
+                        <EmptyMedia>
+                          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                            <path d="M4.5 18.5h15M6.5 15.5v-3m5 3V8m5 7.5V5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                          </svg>
+                        </EmptyMedia>
                         <EmptyTitle>No completed analyses yet</EmptyTitle>
                         <EmptyDescription>Complete an analysis to see your score trend.</EmptyDescription>
                       </EmptyHeader>
@@ -889,6 +894,11 @@ export function DashboardClient() {
                   {visibleSessions.length === 0 ? (
                     <Empty>
                       <EmptyHeader>
+                        <EmptyMedia>
+                          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                            <path d="M5 7.5h14v10H5zM8 5v5m8-5v5M8 14h.01m4 0h.01m4 0h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </EmptyMedia>
                         <EmptyTitle>No recent sessions</EmptyTitle>
                         <EmptyDescription>Connect a device to start tracking workspace activity.</EmptyDescription>
                       </EmptyHeader>
@@ -1555,6 +1565,11 @@ function Distribution({
       ) : (
         <Empty>
           <EmptyHeader>
+            <EmptyMedia>
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                <path d="M4.5 7.5h15v11h-15zM7.5 5.5h9M8 11h2m2 0h2m2 0h1M8 14.5h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </EmptyMedia>
             <EmptyTitle>No data yet</EmptyTitle>
             <EmptyDescription>New activity will appear here when it is available.</EmptyDescription>
           </EmptyHeader>

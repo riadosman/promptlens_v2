@@ -5362,6 +5362,91 @@ body:has(.auth-shell) {
   }
 }
 
+@media (min-width: 761px) and (max-width: 1024px) {
+  .dashboard-shell-v2 {
+    grid-template-columns: 12rem minmax(0, 1fr);
+  }
+
+  .dashboard-shell-v2 .v2-main {
+    min-width: 0;
+    padding: 1.25rem 0.8rem 2rem;
+  }
+
+  .dashboard-shell-v2 .v2-header,
+  .dashboard-shell-v2 .v2-overview-welcome,
+  .dashboard-shell-v2 .v2-project-create,
+  .dashboard-shell-v2 .v2-project-featured {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-shell-v2 .v2-header,
+  .dashboard-shell-v2 .v2-overview-welcome {
+    align-items: stretch;
+  }
+
+  .dashboard-shell-v2 .v2-overview-actions,
+  .dashboard-shell-v2 .v2-project-featured-actions {
+    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-shell-v2 .v2-overview-actions > *,
+  .dashboard-shell-v2 .v2-project-featured-actions > * {
+    flex: 1 1 12rem;
+    justify-content: center;
+  }
+
+  .dashboard-shell-v2 .v2-analytics-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-shell-v2 .v2-analytics-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dashboard-shell-v2 .v2-analytics-insights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-shell-v2 .v2-project-create-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-shell-v2 .v2-project-create-fields > :last-child {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+
+  .dashboard-shell-v2 .v2-session-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .control-center.admin-main .control-center-detail-hero,
+  .control-center.admin-main .control-center-section,
+  .control-center.admin-main .control-center-section-heading,
+  .control-center.admin-main .control-center-list-toolbar {
+    min-width: 0;
+  }
+
+  .control-center.admin-main .control-center-detail-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .control-center.admin-main .control-center-detail-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .control-center.admin-main .control-center-instance-users-list article {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .control-center.admin-main .control-center-instance-users-list article > span,
+  .control-center.admin-main .control-center-instance-users-list article > button {
+    grid-column: 2;
+  }
+}
+
 @media (max-width: 560px) {
   .dashboard-shell-v2 .v2-filter-bar {
     grid-template-columns: 1fr;

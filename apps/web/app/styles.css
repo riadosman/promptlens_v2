@@ -4716,8 +4716,14 @@ body:has(.auth-shell) {
 
 .dashboard-shell-v2 .v2-prompt-row {
   border-bottom: 1px solid #e1e9e2;
-  color: #14231b;
+  color: #14231b !important;
+  -webkit-text-fill-color: #14231b !important;
   transition: background 160ms ease;
+}
+
+.dashboard-shell-v2 .v2-prompt-table [role='cell'] {
+  color: #14231b !important;
+  -webkit-text-fill-color: #14231b !important;
 }
 
 .dashboard-shell-v2 .v2-prompt-row:last-child {
@@ -4766,6 +4772,25 @@ body:has(.auth-shell) {
   font-size: 0.76rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.dashboard-shell-v2 .v2-prompt-table .v2-status {
+  display: inline-flex;
+  color: #167448 !important;
+  -webkit-text-fill-color: #167448 !important;
+  border-color: #abd0b7;
+  background: #e4f1e7;
+  font-weight: 800;
+}
+
+.dashboard-shell-v2 .v2-prompt-table .v2-prompt-actions button {
+  color: #167448 !important;
+  -webkit-text-fill-color: #167448 !important;
+}
+
+.dashboard-shell-v2 .v2-prompt-table .v2-prompt-actions .v2-danger {
+  color: #a33f35 !important;
+  -webkit-text-fill-color: #a33f35 !important;
 }
 
 .dashboard-shell-v2 .v2-prompt-row .v2-prompt-actions {

@@ -5159,3 +5159,20 @@ body:has(.auth-shell) {
   .dashboard-shell-v2 .v2-connect-actions { align-items: stretch; flex-direction: column-reverse; }
   .dashboard-shell-v2 .v2-connect-actions > * { width: 100%; justify-content: center; }
 }
+
+.dashboard-shell-v2 .v2-connect-progress > i.complete {
+  background: #117d4b;
+}
+
+.dashboard-shell-v2 .v2-connect-panel .v2-primary-action,
+.dashboard-shell-v2 .v2-connect-panel .v2-primary-action span {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+.dashboard-shell-v2 .v2-connect-field select,
+.dashboard-shell-v2 .v2-connect-field select option {
+  color: #10251c !important;
+  -webkit-text-fill-color: #10251c !important;
+  background: #fffdf8;
+}

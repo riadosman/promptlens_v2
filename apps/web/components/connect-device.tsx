@@ -67,7 +67,7 @@ export function ConnectDevice() {
     <form className="v2-connect-panel" onSubmit={step === 1 ? (event) => { event.preventDefault(); setStep(2); } : approve}>
       <div className="v2-connect-progress" aria-label={`Connection step ${step} of 2`}>
         <div className={step === 1 ? 'active' : 'complete'}><span>01</span><strong>Device code</strong></div>
-        <i aria-hidden="true" />
+        <i className={step === 2 ? 'complete' : ''} aria-hidden="true" />
         <div className={step === 2 ? 'active' : ''}><span>02</span><strong>Workspace access</strong></div>
       </div>
 

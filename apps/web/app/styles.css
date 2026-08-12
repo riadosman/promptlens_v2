@@ -5718,3 +5718,11 @@ body:has(.auth-shell) {
     align-items: center;
   }
 }
+
+.dashboard-shell-v2 .v2-project-pagination {
+  justify-content: center !important;
+}
+
+.dashboard-shell-v2 .v2-project-pagination .v2-pagination-controls {
+  justify-content: center;
+}

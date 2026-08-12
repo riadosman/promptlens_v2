@@ -759,7 +759,6 @@ export function DashboardClient() {
             <p className="v2-kicker">{sectionCaption}</p>
             <div className="v2-header-title">
               <h1>{sectionTitle}</h1>
-              <span className="v2-mode-dot" aria-hidden="true" />
             </div>
             <p className="v2-subline">
               {section === 'overview'

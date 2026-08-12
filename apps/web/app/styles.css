@@ -4699,8 +4699,8 @@ body:has(.auth-shell) {
   min-width: 2.55rem;
   padding: 0;
   place-items: center;
-  border-color: #173025 !important;
-  background: #173025 !important;
+  border-color: #167448 !important;
+  background: #167448 !important;
   color: #fffdf8 !important;
   -webkit-text-fill-color: #fffdf8 !important;
 }

@@ -5034,6 +5034,15 @@ body:has(.auth-shell) {
   font-weight:700;
 }
 
+.dashboard-shell-v2 .v2-connect-loading-card {
+  display:grid;
+  gap:1rem;
+  max-width:46rem;
+  margin-inline:auto;
+  min-height:24rem;
+  align-content:center;
+}
+
 .dashboard-shell-v2 .v2-export-strip {
   justify-content: flex-end;
   margin: 0.9rem 0 1.2rem;

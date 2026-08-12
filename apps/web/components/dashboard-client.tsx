@@ -770,7 +770,7 @@ export function DashboardClient() {
         </button>
       </aside>
       <main className="v2-main">
-        {sectionLoading || !actor ? <DashboardLoadingShell /> : <>
+        {sectionLoading || !actor ? <DashboardLoadingShell section={section} /> : <>
         <header className="v2-header">
           <div className="v2-header-copy">
             <p className="v2-kicker">{sectionCaption}</p>
@@ -1281,17 +1281,51 @@ export function DashboardClient() {
   );
 }
 
-function DashboardLoadingShell() {
+function DashboardLoadingShell({ section }: { section: DashboardSection }) {
+  if (section === 'prompts') {
+    return (
+      <section className="v2-dashboard-loading" aria-busy="true" aria-label="Loading prompt log">
+        <LoadingHeader />
+        <PromptsPanelSkeleton />
+      </section>
+    );
+  }
+
+  if (section === 'projects') {
+    return (
+      <section className="v2-dashboard-loading" aria-busy="true" aria-label="Loading projects">
+        <LoadingHeader />
+        <div className="v2-panel v2-project-create">
+          <span className="v2-skeleton v2-skeleton-line" style={{ width: '8rem' }} />
+          <span className="v2-skeleton v2-skeleton-input" />
+          <span className="v2-skeleton v2-skeleton-input" />
+          <span className="v2-skeleton v2-skeleton-button" style={{ width: '9rem' }} />
+        </div>
+        <div className="v2-project-grid">
+          {Array.from({ length: 3 }).map((_, index) => <ProjectCardSkeleton key={index} />)}
+        </div>
+      </section>
+    );
+  }
+
+  if (section === 'connect') {
+    return (
+      <section className="v2-dashboard-loading" aria-busy="true" aria-label="Loading device connection">
+        <LoadingHeader />
+        <section className="v2-panel v2-connect-loading-card">
+          <span className="v2-skeleton v2-skeleton-line" style={{ width: '7rem' }} />
+          <span className="v2-skeleton v2-skeleton-title" style={{ width: '70%', height: '3.2rem' }} />
+          <span className="v2-skeleton v2-skeleton-line" style={{ width: '85%' }} />
+          <span className="v2-skeleton v2-skeleton-input" />
+          <span className="v2-skeleton v2-skeleton-button" style={{ width: '10rem' }} />
+        </section>
+      </section>
+    );
+  }
+
   return (
     <section className="v2-dashboard-loading" aria-busy="true" aria-label="Loading dashboard">
-      <div className="v2-dashboard-loading-header">
-        <div>
-          <span className="v2-skeleton v2-skeleton-line" style={{ width: '8rem' }} />
-          <span className="v2-skeleton v2-skeleton-title" style={{ width: '18rem', height: '3rem' }} />
-          <span className="v2-skeleton v2-skeleton-line" style={{ width: '24rem', maxWidth: '80%' }} />
-        </div>
-        <span className="v2-skeleton v2-skeleton-button" style={{ width: '8rem' }} />
-      </div>
+      <LoadingHeader />
       <div className="v2-dashboard-loading-hero">
         <span className="v2-skeleton v2-skeleton-line" style={{ width: '9rem' }} />
         <span className="v2-skeleton v2-skeleton-title" style={{ width: '70%', height: '3.8rem' }} />
@@ -1305,6 +1339,19 @@ function DashboardLoadingShell() {
       </div>
       <span className="v2-skeleton v2-dashboard-loading-panel" />
     </section>
+  );
+}
+
+function LoadingHeader() {
+  return (
+    <div className="v2-dashboard-loading-header">
+      <div>
+        <span className="v2-skeleton v2-skeleton-line" style={{ width: '8rem' }} />
+        <span className="v2-skeleton v2-skeleton-title" style={{ width: '18rem', height: '3rem' }} />
+        <span className="v2-skeleton v2-skeleton-line" style={{ width: '24rem', maxWidth: '80%' }} />
+      </div>
+      <span className="v2-skeleton v2-skeleton-button" style={{ width: '8rem' }} />
+    </div>
   );
 }
 

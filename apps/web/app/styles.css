@@ -5616,6 +5616,40 @@ body:has(.auth-shell) {
   font-weight: 800;
 }
 
+.dashboard-shell-v2 .v2-project-pagination {
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 0;
+}
+
+.dashboard-shell-v2 .v2-project-pagination .v2-pagination-controls {
+  gap: 0.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.dashboard-shell-v2 .v2-project-pagination .v2-pagination-controls > button {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid #d4dfd7;
+  background: #fffdf8;
+  color: #14231b !important;
+  -webkit-text-fill-color: #14231b !important;
+}
+
+.dashboard-shell-v2 .v2-project-pagination .v2-pagination-page {
+  width: auto;
+  min-width: 1.8rem;
+  height: 2rem;
+  border-radius: 0.45rem;
+}
+
+.dashboard-shell-v2 .v2-project-pagination .v2-pagination-ellipsis {
+  width: 1.1rem;
+}
+
 .dashboard-shell-v2 .v2-pagination-page[aria-current='page'] {
   background: #167448;
   color: #fff !important;

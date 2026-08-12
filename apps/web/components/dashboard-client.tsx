@@ -1235,8 +1235,7 @@ export function DashboardClient() {
                           </button>
                         </article>
                       ))}
-                      <div className="v2-pagination v2-project-pagination" aria-label="Project pagination">
-                        <span className="v2-pagination-label">Page <strong>{projectPage}</strong><span aria-hidden="true">/</span>{projectPageCount}</span>
+                      <nav className="control-center-pagination v2-project-pagination" aria-label="Project pagination">
                         <div className="v2-pagination-controls">
                           <button type="button" aria-label="Previous projects page" disabled={projectPage === 1} onClick={() => setProjectPage((page) => Math.max(1, page - 1))}>←</button>
                           <div className="v2-pagination-pages">
@@ -1257,7 +1256,7 @@ export function DashboardClient() {
                           </div>
                           <button type="button" aria-label="Next projects page" disabled={projectPage === projectPageCount} onClick={() => setProjectPage((page) => Math.min(projectPageCount, page + 1))}>→</button>
                         </div>
-                      </div>
+                      </nav>
                     </div>
                   ) : null}
                 </>

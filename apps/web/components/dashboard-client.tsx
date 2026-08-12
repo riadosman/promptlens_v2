@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { DashboardStats, ProjectResponse, PromptListResponse } from '@promptlens/contracts';
 import { apiDownload, apiRequest } from '../lib/api';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from './ui/empty';
 
 type DashboardSection = 'overview' | 'prompts' | 'projects';
 
@@ -992,7 +993,21 @@ export function DashboardClient() {
                   <span role="columnheader" aria-label="Actions" />
                 </div>
                 {prompts.length === 0 ? (
-                  <p className="v2-empty">No prompts yet. Connect a device to start syncing.</p>
+                  <Empty>
+                    <EmptyHeader>
+                      <EmptyMedia>
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                          <path d="M7 5.5h10A1.5 1.5 0 0 1 18.5 7v10a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 17V7A1.5 1.5 0 0 1 7 5.5Z" stroke="currentColor" strokeWidth="1.5" />
+                          <path d="m8.5 9 2 2-2 2m3 2h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </EmptyMedia>
+                      <EmptyTitle>No prompts yet</EmptyTitle>
+                      <EmptyDescription>Connect a device to start syncing prompts into this workspace.</EmptyDescription>
+                    </EmptyHeader>
+                    <EmptyContent>
+                      <Link className="v2-primary-action" href="/connect">Connect a device <span aria-hidden="true">→</span></Link>
+                    </EmptyContent>
+                  </Empty>
                 ) : (
                   prompts.map((prompt) => {
                     const status = (prompt.analysis?.status ?? 'QUEUED').toLowerCase();

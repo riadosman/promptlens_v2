@@ -5376,12 +5376,25 @@ body:has(.auth-shell) {
   .dashboard-shell-v2 .v2-overview-welcome,
   .dashboard-shell-v2 .v2-project-create,
   .dashboard-shell-v2 .v2-project-featured {
-    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .dashboard-shell-v2 .v2-header,
   .dashboard-shell-v2 .v2-overview-welcome {
     align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dashboard-shell-v2 .v2-header {
+    margin: 0;
+    padding: 0 0 1.25rem;
+  }
+
+  .dashboard-shell-v2 .v2-overview-welcome,
+  .dashboard-shell-v2 .v2-project-featured {
+    display: flex;
   }
 
   .dashboard-shell-v2 .v2-overview-actions,
@@ -5399,9 +5412,14 @@ body:has(.auth-shell) {
 
   .dashboard-shell-v2 .v2-analytics-overview {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "score"
+      "kpis"
+      "trend"
+      "insights";
   }
 
-  .dashboard-shell-v2 .v2-analytics-kpis {
+  .dashboard-shell-v2 .v2-command-kpis {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 

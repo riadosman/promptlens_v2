@@ -4184,6 +4184,98 @@ body:has(.auth-shell) {
   .dashboard-shell-v2 .v2-command-kpis article { transition: none; }
 }
 
+/* User-first Overview workspace */
+.dashboard-shell-v2 .v2-main {
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 2.75rem) clamp(1rem, 4vw, 4.5rem) 3.5rem;
+}
+
+.dashboard-shell-v2 .v2-overview-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  margin: 0.35rem 0 0.25rem;
+  padding: clamp(1.3rem, 3vw, 2.2rem);
+  border: 1px solid #c8d9cd;
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(circle at 88% 10%, rgba(154, 140, 255, 0.28), transparent 13rem),
+    linear-gradient(115deg, #e0eee3, #fffdf8 65%);
+}
+
+.dashboard-shell-v2 .v2-overview-welcome h2 {
+  max-width: 22ch;
+  margin: 0.3rem 0 0;
+  color: #14231b;
+  font-size: clamp(1.55rem, 3vw, 2.45rem);
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+}
+
+.dashboard-shell-v2 .v2-overview-welcome > div:first-child > p:last-child {
+  max-width: 52ch;
+  margin: 0.7rem 0 0;
+  color: #496057;
+  line-height: 1.5;
+}
+
+.dashboard-shell-v2 .v2-overview-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.dashboard-shell-v2 .v2-primary-action,
+.dashboard-shell-v2 .v2-secondary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 2.75rem;
+  padding: 0.72rem 1rem;
+  border-radius: 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.dashboard-shell-v2 .v2-primary-action {
+  background: #167448;
+  color: #fffdf8 !important;
+  box-shadow: 0 0.7rem 1.4rem rgba(22, 116, 72, 0.18);
+}
+
+.dashboard-shell-v2 .v2-secondary-action {
+  border: 1px solid #b7cbbd;
+  background: rgba(255, 253, 248, 0.72);
+  color: #167448 !important;
+}
+
+.dashboard-shell-v2 .v2-primary-action:hover,
+.dashboard-shell-v2 .v2-secondary-action:hover {
+  transform: translateY(-1px);
+}
+
+.dashboard-shell-v2 .v2-analytics-overview {
+  margin-top: 0.6rem;
+}
+
+@media (max-width: 760px) {
+  .dashboard-shell-v2 .v2-overview-welcome {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dashboard-shell-v2 .v2-overview-actions {
+    justify-content: flex-start;
+  }
+}
+
 .dashboard-shell-v2 .v2-bar-chart > div > i {
   background: #9a8cff;
 }

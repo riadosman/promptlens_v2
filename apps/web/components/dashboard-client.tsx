@@ -797,6 +797,23 @@ export function DashboardClient() {
         </header>
         {error ? <p className="form-error">{error}</p> : null}
         {section === 'overview' ? (
+          <section className="v2-overview-welcome" aria-labelledby="overview-welcome-title">
+            <div>
+              <p className="v2-kicker">Workspace pulse</p>
+              <h2 id="overview-welcome-title">Make your next prompt sharper.</h2>
+              <p>See what is working, spot the gaps, and keep improving your team&apos;s AI practice.</p>
+            </div>
+            <div className="v2-overview-actions">
+              <Link className="v2-primary-action" href="/dashboard/prompts">
+                Review prompt log <span aria-hidden="true">→</span>
+              </Link>
+              <Link className="v2-secondary-action" href="/connect">
+                Connect a device
+              </Link>
+            </div>
+          </section>
+        ) : null}
+        {section === 'overview' ? (
           sectionLoading ? (
             <OverviewPanelSkeleton />
           ) : (

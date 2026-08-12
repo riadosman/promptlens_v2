@@ -150,6 +150,7 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
   );
 
   const load = useCallback(() => {
+    setLoading(true);
     Promise.all([
       apiRequest<AdminOverview>('/admin/overview'),
       apiRequest<MemberRecord[]>('/admin/members'),
@@ -176,7 +177,7 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => load(), [load]);
+  useEffect(() => load(), [load, section]);
 
   if (loading) return <AdminLoadingSkeleton />;
 

@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { DashboardStats, ProjectResponse, PromptListResponse } from '@promptlens/contracts';
 import { apiDownload, apiRequest } from '../lib/api';
+import { ConnectDevice } from './connect-device';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from './ui/empty';
 
-type DashboardSection = 'overview' | 'prompts' | 'projects';
+type DashboardSection = 'overview' | 'prompts' | 'projects' | 'connect';
 
 type ActorContext = {
   userId: string;
@@ -323,6 +324,7 @@ function currentSection(pathname: string | null): DashboardSection {
   if (!pathname) return 'overview';
   if (pathname.endsWith('/prompts')) return 'prompts';
   if (pathname.endsWith('/projects')) return 'projects';
+  if (pathname.startsWith('/connect')) return 'connect';
   return 'overview';
 }
 
@@ -712,12 +714,16 @@ export function DashboardClient() {
       ? 'Prompt history'
       : section === 'projects'
         ? 'Project control'
+        : section === 'connect'
+          ? 'Connect device'
         : 'Signal command center';
   const sectionCaption =
     section === 'prompts'
       ? 'Prompt analysis'
       : section === 'projects'
         ? 'Workspace'
+        : section === 'connect'
+          ? 'Device setup'
         : 'Workspace health';
   const featuredProject = projects[0];
 
@@ -807,7 +813,9 @@ export function DashboardClient() {
                 ? 'Signals from your workspace, in one controlled view.'
                 : section === 'prompts'
                   ? 'Read, filter, and improve every prompt.'
-                  : 'Organize work by projects and status.'}
+                  : section === 'projects'
+                    ? 'Organize work by projects and status.'
+                    : 'Authorize an AI tool and choose its workspace access.'}
             </p>
           </div>
           <div className="v2-hero-ribbon" aria-hidden="true">
@@ -821,6 +829,7 @@ export function DashboardClient() {
           </div>
         </header>
         {error ? <p className="form-error">{error}</p> : null}
+        {section === 'connect' ? <ConnectDevice /> : null}
         {section === 'overview' ? (
           <section className="v2-overview-welcome" aria-labelledby="overview-welcome-title">
             <div>

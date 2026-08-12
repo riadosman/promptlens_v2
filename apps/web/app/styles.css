@@ -5102,3 +5102,60 @@ body:has(.auth-shell) {
     grid-template-columns: 1fr;
   }
 }
+
+.dashboard-shell-v2 .v2-connect-panel {
+  max-width: 58rem;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+  border: 1px solid #cadbd0;
+  border-radius: 1.25rem;
+  background: #fffdf8;
+  color: #10251c;
+}
+
+.dashboard-shell-v2 .v2-connect-progress {
+  display: grid;
+  grid-template-columns: 1fr 4rem 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2.4rem;
+}
+
+.dashboard-shell-v2 .v2-connect-progress > div { display: grid; grid-template-columns: auto 1fr; gap: 0.55rem; align-items: center; color: #70877b; }
+.dashboard-shell-v2 .v2-connect-progress > div.active,
+.dashboard-shell-v2 .v2-connect-progress > div.complete { color: #117d4b; }
+.dashboard-shell-v2 .v2-connect-progress span { display: grid; width: 2rem; height: 2rem; place-items: center; border: 1px solid #bfd3c5; border-radius: 50%; font-size: 0.7rem; font-weight: 800; }
+.dashboard-shell-v2 .v2-connect-progress .active span { border-color: #117d4b; background: #117d4b; color: #fff; }
+.dashboard-shell-v2 .v2-connect-progress strong { font-size: 0.78rem; }
+.dashboard-shell-v2 .v2-connect-progress i { height: 1px; background: #cadbd0; }
+
+.dashboard-shell-v2 .v2-connect-step { max-width: 36rem; }
+.dashboard-shell-v2 .v2-connect-step h2,
+.dashboard-shell-v2 .v2-connect-success h2 { margin: 0.35rem 0 0.65rem; font-size: clamp(1.7rem, 4vw, 2.65rem); letter-spacing: -0.045em; color: #10251c; }
+.dashboard-shell-v2 .v2-connect-intro { max-width: 34rem; margin: 0 0 1.75rem; color: #607a6d; line-height: 1.55; }
+.dashboard-shell-v2 .v2-connect-field { display: grid; gap: 0.45rem; margin-bottom: 1.25rem; color: #173126; font-weight: 750; }
+.dashboard-shell-v2 .v2-connect-field small { color: #71887c; font-size: 0.76rem; font-weight: 500; }
+.dashboard-shell-v2 .v2-connect-field input,
+.dashboard-shell-v2 .v2-connect-field select { width: 100%; min-height: 3.35rem; border: 1px solid #bcd1c2; border-radius: 0.7rem; padding: 0 1rem; background: #fffdf8; color: #10251c; font: inherit; }
+.dashboard-shell-v2 .v2-connect-field input { font-size: 1.15rem; letter-spacing: 0.08em; }
+.dashboard-shell-v2 .v2-connect-field input:focus,
+.dashboard-shell-v2 .v2-connect-field select:focus { outline: 3px solid rgba(17, 125, 75, 0.18); border-color: #117d4b; }
+.dashboard-shell-v2 .v2-connect-summary { display: flex; justify-content: space-between; gap: 1rem; margin: 0 0 1.3rem; padding: 0.85rem 1rem; border: 1px solid #d5e2d8; border-radius: 0.7rem; background: #eef6ef; color: #61786c; font-size: 0.8rem; }
+.dashboard-shell-v2 .v2-connect-summary strong { color: #10251c; letter-spacing: 0.08em; }
+.dashboard-shell-v2 .v2-connect-actions { display: flex; align-items: center; gap: 0.75rem; margin-top: 1.75rem; }
+.dashboard-shell-v2 .v2-connect-panel .v2-primary-action,
+.dashboard-shell-v2 .v2-connect-panel .v2-secondary-action { min-height: 2.9rem; border-radius: 0.7rem; padding: 0.8rem 1.1rem; font-weight: 800; }
+.dashboard-shell-v2 .v2-connect-panel button.v2-primary-action { border: 0; cursor: pointer; }
+.dashboard-shell-v2 .v2-connect-panel button:disabled { cursor: not-allowed; opacity: 0.55; }
+.dashboard-shell-v2 .v2-connect-status { margin: 1rem 0 0; padding: 0.8rem 0.9rem; border: 1px solid #e4c9b6; border-radius: 0.65rem; background: #fff6ef; color: #8b4d2d; line-height: 1.45; }
+.dashboard-shell-v2 .v2-connect-status a { color: #0d7446; font-weight: 800; }
+.dashboard-shell-v2 .v2-connect-success { text-align: center; }
+.dashboard-shell-v2 .v2-connect-success p:not(.v2-kicker) { margin: 0 auto 1.5rem; max-width: 32rem; color: #607a6d; line-height: 1.55; }
+.dashboard-shell-v2 .v2-connect-success-mark { display: grid; width: 3.5rem; height: 3.5rem; margin: 0 auto 1rem; place-items: center; border-radius: 50%; background: #117d4b; color: #fff; font-size: 1.7rem; font-weight: 900; }
+
+@media (max-width: 560px) {
+  .dashboard-shell-v2 .v2-connect-progress { grid-template-columns: 1fr 2rem 1fr; gap: 0.35rem; }
+  .dashboard-shell-v2 .v2-connect-progress strong { font-size: 0.68rem; }
+  .dashboard-shell-v2 .v2-connect-actions { align-items: stretch; flex-direction: column-reverse; }
+  .dashboard-shell-v2 .v2-connect-actions > * { width: 100%; justify-content: center; }
+}

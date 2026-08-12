@@ -1,20 +1,10 @@
-import Link from 'next/link';
-import { ConnectDevice } from '../../components/connect-device';
+import { Suspense } from 'react';
+import { DashboardClient } from '../../components/dashboard-client';
 
 export default function ConnectPage() {
   return (
-    <main className="auth-shell">
-      <section className="auth-card">
-        <Link className="wordmark" href="/dashboard">
-          PromptLens
-        </Link>
-        <p className="eyebrow">Device authorization</p>
-        <h1>Connect your AI tool.</h1>
-        <p className="muted">
-          Enter the code shown by your connector and choose the only project it may access.
-        </p>
-        <ConnectDevice />
-      </section>
-    </main>
+    <Suspense fallback={<div className="v2-panel">Loading connect setup…</div>}>
+      <DashboardClient />
+    </Suspense>
   );
 }

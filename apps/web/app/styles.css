@@ -4693,6 +4693,19 @@ body:has(.auth-shell) {
   -webkit-text-fill-color: #fffdf8 !important;
 }
 
+.dashboard-shell-v2 .v2-search-button {
+  display: grid !important;
+  width: 2.55rem;
+  min-width: 2.55rem;
+  padding: 0;
+  place-items: center;
+}
+
+.dashboard-shell-v2 .v2-search-button svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
 .dashboard-shell-v2 .v2-export-strip {
   justify-content: flex-end;
   margin: 0.9rem 0 1.2rem;
@@ -4724,6 +4737,12 @@ body:has(.auth-shell) {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.dashboard-shell-v2 .v2-prompt-table-head > span[role='columnheader'] {
+  color: #f3fff5 !important;
+  -webkit-text-fill-color: #f3fff5 !important;
+  text-shadow: 0 0 0 #f3fff5;
 }
 
 .dashboard-shell-v2 .v2-prompt-row {

@@ -985,8 +985,11 @@ export function DashboardClient() {
                   value={minScoreFilter}
                   onChange={(event) => setMinScoreFilter(event.target.value)}
                 />
-                <button className="v2-chip" type="submit">
-                  Search
+                <button className="v2-chip v2-search-button" type="submit" aria-label="Search prompts" title="Search prompts">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                    <circle cx="10.8" cy="10.8" r="5.8" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="m15.2 15.2 4.3 4.3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
                 </button>
               </form>
               <div className="v2-export-strip">

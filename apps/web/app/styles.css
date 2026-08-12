@@ -2305,7 +2305,7 @@ select optgroup {
 
 .landing-nav {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   width: 100%;
   max-width: 78rem;
@@ -2317,16 +2317,18 @@ select optgroup {
   box-shadow: 0 0.7rem 2rem rgba(31, 67, 44, 0.07);
 }
 
-.landing-nav-center {
-  justify-self: center;
-}
-
 .landing-nav-actions {
   display: flex;
   align-items: center;
   justify-self: end;
   gap: clamp(0.8rem, 2vw, 1.5rem);
   margin-left: 0;
+}
+
+.landing-nav-divider {
+  color: #b2c0b5;
+  font-size: 1rem;
+  user-select: none;
 }
 
 /* Landing-only visual system: keep auth and dashboard surfaces unchanged. */
@@ -2442,7 +2444,8 @@ body:has(.landing-shell) {
 }
 
 @media (max-width:560px) {
-  .landing-nav-anchor { display:none; }
+  .landing-nav-anchor,
+  .landing-nav-divider { display:none; }
   .landing-nav-links { gap:.75rem; }
   .landing-nav-links .text-link { display:none; }
   .landing-hero { margin-top:3.5rem; margin-bottom:3.5rem; }

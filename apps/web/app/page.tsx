@@ -18,12 +18,13 @@ export default function HomePage() {
         <a className="wordmark" href="/">
           PromptLens
         </a>
-        <div className="landing-nav-center">
+        <div className="landing-nav-actions">
           <a className="landing-nav-anchor" href="#how-it-works">
             How it works
           </a>
-        </div>
-        <div className="landing-nav-actions">
+          <span className="landing-nav-divider" aria-hidden="true">
+            |
+          </span>
           <a className="text-link" href="/login">
             Sign in
           </a>

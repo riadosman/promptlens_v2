@@ -802,7 +802,7 @@ export function DashboardClient() {
           ) : (
             <>
               <section className="v2-analytics-overview" aria-label="Prompt analytics">
-                <div className="v2-analytics-score-panel">
+                <div className="v2-analytics-score-panel v2-command-score">
                   <div className="v2-analytics-score-copy">
                     <p className="v2-kicker">Prompt health · last 30 days</p>
                     <h2>Signal quality</h2>
@@ -811,12 +811,12 @@ export function DashboardClient() {
                   </div>
                   <div className="v2-score-bar"><i style={{ width: `${stats.averageScore ?? 0}%` }} /></div>
                 </div>
-                <div className="v2-analytics-kpis">
+                <div className="v2-analytics-kpis v2-command-kpis">
                   <article><p>Prompts</p><strong>{stats.prompts}</strong><span>Total captured</span></article>
                   <article><p>Last 7 days</p><strong>{stats.promptsLast7Days}</strong><span>Recent activity</span></article>
                   <article><p>Analyses</p><strong>{stats.analysesCompleted}</strong><span>Completed reviews</span></article>
                 </div>
-                <article className="v2-analytics-chart v2-panel">
+                <article className="v2-analytics-chart v2-panel v2-command-trend">
                   <div className="v2-panel-head"><div><p className="v2-kicker">Performance</p><h2>Score trend</h2></div><span className="v2-chip">14 days</span></div>
                   {stats.scoreTrend.length ? (
                     <div className="v2-bar-chart" aria-label="Score trend chart">
@@ -824,7 +824,7 @@ export function DashboardClient() {
                     </div>
                   ) : <p className="v2-empty">No completed analyses yet.</p>}
                 </article>
-                <div className="v2-analytics-insights">
+                <div className="v2-analytics-insights v2-command-insights">
                   <Distribution title="Models" items={stats.modelDistribution} compact />
                   <Distribution title="Projects" items={stats.projectDistribution} compact />
                 </div>

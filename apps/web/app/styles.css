@@ -5385,6 +5385,83 @@ body:has(.auth-shell) {
   .control-center-pagination { justify-content: space-between; }
 }
 
+@media (max-width: 900px) {
+  .control-center-rail {
+    position: static;
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 1rem 1.25rem;
+  }
+
+  .control-center-wordmark { display: inline-flex; padding-bottom: 0.75rem; }
+  .control-center-nav,
+  .control-center-instance-links {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .control-center-nav::-webkit-scrollbar,
+  .control-center-instance-links::-webkit-scrollbar { display: none; }
+  .control-center-nav a,
+  .control-center-instance-links a { flex: 0 0 auto; white-space: nowrap; }
+  .control-center-back { display: inline-flex; margin-top: 0.8rem; }
+  .control-center-content { margin-left: 0; padding: 1.25rem 1rem 2rem; }
+}
+
+@media (max-width: 760px) {
+  .dashboard-shell-v2 .v2-prompt-table { overflow-x: visible; }
+
+  .dashboard-shell-v2 .v2-prompt-table-head { display: none; }
+
+  .dashboard-shell-v2 .v2-prompt-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+    gap: 0.7rem;
+    padding: 1rem;
+  }
+
+  .dashboard-shell-v2 .v2-prompt-row > .v2-prompt-main,
+  .dashboard-shell-v2 .v2-prompt-row > .v2-prompt-actions,
+  .dashboard-shell-v2 .v2-prompt-row > .v2-analysis {
+    grid-column: 1 / -1;
+  }
+
+  .dashboard-shell-v2 .v2-prompt-row > [role='cell']:not(.v2-prompt-main)::before {
+    display: block;
+    margin-bottom: 0.2rem;
+    color: #71877a;
+    content: attr(data-label);
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .dashboard-shell-v2 .v2-prompt-row > [role='cell']:nth-child(2)::before { content: 'Score'; }
+  .dashboard-shell-v2 .v2-prompt-row > [role='cell']:nth-child(3)::before { content: 'Status'; }
+  .dashboard-shell-v2 .v2-prompt-row > [role='cell']:nth-child(4)::before { content: 'Project'; }
+  .dashboard-shell-v2 .v2-prompt-row > [role='cell']:nth-child(5)::before { content: 'Model'; }
+  .dashboard-shell-v2 .v2-prompt-row > [role='cell']:nth-child(6)::before { content: 'Time'; }
+  .dashboard-shell-v2 .v2-prompt-row .v2-prompt-actions::before { display: none; }
+  .dashboard-shell-v2 .v2-prompt-main p { overflow-wrap: anywhere; white-space: normal; }
+  .dashboard-shell-v2 .v2-prompt-row .v2-prompt-actions { justify-content: stretch; }
+  .dashboard-shell-v2 .v2-prompt-row .v2-prompt-actions > button { flex: 1; }
+  .dashboard-shell-v2 .v2-empty { min-width: 0; }
+}
+
+@media (max-width: 480px) {
+  .dashboard-shell-v2 .v2-prompt-row { grid-template-columns: 1fr; }
+  .dashboard-shell-v2 .v2-prompt-row > [role='cell']:not(.v2-prompt-main) { grid-column: 1 / -1; }
+  .dashboard-shell-v2 .v2-prompt-row .v2-prompt-actions { flex-direction: column; }
+  .dashboard-shell-v2 .v2-prompt-row .v2-prompt-actions > button { width: 100%; }
+}
+
 @media (max-width: 560px) {
   .dashboard-shell-v2 .v2-rail {
     grid-template-columns: 1fr auto;

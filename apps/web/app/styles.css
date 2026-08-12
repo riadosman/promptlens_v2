@@ -5712,6 +5712,18 @@ body:has(.auth-shell) {
   font-family: inherit;
 }
 
+.dashboard-shell-v2 .v2-pagination-arrow {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
 @media (max-width: 560px) {
   .dashboard-shell-v2 .v2-pagination {
     flex-direction: row;

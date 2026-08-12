@@ -1211,7 +1211,7 @@ export function DashboardClient() {
                       ))}
                       <nav className="control-center-pagination v2-project-pagination" aria-label="Project pagination">
                         <div className="v2-pagination-controls">
-                          <button type="button" aria-label="Previous projects page" disabled={projectPage === 1} onClick={() => setProjectPage((page) => Math.max(1, page - 1))}>←</button>
+                          <button type="button" aria-label="Previous projects page" disabled={projectPage === 1} onClick={() => setProjectPage((page) => Math.max(1, page - 1))}><PaginationArrow direction="left" /></button>
                           <div className="v2-pagination-pages">
                             {paginationItems(projectPage, projectPageCount).map((item, index) => item === 'ellipsis' ? (
                               <span className="v2-pagination-ellipsis" key={`ellipsis-${index}`} aria-hidden="true">…</span>
@@ -1228,7 +1228,7 @@ export function DashboardClient() {
                               </button>
                             ))}
                           </div>
-                          <button type="button" aria-label="Next projects page" disabled={projectPage === projectPageCount} onClick={() => setProjectPage((page) => Math.min(projectPageCount, page + 1))}>→</button>
+                          <button type="button" aria-label="Next projects page" disabled={projectPage === projectPageCount} onClick={() => setProjectPage((page) => Math.min(projectPageCount, page + 1))}><PaginationArrow direction="right" /></button>
                         </div>
                       </nav>
                     </div>
@@ -1345,7 +1345,7 @@ function DashboardPagination({
   return (
     <nav className="control-center-pagination v2-pagination" aria-label={`${label} pagination`}>
       <div className="v2-pagination-controls">
-        <button type="button" aria-label={`Previous ${label.toLowerCase()} page`} disabled={page === 1} onClick={() => onChange(Math.max(1, page - 1))}>←</button>
+        <button type="button" aria-label={`Previous ${label.toLowerCase()} page`} disabled={page === 1} onClick={() => onChange(Math.max(1, page - 1))}><PaginationArrow direction="left" /></button>
         <div className="v2-pagination-pages">
           {paginationItems(page, pageCount).map((item, index) => item === 'ellipsis' ? (
             <span className="v2-pagination-ellipsis" key={`ellipsis-${index}`} aria-hidden="true">…</span>
@@ -1353,9 +1353,17 @@ function DashboardPagination({
             <button className="v2-pagination-page" type="button" aria-label={`Go to ${label.toLowerCase()} page ${item}`} aria-current={item === page ? 'page' : undefined} key={item} onClick={() => onChange(item)}>{item}</button>
           ))}
         </div>
-        <button type="button" aria-label={`Next ${label.toLowerCase()} page`} disabled={page === pageCount} onClick={() => onChange(Math.min(pageCount, page + 1))}>→</button>
+        <button type="button" aria-label={`Next ${label.toLowerCase()} page`} disabled={page === pageCount} onClick={() => onChange(Math.min(pageCount, page + 1))}><PaginationArrow direction="right" /></button>
       </div>
     </nav>
+  );
+}
+
+function PaginationArrow({ direction }: { readonly direction: 'left' | 'right' }) {
+  return (
+    <svg className="v2-pagination-arrow" viewBox="0 0 20 20" aria-hidden="true">
+      <path d={direction === 'left' ? 'm11.5 4-5 6 5 6' : 'm8.5 4 5 6-5 6'} />
+    </svg>
   );
 }
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { apiRequest } from '../lib/api';
 import { type AdminSection } from '../lib/admin-sections';
+import { useToast } from './ui/toast';
 
 interface AdminOverview {
   tenant: {
@@ -98,7 +99,7 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
   const [supportGrants, setSupportGrants] = useState<SupportGrant[]>([]);
   const [supportMetadata, setSupportMetadata] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const { toast } = useToast();
   const [deletionModalOpen, setDeletionModalOpen] = useState(false);
   const [deletionConfirmation, setDeletionConfirmation] = useState('');
   const [auditQuery, setAuditQuery] = useState('');
@@ -246,7 +247,7 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
         aiMonthlyTokenBudget: Number(fields.get('aiMonthlyTokenBudget')),
       }),
       });
-      setToast('Settings saved successfully.');
+      toast({ title: 'Settings saved' });
       load();
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : 'Settings could not be saved.');
@@ -262,7 +263,7 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
     anchor.download = `promptlens-${settings?.slug ?? 'workspace'}-export.json`;
     anchor.click();
     URL.revokeObjectURL(url);
-    setToast('Workspace export downloaded.');
+    toast({ title: 'Download complete', description: 'Workspace export is ready.' });
   }
 
   function scheduleDeletion() {
@@ -278,13 +279,13 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
       body: JSON.stringify({ confirmation: deletionConfirmation }),
     });
     setDeletionModalOpen(false);
-    setToast('Workspace deletion has been scheduled.');
+      toast({ title: 'Deletion scheduled' });
     load();
   }
 
   async function cancelDeletion() {
     await apiRequest('/admin/deletion', { method: 'DELETE' });
-    setToast('Scheduled deletion cancelled.');
+    toast({ title: 'Deletion cancelled' });
     load();
   }
 
@@ -1022,7 +1023,6 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
           </section>
         </div>
       ) : null}
-      {toast ? <div className="dashboard-toast" role="status" onClick={() => setToast(null)}>{toast}</div> : null}
     </main>
   );
 }
@@ -1081,8 +1081,18 @@ function Pagination({
   readonly pageCount: number;
   readonly onChange: (page: number) => void;
 }) {
+  const items = adminPaginationItems(page, pageCount);
   return (
     <nav className="control-center-pagination" aria-label="Pagination">
+      <div className="v2-pagination-pages">
+        {items.map((item, index) => item === 'ellipsis' ? (
+          <span className="v2-pagination-ellipsis" key={`ellipsis-${index}`} aria-hidden="true">â€¦</span>
+        ) : (
+          <button className="v2-pagination-page" type="button" aria-label={`Go to page ${item}`} aria-current={item === page ? 'page' : undefined} key={item} onClick={() => onChange(item)}>
+            {item}
+          </button>
+        ))}
+      </div>
       <button
         type="button"
         className="quiet"
@@ -1103,4 +1113,11 @@ function Pagination({
       </button>
     </nav>
   );
+}
+
+function adminPaginationItems(page: number, pageCount: number): Array<number | 'ellipsis'> {
+  if (pageCount <= 5) return Array.from({ length: pageCount }, (_, index) => index + 1);
+  if (page <= 3) return [1, 2, 3, 4, 5, 'ellipsis', pageCount];
+  if (page >= pageCount - 2) return [1, 'ellipsis', pageCount - 4, pageCount - 3, pageCount - 2, pageCount - 1, pageCount];
+  return [1, 'ellipsis', page - 1, page, page + 1, 'ellipsis', pageCount];
 }

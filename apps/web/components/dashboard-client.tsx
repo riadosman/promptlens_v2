@@ -7,6 +7,7 @@ import type { DashboardStats, ProjectResponse, PromptListResponse } from '@promp
 import { apiDownload, apiRequest } from '../lib/api';
 import { ConnectDevice } from './connect-device';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from './ui/empty';
+import { useToast } from './ui/toast';
 
 type DashboardSection = 'overview' | 'prompts' | 'projects' | 'connect';
 
@@ -367,7 +368,7 @@ export function DashboardClient() {
   const [memberFilter, setMemberFilter] = useState('');
   const [tenantMembers, setTenantMembers] = useState<MemberOption[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const { toast } = useToast();
   const [confirmation, setConfirmation] = useState<
     | { type: 'prompt'; promptId: string }
     | { type: 'session'; sessionId: string; current: boolean }
@@ -637,7 +638,7 @@ export function DashboardClient() {
       anchor.download = filename;
       anchor.click();
       URL.revokeObjectURL(url);
-        setFeedback(`${format.toUpperCase()} export downloaded.`);
+        toast({ title: 'Download complete', description: `${format.toUpperCase()} file is ready.` });
         return;
       }
       const parameters = promptParameters();
@@ -651,9 +652,9 @@ export function DashboardClient() {
       anchor.download = filename;
       anchor.click();
       URL.revokeObjectURL(url);
-      setFeedback(`${format.toUpperCase()} export downloaded.`);
+      toast({ title: 'Download complete', description: `${format.toUpperCase()} file is ready.` });
     } catch (cause: unknown) {
-      setError(cause instanceof Error ? cause.message : 'Export could not be downloaded.');
+      toast({ title: 'Download failed', description: cause instanceof Error ? cause.message : 'Export could not be downloaded.', variant: 'destructive' });
     }
   }
 
@@ -987,7 +988,6 @@ export function DashboardClient() {
                 </button>
               </form>
               <div className="v2-export-strip">
-                {feedback ? <span className="v2-export-feedback" role="status">{feedback}</span> : null}
                 <button className="v2-ghost" type="button" onClick={() => void download('json')}>
                   Export JSON
                 </button>
@@ -1232,7 +1232,6 @@ export function DashboardClient() {
             </section>
           )
         ) : null}
-        {feedback ? <div className="dashboard-toast" role="status" onClick={() => setFeedback(null)}>{feedback}</div> : null}
         {confirmation ? (
           <div className="v2-modal-backdrop" role="presentation" onMouseDown={() => setConfirmation(null)}>
             <section
@@ -1416,7 +1415,7 @@ function PromptsPanelSkeleton() {
 
 function paginationItems(page: number, pageCount: number): Array<number | 'ellipsis'> {
   if (pageCount <= 5) return Array.from({ length: pageCount }, (_, index) => index + 1);
-  if (page <= 3) return [1, 2, 3, 'ellipsis', pageCount];
+  if (page <= 3) return [1, 2, 3, 4, 5, 'ellipsis', pageCount];
   if (page >= pageCount - 2) return [1, 'ellipsis', pageCount - 2, pageCount - 1, pageCount];
   return [1, 'ellipsis', page, 'ellipsis', pageCount];
 }

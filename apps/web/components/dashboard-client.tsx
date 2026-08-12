@@ -367,6 +367,7 @@ export function DashboardClient() {
   const [memberFilter, setMemberFilter] = useState('');
   const [tenantMembers, setTenantMembers] = useState<MemberOption[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<
     | { type: 'prompt'; promptId: string }
     | { type: 'session'; sessionId: string; current: boolean }
@@ -613,7 +614,8 @@ export function DashboardClient() {
   }
 
   async function download(format: 'json' | 'csv') {
-    if (demoMode) {
+    try {
+      if (demoMode) {
       const timestamp = new Date().toISOString();
       const filename = `promptlens-mock-${timestamp}.${format}`;
       const payload =
@@ -635,19 +637,24 @@ export function DashboardClient() {
       anchor.download = filename;
       anchor.click();
       URL.revokeObjectURL(url);
-      return;
+        setFeedback(`${format.toUpperCase()} export downloaded.`);
+        return;
+      }
+      const parameters = promptParameters();
+      parameters.set('format', format);
+      const { blob, filename } = await apiDownload(
+        `/prompt-exports${parameters.toString() ? `?${parameters.toString()}` : ''}`,
+      );
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = filename;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setFeedback(`${format.toUpperCase()} export downloaded.`);
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : 'Export could not be downloaded.');
     }
-    const parameters = promptParameters();
-    parameters.set('format', format);
-    const { blob, filename } = await apiDownload(
-      `/prompt-exports${parameters.toString() ? `?${parameters.toString()}` : ''}`,
-    );
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    anchor.click();
-    URL.revokeObjectURL(url);
   }
 
   async function reanalyze(promptId: string) {
@@ -980,6 +987,7 @@ export function DashboardClient() {
                 </button>
               </form>
               <div className="v2-export-strip">
+                {feedback ? <span className="v2-export-feedback" role="status">{feedback}</span> : null}
                 <button className="v2-ghost" type="button" onClick={() => void download('json')}>
                   Export JSON
                 </button>

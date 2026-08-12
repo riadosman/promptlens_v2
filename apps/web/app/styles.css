@@ -2415,6 +2415,13 @@ body:has(.landing-shell) {
 
 .workflow-section,
 .feature-section { padding:clamp(5rem,10vw,9rem) 0; }
+.workflow-section {
+  padding-inline:clamp(1.25rem,4vw,3.5rem);
+  border:1px solid #c4d9ca;
+  border-radius:1.4rem;
+  background:linear-gradient(118deg,#dcefe1 0%,#fdfcf8 56%,#eeeafd 100%);
+  box-shadow:0 1.3rem 3rem rgba(53,91,65,.1);
+}
 .section-heading { max-width:38rem; }
 .section-heading h2,
 .landing-final-cta h2 { max-width:12ch; margin:.9rem 0 1rem; color:var(--landing-ink); font-size:clamp(2.2rem,5vw,4.2rem); letter-spacing:-.07em; line-height:.96; }
@@ -2431,7 +2438,14 @@ body:has(.landing-shell) {
 .feature-grid { grid-template-columns:repeat(3,1fr); }
 .feature-card { border:1px solid var(--landing-line); border-radius:.8rem; background:rgba(255,255,255,.7); padding:1.35rem; transition:transform 160ms ease,box-shadow 160ms ease; }
 .feature-card:hover { box-shadow:0 1rem 2rem rgba(41,65,48,.08); transform:translateY(-3px); }
-.feature-icon { display:grid; width:2rem; height:2rem; place-items:center; border-radius:.5rem; background:var(--landing-soft); color:var(--landing-green); font-weight:850; }
+.feature-icon { display:grid; width:2.2rem; height:2.2rem; place-items:center; border:1px solid #c5ddca; border-radius:.65rem; color:#fff; font-size:0; font-weight:850; box-shadow:0 .45rem 1rem rgba(31,122,71,.16); }
+.feature-icon::before { font-size:.95rem; }
+.feature-card:nth-child(1) .feature-icon { background:#1f7a47; }
+.feature-card:nth-child(1) .feature-icon::before { content:'↗'; }
+.feature-card:nth-child(2) .feature-icon { background:#3a8e61; }
+.feature-card:nth-child(2) .feature-icon::before { content:'◈'; }
+.feature-card:nth-child(3) .feature-icon { background:#236b50; }
+.feature-card:nth-child(3) .feature-icon::before { content:'↔'; }
 .landing-final-cta { display:flex; align-items:end; justify-content:space-between; gap:2rem; border-top:1px solid var(--landing-line); padding:4rem 0 5rem; }
 .landing-final-cta h2 { margin-bottom:0; }
 .landing-footer { display:flex; align-items:center; justify-content:space-between; gap:1rem; border-top:1px solid var(--landing-line); padding-top:1.5rem; color:#89968d; font-size:.78rem; }

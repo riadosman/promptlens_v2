@@ -2594,9 +2594,22 @@ body:has(.landing-shell) {
 
 /* Workflow refresh: a clearer product system instead of a plain card row. */
 .workflow-section {
+  position: relative;
+  isolation: isolate;
+  border-block: 0;
+  padding: clamp(4.5rem, 8vw, 7rem) 0;
+}
+
+.workflow-section::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset-block: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
   border-block: 1px solid #d4e2d7;
   background: linear-gradient(135deg, #edf5ef 0%, #f5f7f4 72%);
-  padding: clamp(4.5rem, 8vw, 7rem) 0;
 }
 
 .workflow-section .section-heading {

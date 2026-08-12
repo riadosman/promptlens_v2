@@ -4276,6 +4276,71 @@ body:has(.auth-shell) {
   }
 }
 
+/* Give Overview metrics room to breathe */
+.dashboard-shell-v2 .v2-analytics-overview {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-areas:
+    "score score score score score score kpis kpis kpis kpis kpis kpis"
+    "trend trend trend trend trend trend trend trend trend trend trend trend"
+    "insights insights insights insights insights insights insights insights insights insights insights insights";
+}
+
+.dashboard-shell-v2 .v2-command-score,
+.dashboard-shell-v2 .v2-command-kpis,
+.dashboard-shell-v2 .v2-command-trend,
+.dashboard-shell-v2 .v2-command-insights {
+  min-width: 0;
+}
+
+.dashboard-shell-v2 .v2-command-score {
+  min-height: 18rem;
+}
+
+.dashboard-shell-v2 .v2-command-kpis {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: none;
+  align-items: stretch;
+}
+
+.dashboard-shell-v2 .v2-command-kpis article {
+  min-height: 18rem;
+  align-content: end;
+}
+
+.dashboard-shell-v2 .v2-command-trend {
+  min-height: 20rem;
+}
+
+.dashboard-shell-v2 .v2-command-insights {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+  .dashboard-shell-v2 .v2-analytics-overview {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "score"
+      "kpis"
+      "trend"
+      "insights";
+  }
+
+  .dashboard-shell-v2 .v2-command-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboard-shell-v2 .v2-command-kpis,
+  .dashboard-shell-v2 .v2-command-insights {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-shell-v2 .v2-command-kpis article {
+    min-height: 7rem;
+  }
+}
+
 .dashboard-shell-v2 .v2-bar-chart > div > i {
   background: #9a8cff;
 }

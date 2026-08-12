@@ -833,9 +833,9 @@ export function DashboardClient() {
                   <div className="v2-score-bar"><i style={{ width: `${stats.averageScore ?? 0}%` }} /></div>
                 </div>
                 <div className="v2-analytics-kpis v2-command-kpis">
-                  <article><p>Prompts</p><strong>{stats.prompts}</strong><span>Total captured</span></article>
-                  <article><p>Last 7 days</p><strong>{stats.promptsLast7Days}</strong><span>Recent activity</span></article>
-                  <article><p>Analyses</p><strong>{stats.analysesCompleted}</strong><span>Completed reviews</span></article>
+                  <article className="v2-kpi-prompts"><p>Prompts</p><strong>{stats.prompts}</strong><span>Total captured</span></article>
+                  <article className="v2-kpi-recent"><p>Last 7 days</p><strong>{stats.promptsLast7Days}</strong><span>Recent activity</span></article>
+                  <article className="v2-kpi-analyses"><p>Analyses</p><strong>{stats.analysesCompleted}</strong><span>Completed reviews</span></article>
                 </div>
                 <article className="v2-analytics-chart v2-panel v2-command-trend">
                   <div className="v2-panel-head"><div><p className="v2-kicker">Performance</p><h2>Score trend</h2></div><span className="v2-chip">Last 14 days</span></div>
@@ -1149,7 +1149,7 @@ export function DashboardClient() {
           sectionLoading ? (
             <ProjectsPanelSkeleton />
           ) : (
-            <section className="v2-panel">
+            <section className="v2-project-workspace">
               <div className="v2-panel-head">
                 <div>
                   <p className="v2-kicker">Organization</p>
@@ -1415,9 +1415,16 @@ function PromptsPanelSkeleton() {
 
 function paginationItems(page: number, pageCount: number): Array<number | 'ellipsis'> {
   if (pageCount <= 5) return Array.from({ length: pageCount }, (_, index) => index + 1);
-  if (page <= 3) return [1, 2, 3, 4, 5, 'ellipsis', pageCount];
-  if (page >= pageCount - 2) return [1, 'ellipsis', pageCount - 2, pageCount - 1, pageCount];
-  return [1, 'ellipsis', page, 'ellipsis', pageCount];
+  const start = Math.max(2, page - 2);
+  const end = Math.min(pageCount - 1, page + 2);
+  const items: Array<number | 'ellipsis'> = [1];
+
+  if (start > 2) items.push('ellipsis');
+  for (let item = start; item <= end; item += 1) items.push(item);
+  if (end < pageCount - 1) items.push('ellipsis');
+  items.push(pageCount);
+
+  return items;
 }
 
 function DashboardPagination({
@@ -1458,7 +1465,7 @@ function PaginationArrow({ direction }: { readonly direction: 'left' | 'right' }
 
 function ProjectsPanelSkeleton() {
   return (
-    <section className="v2-panel">
+    <section className="v2-project-workspace">
       <div className="v2-panel-head">
         <div>
           <p className="v2-kicker">

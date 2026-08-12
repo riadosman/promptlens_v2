@@ -6160,13 +6160,324 @@ body:has(.auth-shell) {
   background-size: 200% 100%;
 }
 
+/* Desktop loading states should preserve the information density of the page they replace. */
+.dashboard-shell-v2 .v2-dashboard-loading-header > div {
+  width: min(100%, 42rem);
+}
+
+.dashboard-shell-v2 .v2-dashboard-loading-hero {
+  position: relative;
+  grid-template-columns: minmax(0, 1.2fr) minmax(13rem, 0.8fr);
+  min-height: 12rem;
+}
+
+.dashboard-shell-v2 .v2-dashboard-loading-hero::after {
+  content: '';
+  align-self: stretch;
+  min-height: 7rem;
+  border: 1px solid #c8dfcd;
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.dashboard-shell-v2 .v2-filter-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-shell-v2 .v2-filter-bar input,
+.dashboard-shell-v2 .v2-filter-bar select {
+  width: auto;
+}
+
 @media (max-width: 760px) {
   .v2-dashboard-loading-header { align-items: stretch; flex-direction: column; }
   .v2-dashboard-loading-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-shell-v2 .v2-dashboard-loading-hero { grid-template-columns: 1fr; }
+  .dashboard-shell-v2 .v2-dashboard-loading-hero::after { display: none; }
+  .dashboard-shell-v2 .v2-filter-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 480px) {
   .v2-dashboard-loading-grid { grid-template-columns: 1fr; }
+  .dashboard-shell-v2 .v2-filter-bar { grid-template-columns: 1fr; }
+}
+
+/* The workspace is the canvas; the welcome state is not another card. */
+.dashboard-shell-v2 .v2-overview-welcome {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(17rem, 0.65fr);
+  align-items: end;
+  min-height: 20rem;
+  margin: 0;
+  padding: clamp(2rem, 6vw, 5rem) 0 clamp(2rem, 4vw, 3.5rem);
+  border: 0;
+  border-bottom: 1px solid #c8d9cd;
+  border-radius: 0;
+  background: transparent;
+}
+
+.dashboard-shell-v2 .v2-overview-welcome h2 {
+  max-width: 15ch;
+  font-size: clamp(2.4rem, 6vw, 5.4rem);
+}
+
+.dashboard-shell-v2 .v2-overview-actions {
+  align-self: end;
+  justify-content: flex-start;
+}
+
+.dashboard-shell-v2 .v2-dashboard-loading-hero {
+  grid-template-columns: minmax(0, 1.35fr) minmax(17rem, 0.65fr);
+  min-height: 20rem;
+  align-items: end;
+  padding: clamp(2rem, 6vw, 5rem) 0 clamp(2rem, 4vw, 3.5rem);
+  border: 0;
+  border-bottom: 1px solid #c8d9cd;
+  border-radius: 0;
+  background: transparent;
+}
+
+.dashboard-shell-v2 .v2-dashboard-loading-hero::after {
+  min-height: 8rem;
+  border: 0;
+  border-radius: 0.9rem;
+  background: linear-gradient(135deg, #e2eee4, #f0edff);
+}
+
+/* Projects owns the page width; the old outer panel made the whole screen read as one card. */
+.dashboard-shell-v2 .v2-project-workspace {
+  display: grid;
+  width: calc(100% + clamp(2rem, 8vw, 8rem));
+  min-width: 0;
+  gap: 1.2rem;
+  margin: 0;
+  margin-inline: calc(-1 * clamp(1rem, 4vw, 4rem));
+  padding: 0;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.dashboard-shell-v2 .v2-main:has(.v2-project-workspace) {
+  padding-inline: 0 !important;
+}
+
+.dashboard-shell-v2 .v2-main:has(.v2-project-workspace) .v2-project-workspace {
+  width: 100%;
+  margin-inline: 0;
+}
+
+.dashboard-shell-v2 .v2-project-workspace > .v2-panel-head {
+  margin-bottom: 0.25rem;
+}
+
+.dashboard-shell-v2 .v2-project-workspace > .v2-project-list {
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid #d4dfd7;
+  border-radius: 0;
+  background: transparent;
+}
+
+.dashboard-shell-v2 .v2-project-workspace > .v2-project-create {
+  margin-bottom: 0.35rem;
+}
+
+/* Project loading uses the same full desktop canvas as the loaded page. */
+.dashboard-shell-v2 .v2-main:has(> .v2-dashboard-loading:has(.v2-project-workspace)) {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: none;
+}
+
+.dashboard-shell-v2 .v2-dashboard-loading:has(.v2-project-workspace),
+.dashboard-shell-v2 .v2-dashboard-loading:has(.v2-project-workspace) .v2-project-workspace {
+  width: 100%;
+  max-width: none;
+}
+
+.dashboard-shell-v2 .v2-project-workspace:has(.v2-project-list-skeleton) {
+  gap: clamp(1.4rem, 2.5vw, 2.5rem);
+}
+
+.dashboard-shell-v2 .v2-project-workspace:has(.v2-project-list-skeleton) .v2-project-featured-skeleton {
+  min-height: clamp(18rem, 30vw, 25rem);
+  padding: clamp(2rem, 5vw, 4.5rem);
+}
+
+.dashboard-shell-v2 .v2-project-workspace:has(.v2-project-list-skeleton) .v2-project-list-skeleton {
+  min-height: 24rem;
+  padding-inline: clamp(1rem, 2.5vw, 2.5rem);
+}
+
+/* Loading states keep the page rhythm instead of collapsing into tiny bars. */
+.dashboard-shell-v2 .v2-dashboard-loading {
+  gap: 1.8rem;
+}
+
+.dashboard-shell-v2 .v2-dashboard-loading-header {
+  min-height: 10rem;
+  padding-bottom: 1.8rem;
+}
+
+.dashboard-shell-v2 .v2-dashboard-loading-panel {
+  min-height: 24rem;
+}
+
+.dashboard-shell-v2 .v2-dashboard-loading-score,
+.dashboard-shell-v2 .v2-dashboard-loading-kpi {
+  min-height: 13rem;
+}
+
+.dashboard-shell-v2 .v2-project-workspace:has(.v2-project-list-skeleton) > .v2-project-create {
+  min-height: 5.5rem;
+  align-items: center;
+}
+
+.dashboard-shell-v2 .v2-header-title {
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: none;
+}
+
+.dashboard-shell-v2 .v2-header-title h1 {
+  display: inline-block !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: max-content !important;
+  flex: none !important;
+  white-space: nowrap !important;
+}
+
+.dashboard-shell-v2 .v2-command-kpis article {
+  position: relative;
+  overflow: hidden;
+  min-height: 12rem;
+  border-top: 3px solid #b7cbbd;
+}
+
+.dashboard-shell-v2 .v2-command-kpis article::after {
+  position: absolute;
+  right: -2rem;
+  bottom: -3rem;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 50%;
+  background: rgba(22, 116, 72, 0.1);
+  content: '';
+}
+
+.dashboard-shell-v2 .v2-command-kpis .v2-kpi-prompts {
+  border-top-color: #167448;
+  background: linear-gradient(145deg, #fffdf9 0%, #eef8f0 100%);
+}
+
+.dashboard-shell-v2 .v2-command-kpis .v2-kpi-prompts strong {
+  color: #167448 !important;
+  font-size: clamp(3rem, 5vw, 4.2rem);
+}
+
+.dashboard-shell-v2 .v2-command-kpis .v2-kpi-recent {
+  border-top-color: #9a8cff;
+  background: linear-gradient(145deg, #fffdf9 0%, #f1efff 100%);
+}
+
+.dashboard-shell-v2 .v2-command-kpis .v2-kpi-recent::after {
+  background: rgba(154, 140, 255, 0.12);
+}
+
+.dashboard-shell-v2 .v2-command-kpis .v2-kpi-recent strong {
+  color: #6658c7 !important;
+}
+
+.dashboard-shell-v2 .v2-command-kpis .v2-kpi-analyses {
+  border-top-color: #75b995;
+  background: linear-gradient(145deg, #fffdf9 0%, #edf8f1 100%);
+}
+
+.dashboard-shell-v2 .v2-command-kpis .v2-kpi-analyses::after {
+  background: rgba(117, 185, 149, 0.12);
+}
+
+.dashboard-shell-v2 .v2-command-kpis .v2-kpi-analyses strong {
+  color: #285f48 !important;
+}
+
+.dashboard-shell-v2 .v2-project-featured-skeleton {
+  min-height: 18rem;
+}
+
+.dashboard-shell-v2 .v2-project-list-skeleton {
+  min-height: 20rem;
+}
+
+.dashboard-shell-v2 .v2-project-list-skeleton .v2-project-list-row {
+  min-height: 5.5rem;
+}
+
+.dashboard-shell-v2 .v2-prompt-card:has(.v2-skeleton) {
+  min-height: 7rem;
+  align-items: center;
+}
+
+.dashboard-shell-v2 .v2-prompt-card:has(.v2-skeleton) .v2-skeleton-score {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.dashboard-shell-v2 .v2-connect-loading-card {
+  min-height: 24rem;
+  align-content: center;
+  gap: 1.2rem;
+}
+
+@media (min-width: 761px) and (max-width: 980px) {
+  .dashboard-shell-v2 .v2-project-workspace {
+    width: calc(100% + 2rem);
+    margin-inline: -1rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-shell-v2 .v2-command-kpis article {
+    min-height: 8.5rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-shell-v2 .v2-header-title,
+  .dashboard-shell-v2 .v2-header-title h1 {
+    width: auto !important;
+    max-width: 100% !important;
+  }
+
+  .dashboard-shell-v2 .v2-header-title h1 {
+    min-width: 0;
+    white-space: normal !important;
+  }
+
+  .dashboard-shell-v2 .v2-project-workspace {
+    width: calc(100% + 1.3rem);
+    margin-inline: -0.65rem;
+  }
+
+  .dashboard-shell-v2 .v2-overview-welcome,
+  .dashboard-shell-v2 .v2-dashboard-loading-hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+    min-height: 0;
+  }
+
+  .dashboard-shell-v2 .v2-overview-welcome h2 {
+    max-width: 18ch;
+  }
+
+  .dashboard-shell-v2 .v2-overview-actions {
+    align-self: start;
+  }
 }
 
 /* Final responsive pass: keep the dashboard airy when cards have no data. */

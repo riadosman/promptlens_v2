@@ -187,7 +187,7 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
 
   useEffect(() => load(), [load, section]);
 
-  if (loading) return <AdminLoadingSkeleton />;
+  if (loading) return <AdminLoadingSkeleton section={section} />;
 
   async function addMember(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -345,20 +345,18 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
             Support access
           </Link>
         </nav>
-        {overview?.instance ? (
-          <div className="control-center-instance-links">
-            <p className="control-center-rail-label">Instance</p>
-            <Link className={section === 'operations' ? 'is-active' : ''} href="/admin/operations">
-              Operations
-            </Link>
-            <Link
-              className={section === 'instance-users' ? 'is-active' : ''}
-              href="/admin/instance-users"
-            >
-              Instance users
-            </Link>
-          </div>
-        ) : null}
+        <div className="control-center-instance-links">
+          <p className="control-center-rail-label">Instance</p>
+          <Link className={section === 'operations' ? 'is-active' : ''} href="/admin/operations">
+            Operations
+          </Link>
+          <Link
+            className={section === 'instance-users' ? 'is-active' : ''}
+            href="/admin/instance-users"
+          >
+            Instance users
+          </Link>
+        </div>
         <Link className="control-center-back" href="/dashboard">
           Back to dashboard
         </Link>
@@ -1042,15 +1040,28 @@ function AdminMetric({
   );
 }
 
-function AdminLoadingSkeleton() {
+function AdminLoadingSkeleton({ section }: { readonly section: AdminSection }) {
   return (
     <main className="control-center admin-main admin-loading-shell" aria-busy="true" aria-label="Loading administration">
-      <aside className="control-center-rail" aria-hidden="true">
-        <span className="admin-skeleton admin-skeleton-wordmark" />
-        <span className="admin-skeleton admin-skeleton-label" />
+      <aside className="control-center-rail" aria-label="Administration navigation">
+        <Link className="control-center-wordmark" href="/dashboard">
+          PromptLens
+        </Link>
+        <p className="control-center-rail-label">Administration</p>
         <nav className="control-center-nav">
-          {Array.from({ length: 6 }).map((_, index) => <span className="admin-skeleton admin-skeleton-nav" key={index} />)}
+          <Link className={section === 'overview' ? 'is-active' : ''} href="/admin">Overview</Link>
+          <Link className={section === 'members' ? 'is-active' : ''} href="/admin/members">Members</Link>
+          <Link className={section === 'settings' ? 'is-active' : ''} href="/admin/settings">Settings</Link>
+          <Link className={section === 'connectors' ? 'is-active' : ''} href="/admin/connectors">Connectors</Link>
+          <Link className={section === 'audit' ? 'is-active' : ''} href="/admin/audit">Audit log</Link>
+          <Link className={section === 'support' ? 'is-active' : ''} href="/admin/support">Support access</Link>
         </nav>
+        <div className="control-center-instance-links">
+          <p className="control-center-rail-label">Instance</p>
+          <Link className={section === 'operations' ? 'is-active' : ''} href="/admin/operations">Operations</Link>
+          <Link className={section === 'instance-users' ? 'is-active' : ''} href="/admin/instance-users">Instance users</Link>
+        </div>
+        <Link className="control-center-back" href="/dashboard">Back to dashboard</Link>
       </aside>
       <div className="control-center-content">
         <header className="control-center-topbar">

@@ -104,6 +104,10 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
   const [instanceUserQuery, setInstanceUserQuery] = useState('');
   const [instanceUserStatus, setInstanceUserStatus] = useState('ALL');
   const [instanceUserPage, setInstanceUserPage] = useState(1);
+  const [statusConfirmation, setStatusConfirmation] = useState<{
+    user: InstanceUser;
+    status: 'ACTIVE' | 'SUSPENDED';
+  } | null>(null);
 
   const showSection = (target: AdminSection) => section === target;
   const adminMemberCount = members.filter(
@@ -215,8 +219,10 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
 
   async function changeUserStatus(user: InstanceUser) {
     const status = user.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-    if (!window.confirm(`${status === 'SUSPENDED' ? 'Suspend' : 'Reactivate'} ${user.email}?`))
-      return;
+    setStatusConfirmation({ user, status });
+  }
+
+  async function confirmUserStatusChange(user: InstanceUser, status: 'ACTIVE' | 'SUSPENDED') {
     await apiRequest(`/admin/instance/users/${user.id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
@@ -957,6 +963,43 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
         </section>
       ) : null}
       </div>
+      {statusConfirmation ? (
+        <div className="admin-modal-backdrop" role="presentation" onMouseDown={() => setStatusConfirmation(null)}>
+          <section
+            className="admin-confirm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-status-confirmation-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <p className="eyebrow">Instance users</p>
+            <h2 id="admin-status-confirmation-title">
+              {statusConfirmation.status === 'SUSPENDED' ? 'Suspend user?' : 'Reactivate user?'}
+            </h2>
+            <p>
+              {statusConfirmation.status === 'SUSPENDED'
+                ? `${statusConfirmation.user.email} will lose access to the instance.`
+                : `${statusConfirmation.user.email} will regain access to the instance.`}
+            </p>
+            <div className="admin-modal-actions">
+              <button className="quiet" type="button" onClick={() => setStatusConfirmation(null)}>
+                Cancel
+              </button>
+              <button
+                className={statusConfirmation.status === 'SUSPENDED' ? 'danger' : 'primary'}
+                type="button"
+                onClick={() => {
+                  const pending = statusConfirmation;
+                  setStatusConfirmation(null);
+                  void confirmUserStatusChange(pending.user, pending.status);
+                }}
+              >
+                {statusConfirmation.status === 'SUSPENDED' ? 'Suspend' : 'Reactivate'}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }

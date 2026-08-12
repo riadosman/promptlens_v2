@@ -1047,21 +1047,11 @@ select:focus {
 .v2-wordmark {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
   margin: 0.1rem 0.2rem 0.8rem;
   text-decoration: none;
   font-weight: 900;
   letter-spacing: -0.03em;
   font-size: 1.05rem;
-}
-
-.v2-wordmark::before {
-  content: '';
-  width: 1.2rem;
-  height: 1.2rem;
-  border-radius: 0.35rem;
-  background: linear-gradient(145deg, var(--v2-accent), var(--v2-accent-deep));
-  box-shadow: 0 0 1rem rgba(114, 240, 196, 0.45);
 }
 
 .v2-panel {
@@ -4260,11 +4250,6 @@ body:has(.auth-shell) {
 .dashboard-shell-v2 .v2-rail {
   border-right-color: #d4dfd7;
   background: #f0eee9;
-}
-
-.dashboard-shell-v2 .v2-wordmark::before {
-  background: linear-gradient(145deg, #9a8cff, #75d6aa);
-  box-shadow: none;
 }
 
 .dashboard-shell-v2 .v2-wordmark,

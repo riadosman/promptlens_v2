@@ -834,7 +834,7 @@ export function DashboardClient() {
                   <article><p>Analyses</p><strong>{stats.analysesCompleted}</strong><span>Completed reviews</span></article>
                 </div>
                 <article className="v2-analytics-chart v2-panel v2-command-trend">
-                  <div className="v2-panel-head"><div><p className="v2-kicker">Performance</p><h2>Score trend</h2></div><span className="v2-chip">14 days</span></div>
+                  <div className="v2-panel-head"><div><p className="v2-kicker">Performance</p><h2>Score trend</h2></div><span className="v2-chip">Last 14 days</span></div>
                   {stats.scoreTrend.length ? (
                     <div className="v2-bar-chart" aria-label="Score trend chart">
                       {stats.scoreTrend.map((point) => <div key={point.date} style={{ height: `${Math.max(point.score, 8)}%` }}><span>{point.score}</span><i /></div>)}
@@ -873,7 +873,7 @@ export function DashboardClient() {
                   ))}
                 </div>
                 <div className="v2-pagination" aria-label="Session pagination">
-                  <span>{sessionsPage} / {sessionsPageCount}</span>
+                  <span className="v2-pagination-label">Page <strong>{sessionsPage}</strong><span aria-hidden="true">/</span>{sessionsPageCount}</span>
                   <div>
                     <button
                       type="button"

@@ -708,6 +708,7 @@ export function DashboardClient() {
       : section === 'projects'
         ? 'Workspace'
         : 'Workspace health';
+  const featuredProject = projects[0];
 
   return (
     <div className="dashboard-shell-v2">
@@ -1164,34 +1165,60 @@ export function DashboardClient() {
               <div className="v2-panel-head">
                 <div>
                   <p className="v2-kicker">Organization</p>
-                  <h2>Projects</h2>
+                  <h2>Project control</h2>
                 </div>
+                <span className="v2-chip">{projects.length} projects</span>
               </div>
-              <div className="v2-project-grid">
-                {projects.map((project) => (
-                  <article className="v2-project-card" key={project.id}>
-                    <h3>{project.name}</h3>
-                    <p>{project.description ?? 'No description'}</p>
-                    <span className={`v2-mini-chip ${project.status.toLowerCase()}`}>
-                      {project.status}
-                    </span>
-                    <button
-                      className="v2-action"
-                      type="button"
-                      onClick={() => void toggleProject(project.id, project.status !== 'ARCHIVED')}
-                    >
-                      {project.status === 'ARCHIVED' ? 'Restore' : 'Archive'}
-                    </button>
-                  </article>
-                ))}
-              </div>
-              <form className="v2-inline-form" onSubmit={createProject}>
-                <input name="name" placeholder="New project name" required maxLength={120} />
-                <input name="description" placeholder="Description" maxLength={1000} />
-                <button type="submit" className="v2-chip">
-                  Create project
-                </button>
+              <form className="v2-project-create" onSubmit={createProject}>
+                <div><p className="v2-kicker">Add to workspace</p><h3>Create a project</h3></div>
+                <div className="v2-project-create-fields">
+                  <input name="name" placeholder="Project name" required maxLength={120} />
+                  <input name="description" placeholder="Short description" maxLength={1000} />
+                  <button type="submit" className="v2-primary-action">Create project <span aria-hidden="true">+</span></button>
+                </div>
               </form>
+              {projects.length === 0 ? (
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyMedia><span aria-hidden="true">+</span></EmptyMedia>
+                    <EmptyTitle>No projects yet</EmptyTitle>
+                    <EmptyDescription>Create your first project to organize prompts and analysis.</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              ) : (
+                <>
+                  {featuredProject ? (
+                    <article className="v2-project-featured" key={featuredProject.id}>
+                      <div>
+                        <p className="v2-kicker">Active project</p>
+                        <h3>{featuredProject.name}</h3>
+                        <p>{featuredProject.description ?? 'No description'}</p>
+                      </div>
+                      <div className="v2-project-featured-actions">
+                        <span className={`v2-status v2-status-${featuredProject.status.toLowerCase()}`}>{featuredProject.status}</span>
+                        <Link className="v2-primary-action" href="/dashboard/prompts">View prompts <span aria-hidden="true">→</span></Link>
+                        <button className="v2-action" type="button" onClick={() => void toggleProject(featuredProject.id, featuredProject.status !== 'ARCHIVED')}>
+                          {featuredProject.status === 'ARCHIVED' ? 'Restore' : 'Archive'}
+                        </button>
+                      </div>
+                    </article>
+                  ) : null}
+                  {projects.length > 1 ? (
+                    <div className="v2-project-list">
+                      <div className="v2-section-title"><div><p className="v2-kicker">Workspace projects</p><h3>All projects</h3></div><span className="v2-chip">{projects.length - 1} more</span></div>
+                      {projects.slice(1).map((project) => (
+                        <article className="v2-project-list-row" key={project.id}>
+                          <div><h3>{project.name}</h3><p>{project.description ?? 'No description'}</p></div>
+                          <span className={`v2-status v2-status-${project.status.toLowerCase()}`}>{project.status}</span>
+                          <button className="v2-action" type="button" onClick={() => void toggleProject(project.id, project.status !== 'ARCHIVED')}>
+                            {project.status === 'ARCHIVED' ? 'Restore' : 'Archive'}
+                          </button>
+                        </article>
+                      ))}
+                    </div>
+                  ) : null}
+                </>
+              )}
             </section>
           )
         ) : null}

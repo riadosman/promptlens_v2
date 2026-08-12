@@ -2185,6 +2185,92 @@ select optgroup {
   }
 }
 
+/* Tablets keep the administration rail; only phones use the compact nav. */
+@media (min-width: 761px) and (max-width: 1024px) {
+  .control-center.admin-main .control-center-rail {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 20;
+    width: 15rem;
+    height: 100vh;
+    min-height: 100vh;
+    overflow: hidden;
+    padding: 1.25rem 1rem;
+  }
+
+  .control-center.admin-main .control-center-content {
+    width: auto;
+    margin-left: 15rem;
+  }
+
+  .control-center.admin-main .control-center-nav,
+  .control-center.admin-main .control-center-instance-links {
+    display: grid;
+    max-width: none;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 760px) {
+  .control-center.admin-main .control-center-rail {
+    display: block;
+    padding: 0.85rem 0.8rem;
+  }
+
+  .control-center.admin-main .control-center-wordmark {
+    display: inline-flex;
+    margin-bottom: 0.65rem;
+  }
+
+  .control-center.admin-main .control-center-rail-label {
+    margin: 0 0 0.45rem;
+  }
+
+  .control-center.admin-main .control-center-nav,
+  .control-center.admin-main .control-center-instance-links {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+    scrollbar-width: none;
+  }
+
+  .control-center.admin-main .control-center-nav::-webkit-scrollbar,
+  .control-center.admin-main .control-center-instance-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .control-center.admin-main .control-center-nav a,
+  .control-center.admin-main .control-center-instance-links a {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 2.45rem;
+    white-space: nowrap;
+  }
+
+  .control-center.admin-main .control-center-instance-links {
+    margin-top: 0.15rem;
+  }
+
+  .control-center.admin-main .control-center-instance-links .control-center-rail-label {
+    flex: 0 0 auto;
+    align-self: center;
+    margin: 0;
+    padding: 0;
+  }
+
+  .control-center.admin-main .control-center-back {
+    display: inline-flex;
+    min-height: 2.45rem;
+    margin-top: 0.65rem;
+    padding-inline: 0.75rem;
+    background: transparent;
+    color: #496057;
+  }
+}
+
 @media (max-width: 560px) {
   .workflow-card,
   .workflow-card-featured {

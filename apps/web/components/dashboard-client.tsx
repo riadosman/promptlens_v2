@@ -688,7 +688,7 @@ export function DashboardClient() {
       ? 'Prompt history'
       : section === 'projects'
         ? 'Project control'
-        : 'Signal analytics';
+        : 'Signal command center';
   const sectionCaption =
     section === 'prompts'
       ? 'Prompt analysis'

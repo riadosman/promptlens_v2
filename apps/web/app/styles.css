@@ -5003,6 +5003,26 @@ body:has(.auth-shell) {
   -webkit-text-fill-color: #d6ead9 !important;
 }
 
+.dashboard-shell-v2 .v2-project-featured-actions .v2-status {
+  border-color: #75b995 !important;
+  background: rgba(117, 185, 149, 0.14) !important;
+  color: #9bd3aa !important;
+  -webkit-text-fill-color: #9bd3aa !important;
+}
+
+.dashboard-shell-v2 .v2-project-featured-actions .v2-primary-action {
+  color: #fffdf8 !important;
+  -webkit-text-fill-color: #fffdf8 !important;
+}
+
+.dashboard-shell-v2 #projects .v2-chip,
+.dashboard-shell-v2 .v2-panel > .v2-panel-head .v2-chip {
+  border-color: #b7cbbd;
+  background: #e4f1e7;
+  color: #167448 !important;
+  -webkit-text-fill-color: #167448 !important;
+}
+
 .dashboard-shell-v2 .v2-project-list {
   margin-top: 1.2rem;
   padding: 1rem;

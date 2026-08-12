@@ -5732,9 +5732,14 @@ body:has(.auth-shell) {
 }
 
 .dashboard-shell-v2 .v2-project-pagination {
-  justify-content: center !important;
+  justify-content: flex-end !important;
 }
 
-.dashboard-shell-v2 .v2-project-pagination .v2-pagination-controls {
-  justify-content: center;
+.dashboard-shell-v2 .v2-pagination .v2-pagination-controls > button {
+  align-items: center;
+  justify-items: center;
+}
+
+.dashboard-shell-v2 .v2-pagination-arrow {
+  place-self: center;
 }

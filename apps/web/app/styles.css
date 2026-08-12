@@ -5665,3 +5665,38 @@ body:has(.auth-shell) {
 .dashboard-shell-v2 .v2-pagination-ellipsis {
   width: 1.35rem;
 }
+
+.dashboard-shell-v2 .v2-pagination {
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.dashboard-shell-v2 .v2-pagination .v2-pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 2.35rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.dashboard-shell-v2 .v2-pagination .v2-pagination-pages {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+@media (max-width: 560px) {
+  .dashboard-shell-v2 .v2-pagination {
+    flex-direction: row;
+    align-items: center;
+  }
+}

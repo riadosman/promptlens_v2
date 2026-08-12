@@ -906,27 +906,7 @@ export function DashboardClient() {
                     </article>
                   ))}
                 </div>
-                <div className="v2-pagination" aria-label="Session pagination">
-                  <span className="v2-pagination-label">Page <strong>{sessionsPage}</strong><span aria-hidden="true">/</span>{sessionsPageCount}</span>
-                  <div>
-                    <button
-                      type="button"
-                      aria-label="Previous sessions page"
-                      disabled={sessionsPage === 1}
-                      onClick={() => setSessionsPage((page) => Math.max(1, page - 1))}
-                    >
-                      ←
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Next sessions page"
-                      disabled={sessionsPage === sessionsPageCount}
-                      onClick={() => setSessionsPage((page) => Math.min(sessionsPageCount, page + 1))}
-                    >
-                      →
-                    </button>
-                  </div>
-                </div>
+                <DashboardPagination label="Session" page={sessionsPage} pageCount={sessionsPageCount} onChange={setSessionsPage} />
               </section>
             </>
           )
@@ -1167,13 +1147,7 @@ export function DashboardClient() {
                   })
                 )}
               </div>
-              <div className="v2-pagination v2-prompt-pagination" aria-label="Prompt pagination">
-                <span className="v2-pagination-label">Page <strong>{promptPage}</strong><span aria-hidden="true">/</span>{promptPageCount}</span>
-                <div>
-                  <button type="button" aria-label="Previous prompts page" disabled={promptPage === 1} onClick={() => setPromptPage((page) => Math.max(1, page - 1))}>←</button>
-                  <button type="button" aria-label="Next prompts page" disabled={promptPage === promptPageCount} onClick={() => setPromptPage((page) => Math.min(promptPageCount, page + 1))}>→</button>
-                </div>
-              </div>
+              <DashboardPagination label="Prompt" page={promptPage} pageCount={promptPageCount} onChange={setPromptPage} />
             </section>
           )
         ) : null}
@@ -1355,6 +1329,34 @@ function paginationItems(page: number, pageCount: number): Array<number | 'ellip
   if (page <= 3) return [1, 2, 3, 'ellipsis', pageCount];
   if (page >= pageCount - 2) return [1, 'ellipsis', pageCount - 2, pageCount - 1, pageCount];
   return [1, 'ellipsis', page, 'ellipsis', pageCount];
+}
+
+function DashboardPagination({
+  label,
+  page,
+  pageCount,
+  onChange,
+}: {
+  readonly label: string;
+  readonly page: number;
+  readonly pageCount: number;
+  readonly onChange: (page: number) => void;
+}) {
+  return (
+    <nav className="control-center-pagination v2-pagination" aria-label={`${label} pagination`}>
+      <div className="v2-pagination-controls">
+        <button type="button" aria-label={`Previous ${label.toLowerCase()} page`} disabled={page === 1} onClick={() => onChange(Math.max(1, page - 1))}>←</button>
+        <div className="v2-pagination-pages">
+          {paginationItems(page, pageCount).map((item, index) => item === 'ellipsis' ? (
+            <span className="v2-pagination-ellipsis" key={`ellipsis-${index}`} aria-hidden="true">…</span>
+          ) : (
+            <button className="v2-pagination-page" type="button" aria-label={`Go to ${label.toLowerCase()} page ${item}`} aria-current={item === page ? 'page' : undefined} key={item} onClick={() => onChange(item)}>{item}</button>
+          ))}
+        </div>
+        <button type="button" aria-label={`Next ${label.toLowerCase()} page`} disabled={page === pageCount} onClick={() => onChange(Math.min(pageCount, page + 1))}>→</button>
+      </div>
+    </nav>
+  );
 }
 
 function ProjectsPanelSkeleton() {

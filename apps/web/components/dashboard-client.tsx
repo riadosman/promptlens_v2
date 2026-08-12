@@ -342,6 +342,13 @@ export function DashboardClient() {
   const [actor, setActor] = useState<ActorContext | null>(null);
   const [stats, setStats] = useState(emptyStats);
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
+  const [projectPage, setProjectPage] = useState(1);
+  const projectsPerPage = 4;
+  const projectPageCount = Math.max(1, Math.ceil(Math.max(0, projects.length - 1) / projectsPerPage));
+  const visibleProjectItems = projects.slice(1).slice(
+    (projectPage - 1) * projectsPerPage,
+    projectPage * projectsPerPage,
+  );
   const [prompts, setPrompts] = useState<PromptListResponse['items']>([]);
   const [promptPage, setPromptPage] = useState(1);
   const promptsPerPage = 8;
@@ -381,6 +388,10 @@ export function DashboardClient() {
   useEffect(() => {
     setPromptPage((page) => Math.min(page, promptPageCount));
   }, [promptPageCount]);
+
+  useEffect(() => {
+    setProjectPage((page) => Math.min(page, projectPageCount));
+  }, [projectPageCount]);
 
   useEffect(() => {
     if (!demoMode) {
@@ -1205,8 +1216,8 @@ export function DashboardClient() {
                   ) : null}
                   {projects.length > 1 ? (
                     <div className="v2-project-list">
-                      <div className="v2-section-title"><div><p className="v2-kicker">Workspace projects</p><h3>All projects</h3></div><span className="v2-chip">{projects.length - 1} more</span></div>
-                      {projects.slice(1).map((project) => (
+                      <div className="v2-section-title"><div><p className="v2-kicker">Workspace projects</p><h3>All projects</h3></div><span className="v2-chip v2-project-more-chip">{projects.length - 1} more</span></div>
+                      {visibleProjectItems.map((project) => (
                         <article className="v2-project-list-row" key={project.id}>
                           <div><h3>{project.name}</h3><p>{project.description ?? 'No description'}</p></div>
                           <span className={`v2-status v2-status-${project.status.toLowerCase()}`}>{project.status}</span>
@@ -1215,6 +1226,13 @@ export function DashboardClient() {
                           </button>
                         </article>
                       ))}
+                      <div className="v2-pagination v2-project-pagination" aria-label="Project pagination">
+                        <span className="v2-pagination-label">Page <strong>{projectPage}</strong><span aria-hidden="true">/</span>{projectPageCount}</span>
+                        <div>
+                          <button type="button" aria-label="Previous projects page" disabled={projectPage === 1} onClick={() => setProjectPage((page) => Math.max(1, page - 1))}>←</button>
+                          <button type="button" aria-label="Next projects page" disabled={projectPage === projectPageCount} onClick={() => setProjectPage((page) => Math.min(projectPageCount, page + 1))}>→</button>
+                        </div>
+                      </div>
                     </div>
                   ) : null}
                 </>

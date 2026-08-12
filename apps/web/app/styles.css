@@ -5040,6 +5040,16 @@ body:has(.auth-shell) {
   margin-bottom: 0.4rem;
 }
 
+.dashboard-shell-v2 .v2-project-more-chip {
+  display: inline-flex;
+  min-width: 4.2rem;
+  justify-content: center;
+  border-color: #b7cbbd !important;
+  background: #e4f1e7 !important;
+  color: #167448 !important;
+  -webkit-text-fill-color: #167448 !important;
+}
+
 .dashboard-shell-v2 .v2-project-list-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
@@ -5051,6 +5061,7 @@ body:has(.auth-shell) {
 
 .dashboard-shell-v2 .v2-project-list-row:last-child { border-bottom: 0; }
 .dashboard-shell-v2 .v2-project-list-row p { margin: 0.25rem 0 0; font-size: 0.78rem; }
+.dashboard-shell-v2 .v2-project-pagination { margin-top: 0.8rem; }
 
 @media (max-width: 760px) {
   .dashboard-shell-v2 .v2-project-create,

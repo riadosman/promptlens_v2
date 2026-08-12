@@ -5694,6 +5694,15 @@ body:has(.auth-shell) {
   gap: 0.15rem;
 }
 
+.dashboard-shell-v2 .v2-pagination .v2-pagination-controls > button {
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  line-height: 1;
+  text-align: center;
+  font-family: inherit;
+}
+
 @media (max-width: 560px) {
   .dashboard-shell-v2 .v2-pagination {
     flex-direction: row;

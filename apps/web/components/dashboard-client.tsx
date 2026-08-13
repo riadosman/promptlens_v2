@@ -361,6 +361,7 @@ export function DashboardClient() {
     promptPage * promptsPerPage,
   );
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [projectFilter, setProjectFilter] = useState('');
   const [platformFilter, setPlatformFilter] = useState('');
   const [modelFilter, setModelFilter] = useState('');
@@ -386,6 +387,11 @@ export function DashboardClient() {
     (sessionsPage - 1) * sessionsPerPage,
     sessionsPage * sessionsPerPage,
   );
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(query), 300);
+    return () => window.clearTimeout(timer);
+  }, [query]);
 
   useEffect(() => {
     setSessionsPage((page) => Math.min(page, sessionsPageCount));
@@ -427,7 +433,7 @@ export function DashboardClient() {
     if (!actor) return parameters;
 
     const tenantAdmin = isTenantAdmin(actor.role);
-    if (query) parameters.set('q', query);
+    if (debouncedQuery) parameters.set('q', debouncedQuery);
     if (projectFilter) parameters.set('projectId', projectFilter);
     if (platformFilter) parameters.set('platform', platformFilter);
     if (modelFilter) parameters.set('model', modelFilter);
@@ -435,7 +441,7 @@ export function DashboardClient() {
     if (!tenantAdmin) parameters.set('mine', 'true');
     if (tenantAdmin && memberFilter) parameters.set('userId', memberFilter);
     return parameters;
-  }, [actor, query, projectFilter, platformFilter, modelFilter, minScoreFilter, memberFilter]);
+  }, [actor, debouncedQuery, projectFilter, platformFilter, modelFilter, minScoreFilter, memberFilter]);
 
   const mockRows = useCallback(() => {
     if (!demoMode || !actor) return [];
@@ -716,14 +722,6 @@ export function DashboardClient() {
         : section === 'connect'
           ? 'Connect device'
         : 'Signal command center';
-  const sectionCaption =
-    section === 'prompts'
-      ? 'Prompt analysis'
-      : section === 'projects'
-        ? 'Workspace'
-        : section === 'connect'
-          ? 'Device setup'
-        : 'Workspace health';
   const featuredProject = projects[0];
 
   return (
@@ -774,7 +772,6 @@ export function DashboardClient() {
         {sectionLoading || !actor ? <DashboardLoadingShell section={section} /> : <>
         <header className="v2-header">
           <div className="v2-header-copy">
-            <p className="v2-kicker">{sectionCaption}</p>
             <div className="v2-header-title">
               <h1>{sectionTitle}</h1>
             </div>
@@ -1155,7 +1152,7 @@ export function DashboardClient() {
                   <p className="v2-kicker">Organization</p>
                   <h2>Project control</h2>
                 </div>
-                <span className="v2-chip">{projects.length} projects</span>
+                <span className="v2-chip v2-project-count-chip">{projects.length} projects</span>
               </div>
               <form className="v2-project-create" onSubmit={createProject}>
                 <div><p className="v2-kicker">Add to workspace</p><h3>Create a project</h3></div>

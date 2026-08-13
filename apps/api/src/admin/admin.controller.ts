@@ -53,6 +53,11 @@ export class AdminController {
     return this.admin.instanceUsers(await this.actor(request));
   }
 
+  @Get('instance/tenants')
+  async instanceTenants(@Req() request: FastifyRequest) {
+    return this.admin.instanceTenants(await this.actor(request));
+  }
+
   @Patch('instance/users/:userId/status')
   @HttpCode(204)
   async updateUserStatus(

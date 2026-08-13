@@ -87,6 +87,12 @@ interface SupportGrant {
   createdAt: string;
 }
 
+interface SupportTenant {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export function AdminClient({ section = 'overview' }: { readonly section?: AdminSection }) {
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<AdminOverview | null>(null);
@@ -97,21 +103,34 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
   const [instanceUsers, setInstanceUsers] = useState<InstanceUser[]>([]);
   const [settings, setSettings] = useState<TenantSettings | null>(null);
   const [supportGrants, setSupportGrants] = useState<SupportGrant[]>([]);
+  const [supportTenants, setSupportTenants] = useState<SupportTenant[]>([]);
+  const [supportTenantId, setSupportTenantId] = useState('');
+  const [supportModalOpen, setSupportModalOpen] = useState(false);
   const [supportMetadata, setSupportMetadata] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const [deletionModalOpen, setDeletionModalOpen] = useState(false);
   const [deletionConfirmation, setDeletionConfirmation] = useState('');
   const [auditQuery, setAuditQuery] = useState('');
+  const [debouncedAuditQuery, setDebouncedAuditQuery] = useState('');
   const [auditResult, setAuditResult] = useState('ALL');
   const [auditPage, setAuditPage] = useState(1);
   const [instanceUserQuery, setInstanceUserQuery] = useState('');
+  const [debouncedInstanceUserQuery, setDebouncedInstanceUserQuery] = useState('');
   const [instanceUserStatus, setInstanceUserStatus] = useState('ALL');
   const [instanceUserPage, setInstanceUserPage] = useState(1);
   const [statusConfirmation, setStatusConfirmation] = useState<{
     user: InstanceUser;
     status: 'ACTIVE' | 'SUSPENDED';
   } | null>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedAuditQuery(auditQuery);
+      setDebouncedInstanceUserQuery(instanceUserQuery);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [auditQuery, instanceUserQuery]);
 
   const showSection = (target: AdminSection) => section === target;
   const adminMemberCount = members.filter(
@@ -135,7 +154,7 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
   ).length;
   const instanceAdminCount = instanceUsers.filter((user) => user.isInstanceAdmin).length;
   const filteredAudit = audit.filter((event) => {
-    const query = auditQuery.trim().toLowerCase();
+    const query = debouncedAuditQuery.trim().toLowerCase();
     const matchesQuery = !query || [event.action, event.result, event.targetType ?? '']
       .join(' ')
       .toLowerCase()
@@ -146,7 +165,7 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
   const safeAuditPage = Math.min(auditPage, auditPageCount);
   const visibleAudit = filteredAudit.slice((safeAuditPage - 1) * 8, safeAuditPage * 8);
   const filteredInstanceUsers = instanceUsers.filter((user) => {
-    const query = instanceUserQuery.trim().toLowerCase();
+    const query = debouncedInstanceUserQuery.trim().toLowerCase();
     const matchesQuery = !query || `${user.displayName} ${user.email}`.toLowerCase().includes(query);
     return matchesQuery && (instanceUserStatus === 'ALL' || user.status === instanceUserStatus);
   });
@@ -175,6 +194,10 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
         setSettings(nextSettings);
         setSupportGrants(nextSupport);
         if (nextOverview.instance) {
+          void apiRequest<SupportTenant[]>('/admin/instance/tenants').then((tenants) => {
+            setSupportTenants(tenants);
+            setSupportTenantId((current) => current || tenants[0]?.id || '');
+          });
           void apiRequest<QueueStatus>('/admin/operations/queue').then(setQueue);
           void apiRequest<InstanceUser[]>('/admin/instance/users').then(setInstanceUsers);
         }
@@ -298,6 +321,7 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
       body: JSON.stringify({ tenantId: fields.get('tenantId'), reason: fields.get('reason') }),
     });
     form.reset();
+    setSupportModalOpen(false);
     load();
   }
 
@@ -671,11 +695,41 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
           or analysis content.
         </p>
         {overview?.instance ? (
-          <form className="inline-form" onSubmit={requestSupport}>
-            <input name="tenantId" placeholder="Target workspace UUID" required />
-            <input name="reason" placeholder="Support reason (minimum 10 characters)" required />
-            <button type="submit">Request support access</button>
-          </form>
+          <>
+            <div className="inline-form">
+              <select
+                name="tenantId"
+                aria-label="Target workspace"
+                value={supportTenantId}
+                onChange={(event) => setSupportTenantId(event.target.value)}
+                required
+              >
+                <option value="" disabled>Select target workspace</option>
+                {supportTenants.map((tenant) => (
+                  <option value={tenant.id} key={tenant.id}>{tenant.name} · {tenant.id}</option>
+                ))}
+              </select>
+              <button type="button" disabled={!supportTenantId} onClick={() => setSupportModalOpen(true)}>
+                Request support access
+              </button>
+            </div>
+            {supportModalOpen ? (
+              <div className="v2-modal-backdrop" role="presentation" onMouseDown={() => setSupportModalOpen(false)}>
+                <section className="v2-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="support-reason-title" onMouseDown={(event) => event.stopPropagation()}>
+                  <p className="v2-kicker">Support access</p>
+                  <h2 id="support-reason-title">Why is support access needed?</h2>
+                  <form onSubmit={requestSupport}>
+                    <input type="hidden" name="tenantId" value={supportTenantId} />
+                    <textarea name="reason" placeholder="Support reason (minimum 10 characters)" minLength={10} required autoFocus />
+                    <div className="v2-modal-actions">
+                      <button className="v2-secondary-action" type="button" onClick={() => setSupportModalOpen(false)}>Cancel</button>
+                      <button className="v2-primary-action" type="submit">Submit request</button>
+                    </div>
+                  </form>
+                </section>
+              </div>
+            ) : null}
+          </>
         ) : null}
         <div className="data-list control-center-support-list">
           {supportGrants.map((grant) => {

@@ -106,6 +106,15 @@ export class AdminService {
     });
   }
 
+  async instanceTenants(actor: AuthenticatedActor) {
+    this.assertInstanceAdmin(actor);
+    return this.database.client.tenant.findMany({
+      select: { id: true, name: true, slug: true },
+      orderBy: { name: 'asc' },
+      take: 200,
+    });
+  }
+
   async updateUserStatus(
     actor: AuthenticatedActor,
     userId: string,

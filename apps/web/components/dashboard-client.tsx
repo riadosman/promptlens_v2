@@ -178,6 +178,39 @@ const mockPrompts: MockPromptRow[] = [
   },
 ];
 
+mockPrompts.push(
+  ...Array.from({ length: 16 }, (_, index): MockPromptRow => {
+    const project = mockProjects[index % mockProjects.length]!;
+    const completed = index % 4 !== 3;
+    const score = completed ? 62 + ((index * 7) % 35) : null;
+    return {
+      id: `prompt-mock-${String(index + 5).padStart(3, '0')}`,
+      projectId: project.id,
+      projectName: project.name,
+      content: [
+        'Turn this product brief into a concise launch checklist for the team.',
+        'Draft a helpful customer reply that explains the next steps clearly.',
+        'Compare these campaign ideas and recommend the strongest direction.',
+        'Summarize the meeting notes into owners, deadlines, and risks.',
+      ][index % 4]!,
+      platform: ['slack', 'chat', 'api', 'browser'][index % 4]!,
+      model: ['gpt-4o-mini', 'claude-3.5-sonnet', 'gpt-4o', 'gemini-pro'][index % 4]!,
+      occurredAt: relativeIsoDate(index + 4),
+      tags: [['planning', 'launch'], ['support', 'customer'], ['strategy', 'review'], ['operations', 'team']][index % 4]!,
+      ownerId: index % 2 === 0 ? 'user-owner-001' : 'user-dev-002',
+      analysis: {
+        id: `analysis-mock-${String(index + 5).padStart(3, '0')}`,
+        status: completed ? 'COMPLETED' : 'FAILED',
+        score,
+        strengths: ['Clear intent', 'Useful context'],
+        weaknesses: completed ? ['Could define the audience more precisely'] : ['Provider timeout'],
+        suggestions: ['Add a measurable outcome', 'Specify the expected output format'],
+        improvedPrompt: completed ? 'Rewrite this request with audience, constraints, and a measurable outcome.' : null,
+      },
+    };
+  }),
+);
+
 const mockSessions = [
   {
     id: 'session-owner-001',
@@ -361,6 +394,7 @@ export function DashboardClient() {
     promptPage * promptsPerPage,
   );
   const [query, setQuery] = useState('');
+  const [submittedQuery, setSubmittedQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [projectFilter, setProjectFilter] = useState('');
   const [platformFilter, setPlatformFilter] = useState('');
@@ -389,9 +423,9 @@ export function DashboardClient() {
   );
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedQuery(query), 300);
+    const timer = window.setTimeout(() => setDebouncedQuery(submittedQuery), 300);
     return () => window.clearTimeout(timer);
-  }, [query]);
+  }, [submittedQuery]);
 
   useEffect(() => {
     setSessionsPage((page) => Math.min(page, sessionsPageCount));
@@ -582,11 +616,10 @@ export function DashboardClient() {
     await load();
   }
 
-  async function search(event: FormEvent<HTMLFormElement>) {
+  function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPromptPage(1);
-    if (demoMode) return;
-    await load();
+    setSubmittedQuery(query);
   }
 
   async function toggleProject(projectId: string, archived: boolean) {
@@ -815,9 +848,6 @@ export function DashboardClient() {
           </section>
         ) : null}
         {section === 'overview' ? (
-          sectionLoading ? (
-            <OverviewPanelSkeleton />
-          ) : (
             <>
               <section className="v2-analytics-overview" aria-label="Prompt analytics">
                 <div className="v2-analytics-score-panel v2-command-score">
@@ -900,12 +930,8 @@ export function DashboardClient() {
                 <DashboardPagination label="Session" page={sessionsPage} pageCount={sessionsPageCount} onChange={setSessionsPage} />
               </section>
             </>
-          )
         ) : null}
         {section === 'prompts' ? (
-          sectionLoading ? (
-            <PromptsPanelSkeleton />
-          ) : (
             <section className="v2-panel" id="prompts">
               <div className="v2-panel-head">
                 <div>
@@ -1063,7 +1089,7 @@ export function DashboardClient() {
                               {prompt.analysis?.strengths.length ? (
                                 <ul>
                                   {prompt.analysis.strengths.map((item) => (
-                                    <li key={item}>{item}</li>
+                                    <li key={item}><LucideIcon name="check" />{item}</li>
                                   ))}
                                 </ul>
                               ) : (
@@ -1075,7 +1101,7 @@ export function DashboardClient() {
                               {prompt.analysis?.weaknesses.length ? (
                                 <ul>
                                   {prompt.analysis.weaknesses.map((item) => (
-                                    <li key={item}>{item}</li>
+                                    <li key={item}><LucideIcon name="alert" />{item}</li>
                                   ))}
                                 </ul>
                               ) : (
@@ -1096,7 +1122,7 @@ export function DashboardClient() {
                                 <ul>
                                   {prompt.analysis.suggestions.map((item, index) => (
                                     <li key={item}>
-                                      <span className="v2-bullet">{index + 1}</span>
+                                      <span className="v2-bullet"><LucideIcon name="list" />{index + 1}</span>
                                       <span>{item}</span>
                                     </li>
                                   ))}
@@ -1106,7 +1132,7 @@ export function DashboardClient() {
                               )}
                             </section>
                             <section>
-                              <h3>Improved prompt</h3>
+                              <h3><LucideIcon name="wand" />Improved prompt</h3>
                               <pre>
                                 {prompt.analysis?.improvedPrompt ?? 'Analysis is still running.'}
                               </pre>
@@ -1140,12 +1166,8 @@ export function DashboardClient() {
               </div>
               <DashboardPagination label="Prompt" page={promptPage} pageCount={promptPageCount} onChange={setPromptPage} />
             </section>
-          )
         ) : null}
         {section === 'projects' ? (
-          sectionLoading ? (
-            <ProjectsPanelSkeleton />
-          ) : (
             <section className="v2-project-workspace">
               <div className="v2-panel-head">
                 <div>
@@ -1227,7 +1249,6 @@ export function DashboardClient() {
                 </>
               )}
             </section>
-          )
         ) : null}
         {confirmation ? (
           <div className="v2-modal-backdrop" role="presentation" onMouseDown={() => setConfirmation(null)}>
@@ -1279,133 +1300,106 @@ export function DashboardClient() {
 }
 
 function DashboardLoadingShell({ section }: { section: DashboardSection }) {
-  if (section === 'prompts') {
-    return (
-      <section className="v2-dashboard-loading" aria-busy="true" aria-label="Loading prompt log">
-        <LoadingHeader />
-        <PromptsPanelSkeleton />
-      </section>
-    );
-  }
-
-  if (section === 'projects') {
-    return (
-      <section className="v2-dashboard-loading" aria-busy="true" aria-label="Loading projects">
-        <LoadingHeader />
-        <ProjectsPanelSkeleton />
-      </section>
-    );
-  }
-
-  if (section === 'connect') {
-    return (
-      <section className="v2-dashboard-loading" aria-busy="true" aria-label="Loading device connection">
-        <LoadingHeader />
-        <section className="v2-panel v2-connect-loading-card">
-          <span className="v2-skeleton v2-skeleton-line" style={{ width: '7rem' }} />
-          <span className="v2-skeleton v2-skeleton-title" style={{ width: '70%', height: '3.2rem' }} />
-          <span className="v2-skeleton v2-skeleton-line" style={{ width: '85%' }} />
-          <span className="v2-skeleton v2-skeleton-input" />
-          <span className="v2-skeleton v2-skeleton-button" style={{ width: '10rem' }} />
-        </section>
-      </section>
-    );
-  }
-
+  const label = {
+    connect: 'device connection',
+    overview: 'dashboard',
+    projects: 'projects',
+    prompts: 'prompt log',
+  }[section];
   return (
-    <section className="v2-dashboard-loading" aria-busy="true" aria-label="Loading dashboard">
+    <section className="v2-dashboard-loading" aria-busy="true" aria-live="polite" aria-label={`Loading ${label}`}>
       <LoadingHeader />
+      {section === 'overview' ? <OverviewPanelSkeleton /> : null}
+      {section === 'prompts' ? <PromptsPanelSkeleton /> : null}
+      {section === 'projects' ? <ProjectsPanelSkeleton /> : null}
+      {section === 'connect' ? <ConnectPanelSkeleton /> : null}
+    </section>
+  );
+}
+
+function LoadingHeader() {
+  return <div className="v2-dashboard-loading-header"><span className="v2-skeleton v2-skeleton-title" /><span className="v2-skeleton v2-skeleton-button" /></div>;
+}
+
+function OverviewPanelSkeleton() {
+  return (
+    <section className="v2-overview-skeleton">
       <div className="v2-dashboard-loading-hero">
-        <span className="v2-skeleton v2-skeleton-line" style={{ width: '9rem' }} />
-        <span className="v2-skeleton v2-skeleton-title" style={{ width: '70%', height: '3.8rem' }} />
-        <span className="v2-skeleton v2-skeleton-line" style={{ width: '42%' }} />
+        <span className="v2-skeleton v2-skeleton-kicker" />
+        <span className="v2-skeleton v2-overview-skeleton-heading" />
+        <span className="v2-skeleton v2-skeleton-line" />
       </div>
       <div className="v2-dashboard-loading-grid">
         <span className="v2-skeleton v2-dashboard-loading-score" />
-        {Array.from({ length: 3 }).map((_, index) => (
-          <span className="v2-skeleton v2-dashboard-loading-kpi" key={index} />
-        ))}
+        {Array.from({ length: 3 }, (_, index) => <span className="v2-skeleton v2-dashboard-loading-kpi" key={index} />)}
+      </div>
+      <span className="v2-skeleton v2-dashboard-loading-panel" />
+      <div className="v2-overview-skeleton-distributions">
+        <span className="v2-skeleton v2-dashboard-loading-panel" />
+        <span className="v2-skeleton v2-dashboard-loading-panel" />
       </div>
       <span className="v2-skeleton v2-dashboard-loading-panel" />
     </section>
   );
 }
 
-function LoadingHeader() {
-  return (
-    <div className="v2-dashboard-loading-header">
-      <div>
-        <span className="v2-skeleton v2-skeleton-line" style={{ width: '8rem' }} />
-        <span className="v2-skeleton v2-skeleton-title" style={{ width: '18rem', height: '3rem' }} />
-        <span className="v2-skeleton v2-skeleton-line" style={{ width: '24rem', maxWidth: '80%' }} />
-      </div>
-      <span className="v2-skeleton v2-skeleton-button" style={{ width: '8rem' }} />
-    </div>
-  );
-}
-
-function PromptRowSkeleton() {
-  return (
-    <article className="v2-prompt-card">
-      <span className="v2-skeleton v2-skeleton-score" />
-      <div className="v2-prompt-copy">
-        <p>
-          <span className="v2-skeleton v2-skeleton-line" />
-        </p>
-        <div className="v2-chip-row">
-          <span className="v2-skeleton v2-skeleton-chip" style={{ width: '4.9rem' }} />
-          <span className="v2-skeleton v2-skeleton-chip" style={{ width: '3.9rem' }} />
-          <span className="v2-skeleton v2-skeleton-chip" style={{ width: '3.2rem' }} />
-        </div>
-        <small className="v2-prompt-meta">
-          <span className="v2-skeleton v2-skeleton-line" style={{ width: '62%' }} />
-        </small>
-      </div>
-      <div className="v2-prompt-actions">
-        <span
-          className="v2-skeleton v2-skeleton-line"
-          style={{ width: '5.4rem', height: '1.8rem' }}
-        />
-        <span
-          className="v2-skeleton v2-skeleton-line"
-          style={{ width: '6.1rem', height: '1.8rem' }}
-        />
-      </div>
-    </article>
-  );
-}
-
 function PromptsPanelSkeleton() {
   return (
-    <section className="v2-panel" id="prompts">
+    <section className="v2-panel v2-prompt-log-skeleton">
       <div className="v2-panel-head">
         <div>
-          <p className="v2-kicker">
-            <span className="v2-skeleton v2-skeleton-line" style={{ width: '7.5rem' }} />
-          </p>
-          <h2>
-            <span className="v2-skeleton v2-skeleton-title" style={{ width: '10rem' }} />
-          </h2>
+          <span className="v2-skeleton v2-skeleton-kicker" />
+          <span className="v2-skeleton v2-skeleton-title" />
         </div>
-        <span className="v2-skeleton v2-skeleton-line" style={{ width: '6rem' }} />
+        <span className="v2-skeleton v2-skeleton-button" />
       </div>
       <div className="v2-filter-bar">
-        <span className="v2-skeleton v2-skeleton-input" />
-        <span className="v2-skeleton v2-skeleton-input" />
-        <span className="v2-skeleton v2-skeleton-input" />
-        <span className="v2-skeleton v2-skeleton-input" />
-        <span className="v2-skeleton v2-skeleton-input" />
-        <span className="v2-skeleton v2-skeleton-input" />
+        {Array.from({ length: 6 }, (_, index) => <span className="v2-skeleton v2-skeleton-input" key={index} />)}
       </div>
       <div className="v2-export-strip">
-        <span className="v2-skeleton v2-skeleton-button" style={{ width: '8rem' }} />
-        <span className="v2-skeleton v2-skeleton-button" style={{ width: '8rem' }} />
+        <span className="v2-skeleton v2-skeleton-button" />
+        <span className="v2-skeleton v2-skeleton-button" />
       </div>
-      <div className="v2-prompts">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <PromptRowSkeleton key={index} />
-        ))}
+      <div className="v2-prompt-table-skeleton">
+        <span className="v2-skeleton v2-skeleton-table-head" />
+        {Array.from({ length: 4 }, (_, index) => <span className="v2-skeleton v2-skeleton-table-row" key={index} />)}
       </div>
+    </section>
+  );
+}
+
+function ProjectsPanelSkeleton() {
+  return (
+    <section className="v2-project-workspace v2-projects-skeleton">
+      <div className="v2-panel-head">
+        <div><span className="v2-skeleton v2-skeleton-kicker" /><span className="v2-skeleton v2-skeleton-title" /></div>
+        <span className="v2-skeleton v2-skeleton-chip" />
+      </div>
+      <div className="v2-project-create v2-skeleton-form">
+        <div><span className="v2-skeleton v2-skeleton-kicker" /><span className="v2-skeleton v2-skeleton-title" /></div>
+        <div className="v2-project-create-fields"><span className="v2-skeleton v2-skeleton-input" /><span className="v2-skeleton v2-skeleton-input" /><span className="v2-skeleton v2-skeleton-button" /></div>
+      </div>
+      <article className="v2-project-featured v2-project-featured-skeleton">
+        <div><span className="v2-skeleton v2-skeleton-kicker" /><span className="v2-skeleton v2-project-featured-title" /><span className="v2-skeleton v2-project-featured-copy" /></div>
+        <div className="v2-project-featured-actions"><span className="v2-skeleton v2-skeleton-chip" /><span className="v2-skeleton v2-skeleton-button" /><span className="v2-skeleton v2-skeleton-button" /></div>
+      </article>
+      <div className="v2-project-list v2-projects-skeleton-list">
+        <div className="v2-section-title"><div><span className="v2-skeleton v2-skeleton-kicker" /><span className="v2-skeleton v2-skeleton-title" /></div><span className="v2-skeleton v2-skeleton-chip" /></div>
+        {Array.from({ length: 4 }, (_, index) => <div className="v2-skeleton v2-projects-skeleton-row" key={index} />)}
+        <span className="v2-skeleton v2-projects-skeleton-pagination" />
+      </div>
+    </section>
+  );
+}
+
+function ConnectPanelSkeleton() {
+  return (
+    <section className="v2-panel v2-connect-loading-card v2-connect-skeleton">
+      <span className="v2-skeleton v2-skeleton-kicker" />
+      <span className="v2-skeleton v2-overview-skeleton-heading" />
+      <span className="v2-skeleton v2-skeleton-line" />
+      <span className="v2-skeleton v2-connect-skeleton-code" />
+      <span className="v2-skeleton v2-skeleton-button" />
     </section>
   );
 }
@@ -1460,168 +1454,14 @@ function PaginationArrow({ direction }: { readonly direction: 'left' | 'right' }
   );
 }
 
-function ProjectsPanelSkeleton() {
-  return (
-    <section className="v2-project-workspace">
-      <div className="v2-panel-head">
-        <div>
-          <p className="v2-kicker">
-            <span className="v2-skeleton v2-skeleton-line" style={{ width: '6.4rem' }} />
-          </p>
-          <h2>
-            <span className="v2-skeleton v2-skeleton-title" style={{ width: '7rem' }} />
-          </h2>
-        </div>
-        <span className="v2-skeleton v2-skeleton-line" style={{ width: '6.5rem' }} />
-      </div>
-      <div className="v2-project-create">
-        <div>
-          <span className="v2-skeleton v2-skeleton-line" style={{ width: '8rem' }} />
-          <span className="v2-skeleton v2-skeleton-title" style={{ width: '10rem' }} />
-        </div>
-        <div className="v2-project-create-fields">
-          <span className="v2-skeleton v2-skeleton-input" />
-          <span className="v2-skeleton v2-skeleton-input" />
-          <span className="v2-skeleton v2-skeleton-button" style={{ minWidth: '9rem' }} />
-        </div>
-      </div>
-      <article className="v2-project-featured v2-project-featured-skeleton">
-        <div>
-          <span className="v2-skeleton v2-skeleton-line" style={{ width: '7rem' }} />
-          <span className="v2-skeleton v2-skeleton-title" style={{ width: '13rem', height: '2.2rem' }} />
-          <span className="v2-skeleton v2-skeleton-line" style={{ width: '10rem' }} />
-        </div>
-        <div className="v2-project-featured-actions">
-          <span className="v2-skeleton v2-skeleton-chip" />
-          <span className="v2-skeleton v2-skeleton-button" style={{ width: '8rem' }} />
-          <span className="v2-skeleton v2-skeleton-button" style={{ width: '5rem' }} />
-        </div>
-      </article>
-      <div className="v2-project-list v2-project-list-skeleton">
-        <div className="v2-section-title">
-          <div>
-            <span className="v2-skeleton v2-skeleton-line" style={{ width: '9rem' }} />
-            <span className="v2-skeleton v2-skeleton-title" style={{ width: '8rem' }} />
-          </div>
-          <span className="v2-skeleton v2-skeleton-chip" />
-        </div>
-        {Array.from({ length: 2 }).map((_, index) => (
-          <article className="v2-project-list-row" key={index}>
-            <div>
-              <span className="v2-skeleton v2-skeleton-title" style={{ width: '9rem' }} />
-              <span className="v2-skeleton v2-skeleton-line" style={{ width: '12rem' }} />
-            </div>
-            <span className="v2-skeleton v2-skeleton-chip" />
-            <span className="v2-skeleton v2-skeleton-button" style={{ width: '5rem' }} />
-          </article>
-        ))}
-        <DashboardPagination label="Project" page={1} pageCount={1} onChange={() => undefined} />
-      </div>
-    </section>
-  );
-}
-
-function DistributionPanelSkeleton() {
-  return (
-    <article className="v2-panel v2-panel-compact">
-      <p className="v2-kicker">
-        <span className="v2-skeleton v2-skeleton-line" style={{ width: '44%' }} />
-      </p>
-      <h2>
-        <span className="v2-skeleton v2-skeleton-title" />
-      </h2>
-      <ol className="v2-stat-list">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <li key={index}>
-            <span>
-              <span className="v2-skeleton v2-skeleton-line" />
-            </span>
-            <strong>
-              <span className="v2-skeleton v2-skeleton-line" style={{ width: '1.75rem' }} />
-            </strong>
-          </li>
-        ))}
-      </ol>
-    </article>
-  );
-}
-
-function OverviewPanelSkeleton() {
-  return (
-    <>
-      <section className="v2-kpi-grid" aria-label="Loading workspace statistics">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <article className="v2-kpi" key={index}>
-            <p>
-              <span
-                className="v2-skeleton v2-skeleton-title"
-                style={{ width: index === 0 ? '58%' : '42%' }}
-              />
-            </p>
-            <strong>
-              <span className="v2-skeleton v2-skeleton-title" style={{ width: '58%' }} />
-            </strong>
-          </article>
-        ))}
-      </section>
-      <section className="v2-panels" aria-label="Loading prompt analytics">
-        <article className="v2-panel">
-          <p className="v2-kicker">
-            <span className="v2-skeleton v2-skeleton-line" style={{ width: '35%' }} />
-          </p>
-          <h2>
-            <span className="v2-skeleton v2-skeleton-title" />
-          </h2>
-          <ol className="v2-stat-list">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <li key={index}>
-                <span>
-                  <span
-                    className="v2-skeleton v2-skeleton-line"
-                    style={{ width: `${65 - index * 4}%` }}
-                  />
-                </span>
-                <strong>
-                  <span className="v2-skeleton v2-skeleton-line" style={{ width: '2rem' }} />
-                </strong>
-              </li>
-            ))}
-          </ol>
-        </article>
-        <DistributionPanelSkeleton />
-        <DistributionPanelSkeleton />
-      </section>
-      <section className="v2-panel">
-        <p className="v2-kicker">
-          <span className="v2-skeleton v2-skeleton-line" style={{ width: '38%' }} />
-        </p>
-        <h2>
-          <span className="v2-skeleton v2-skeleton-title" />
-        </h2>
-        <div className="v2-session-grid">
-          {Array.from({ length: 2 }).map((_, index) => (
-            <article className="v2-session-card" key={index}>
-              <div>
-                <h3>
-                  <span className="v2-skeleton v2-skeleton-title" style={{ width: '58%' }} />
-                </h3>
-                <p>
-                  <span className="v2-skeleton v2-skeleton-line" />
-                </p>
-                <small>
-                  <span className="v2-skeleton v2-skeleton-line" />
-                </small>
-              </div>
-              <span
-                className="v2-skeleton v2-skeleton-line"
-                style={{ width: '5.5rem', height: '1.95rem' }}
-              />
-            </article>
-          ))}
-        </div>
-      </section>
-    </>
-  );
+function LucideIcon({ name }: { readonly name: 'check' | 'alert' | 'list' | 'wand' }) {
+  const paths = {
+    check: <path d="m5 12 4 4L19 6" />,
+    alert: <path d="M12 3 2.8 19h18.4L12 3Zm0 6v4m0 3h.01" />,
+    list: <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />,
+    wand: <path d="m15 4 5 5M13 6 4 15l5 5 9-9M4 4v3m-1.5-1.5h3M19 16v3m-1.5-1.5h3" />,
+  }[name];
+  return <svg className="v2-lucide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths}</svg>;
 }
 
 function Distribution({

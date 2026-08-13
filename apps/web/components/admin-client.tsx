@@ -93,7 +93,45 @@ interface SupportTenant {
   slug: string;
 }
 
+const mockAdminData = () => {
+  const createdAt = (daysAgo: number) => new Date(Date.now() - daysAgo * 86_400_000).toISOString();
+  const users: InstanceUser[] = Array.from({ length: 12 }, (_, index) => ({
+    id: `mock-user-${index + 1}`,
+    email: `${['ayse', 'berk', 'cem', 'deniz'][index % 4]!}@promptlens.test`,
+    displayName: ['Ayşe Kaya', 'Berk Demir', 'Cem Yılmaz', 'Deniz Arslan'][index % 4]!,
+    status: index === 4 || index === 9 ? 'SUSPENDED' : 'ACTIVE',
+    isInstanceAdmin: index === 0,
+    _count: { memberships: (index % 3) + 1 },
+  }));
+  return {
+    overview: {
+      tenant: { users: 8, projects: 5, prompts: 42, analyses: 31, connectors: 3, inputTokens: 184200, outputTokens: 92700, costMicros: 3840000 },
+      instance: { users: 24, tenants: 6, queuedAnalyses: 3, unpublishedEvents: 2 },
+    } satisfies AdminOverview,
+    members: [
+      { role: 'OWNER', createdAt: createdAt(180), user: { id: 'mock-owner', email: 'owner@promptlens.test', displayName: 'Fatih Emre Yüce', status: 'ACTIVE' } },
+      { role: 'ADMIN', createdAt: createdAt(42), user: { id: 'mock-admin', email: 'admin@promptlens.test', displayName: 'Ayşe Kaya', status: 'ACTIVE' } },
+      { role: 'VIEWER', createdAt: createdAt(12), user: { id: 'mock-viewer', email: 'viewer@promptlens.test', displayName: 'Berk Demir', status: 'ACTIVE' } },
+    ] satisfies MemberRecord[],
+    audit: Array.from({ length: 16 }, (_, index) => ({ id: `mock-audit-${index}`, action: ['prompts.exported', 'member.updated', 'session.revoked', 'connector.connected'][index % 4]!, result: index === 6 ? 'FAILURE' : 'SUCCESS', targetType: ['PROMPT_EXPORT', 'MEMBER', 'SESSION', 'CONNECTOR'][index % 4]!, createdAt: createdAt(index + 1) })) satisfies AuditRecord[],
+    connectors: [
+      { id: 'mock-connector-1', displayName: 'Slack workspace', platform: 'slack', protocolVersion: '1.4', status: 'ACTIVE' },
+      { id: 'mock-connector-2', displayName: 'Chrome extension', platform: 'browser', protocolVersion: '1.2', status: 'ACTIVE' },
+      { id: 'mock-connector-3', displayName: 'Internal API', platform: 'api', protocolVersion: '2.0', status: 'REVOKED' },
+    ] satisfies ConnectorRecord[],
+    settings: { id: 'mock-tenant', name: 'PromptLens Demo Workspace', slug: 'promptlens-demo', retentionDays: 90, aiProvider: 'fake', aiModel: 'gpt-4o-mini', aiMonthlyTokenBudget: 1_000_000, deletionScheduledAt: null } satisfies TenantSettings,
+    supportGrants: [
+      { id: 'mock-grant-1', requestedById: 'mock-instance-admin', reason: 'Investigate connector sync delay', approvedById: 'mock-owner', expiresAt: new Date(Date.now() + 45 * 60_000).toISOString(), revokedAt: null, createdAt: createdAt(1) },
+      { id: 'mock-grant-2', requestedById: 'mock-instance-admin', reason: 'Review recent workspace errors', approvedById: null, expiresAt: null, revokedAt: null, createdAt: createdAt(3) },
+    ] satisfies SupportGrant[],
+    supportTenants: ['Marketing workspace', 'Product lab', 'Customer success'].map((name, index) => ({ id: `mock-tenant-${index + 1}`, name, slug: name.toLowerCase().replaceAll(' ', '-') })),
+    queue: { counts: { completed: 128, active: 3, failed: 2 }, failed: [{ id: 'job-mock-1', tenantId: 'mock-tenant-1', analysisId: 'analysis-mock-1', attemptsMade: 2 }, { id: 'job-mock-2', tenantId: 'mock-tenant-2', analysisId: null, attemptsMade: 1 }] } satisfies QueueStatus,
+    instanceUsers: users,
+  };
+};
+
 export function AdminClient({ section = 'overview' }: { readonly section?: AdminSection }) {
+  const [mockMode, setMockMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [members, setMembers] = useState<MemberRecord[]>([]);
@@ -123,6 +161,11 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
     user: InstanceUser;
     status: 'ACTIVE' | 'SUSPENDED';
   } | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setMockMode(params.get('mock') === '1' || params.get('demo') === '1');
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -178,6 +221,22 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
 
   const load = useCallback(() => {
     setLoading(true);
+    if (mockMode) {
+      const data = mockAdminData();
+      setOverview(data.overview);
+      setMembers(data.members);
+      setAudit(data.audit);
+      setConnectors(data.connectors);
+      setSettings(data.settings);
+      setSupportGrants(data.supportGrants);
+      setSupportTenants(data.supportTenants);
+      setSupportTenantId(data.supportTenants[0]?.id ?? '');
+      setQueue(data.queue);
+      setInstanceUsers(data.instanceUsers);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     Promise.all([
       apiRequest<AdminOverview>('/admin/overview'),
       apiRequest<MemberRecord[]>('/admin/members'),
@@ -206,7 +265,7 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
         setError(cause instanceof Error ? cause.message : 'Admin data could not be loaded.'),
       )
       .finally(() => setLoading(false));
-  }, []);
+  }, [mockMode]);
 
   useEffect(() => load(), [load, section]);
 

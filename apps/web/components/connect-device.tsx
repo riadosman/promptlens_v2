@@ -15,12 +15,26 @@ export function ConnectDevice() {
   const [needsAuthentication, setNeedsAuthentication] = useState(false);
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [mockMode, setMockMode] = useState(false);
 
   const activeProjects = projects.filter((project) => project.status === 'ACTIVE');
   const selectedProject = activeProjects.find((project) => project.id === projectId);
 
   useEffect(() => {
-    setUserCode(new URLSearchParams(window.location.search).get('code')?.toUpperCase() ?? '');
+    const params = new URLSearchParams(window.location.search);
+    const isMock = params.get('mock') === '1' || params.get('demo') === '1';
+    setMockMode(isMock);
+    setUserCode(params.get('code')?.toUpperCase() ?? (isMock ? 'PL-DEMO-42QX' : ''));
+    if (isMock) {
+      const items: ProjectResponse[] = [
+        { id: 'mock-project-content', name: 'Content team', description: 'Product launches and campaign tracking.', status: 'ACTIVE', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: 'mock-project-support', name: 'Support ops', description: 'Customer support workflows.', status: 'ACTIVE', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      ];
+      setProjects(items);
+      setProjectId(items[0]!.id);
+      setLoadingProjects(false);
+      return;
+    }
     apiRequest<ProjectResponse[]>('/projects')
       .then((items) => {
         const active = items.filter((project) => project.status === 'ACTIVE');
@@ -39,6 +53,12 @@ export function ConnectDevice() {
     setConnecting(true);
     setMessage(null);
     try {
+      if (mockMode) {
+        await new Promise((resolve) => window.setTimeout(resolve, 450));
+        setConnected(true);
+        setConnecting(false);
+        return;
+      }
       await apiRequest('/connectors/device/approve', {
         method: 'POST',
         body: JSON.stringify({ userCode, projectId }),
@@ -65,12 +85,17 @@ export function ConnectDevice() {
 
   return (
     <form className="v2-connect-panel" onSubmit={step === 1 ? (event) => { event.preventDefault(); setStep(2); } : approve}>
+      <div className="v2-connect-card-head">
+        <div><p className="v2-kicker">Device pairing</p><h2>Connect your AI tool</h2></div>
+        <span className="v2-connect-secure">Secure setup</span>
+      </div>
       <div className="v2-connect-progress" aria-label={`Connection step ${step} of 2`}>
         <div className={step === 1 ? 'active' : 'complete'}><span>01</span><strong>Device code</strong></div>
         <i className={step === 2 ? 'complete' : ''} aria-hidden="true" />
         <div className={step === 2 ? 'active' : ''}><span>02</span><strong>Workspace access</strong></div>
       </div>
 
+      <div className="v2-connect-body">
       {step === 1 ? (
         <div className="v2-connect-step">
           <p className="v2-kicker">Step 1 · Verify the connector</p>
@@ -128,6 +153,15 @@ export function ConnectDevice() {
           </div>
         </div>
       )}
+        <aside className="v2-connect-help">
+          <p className="v2-kicker">How it works</p>
+          <ol>
+            <li className={step === 1 ? 'current' : 'complete'}><span>1</span><div><strong>Verify your device</strong><small>Enter the temporary code from your AI tool.</small></div></li>
+            <li className={step === 2 ? 'current' : ''}><span>2</span><div><strong>Choose a workspace</strong><small>Set where this tool&apos;s prompts are stored.</small></div></li>
+          </ol>
+          <p className="v2-connect-help-note">You can revoke this device at any time from Administration.</p>
+        </aside>
+      </div>
     </form>
   );
 }

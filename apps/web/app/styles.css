@@ -1617,74 +1617,6 @@ select optgroup {
   -webkit-text-fill-color: #e5ecff !important;
 }
 
-.v2-project-card-skeleton {
-  gap: 0.7rem;
-}
-
-.v2-skeleton {
-  position: relative;
-  display: block;
-  overflow: hidden;
-  border-radius: 0.45rem;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.1),
-    rgba(255, 255, 255, 0.22),
-    rgba(255, 255, 255, 0.1)
-  );
-  background-size: 200% 100%;
-  animation: v2-skeleton-shimmer 1.2s linear infinite;
-}
-
-.v2-skeleton-title {
-  height: 1.1rem;
-  width: 72%;
-}
-
-.v2-skeleton-line {
-  height: 0.9rem;
-  width: 100%;
-}
-
-.v2-skeleton-input {
-  height: 2.5rem;
-  width: 100%;
-}
-
-.v2-skeleton-score {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-}
-
-.v2-skeleton-chip {
-  height: 1.45rem;
-  width: 4.6rem;
-}
-
-.v2-skeleton-button {
-  margin-top: 0.3rem;
-  height: 2rem;
-  width: 7.2rem;
-}
-
-.v2-project-card .v2-skeleton-chip {
-  border-radius: 999px;
-}
-
-.v2-project-card .v2-skeleton-button {
-  border-radius: 0.55rem;
-}
-
-@keyframes v2-skeleton-shimmer {
-  0% {
-    background-position: 120% 0%;
-  }
-  100% {
-    background-position: -120% 0%;
-  }
-}
-
 .v2-inline-form {
   margin-top: 0.85rem;
 }
@@ -4877,6 +4809,7 @@ body:has(.auth-shell) {
 
 .dashboard-shell-v2 .v2-bar-chart > div > i {
   background: #9a8cff;
+  height: 100%;
 }
 
 .dashboard-shell-v2 .v2-bar-chart > div > span {
@@ -5629,7 +5562,7 @@ body:has(.auth-shell) {
 }
 
 .dashboard-shell-v2 .v2-connect-panel {
-  max-width: 58rem;
+  max-width: 64rem;
   margin: 0 auto;
   padding: clamp(1.25rem, 3vw, 2.25rem);
   border: 1px solid #cadbd0;
@@ -5679,6 +5612,10 @@ body:has(.auth-shell) {
 .dashboard-shell-v2 .v2-connect-success-mark { display: grid; width: 3.5rem; height: 3.5rem; margin: 0 auto 1rem; place-items: center; border-radius: 50%; background: #117d4b; color: #fff; font-size: 1.7rem; font-weight: 900; }
 
 @media (max-width: 560px) {
+  .dashboard-shell-v2 .v2-connect-card-head { align-items: stretch; flex-direction: column; }
+  .dashboard-shell-v2 .v2-connect-secure { align-self: flex-start; }
+  .dashboard-shell-v2 .v2-connect-body { grid-template-columns: 1fr; }
+  .dashboard-shell-v2 .v2-connect-help { padding: 1.25rem 0 0; border-top: 1px solid #d9e4db; border-left: 0; }
   .dashboard-shell-v2 .v2-connect-progress { grid-template-columns: 1fr 2rem 1fr; gap: 0.35rem; }
   .dashboard-shell-v2 .v2-connect-progress strong { font-size: 0.68rem; }
   .dashboard-shell-v2 .v2-connect-actions { align-items: stretch; flex-direction: column-reverse; }
@@ -6203,6 +6140,139 @@ body:has(.auth-shell) {
   display: grid;
   gap: 1.25rem;
   min-width: 0;
+  min-height: 16rem;
+  width: 100%;
+  place-items: stretch;
+}
+
+.dashboard-shell-v2 .v2-connect-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.3rem;
+  border-bottom: 1px solid #d9e4db;
+}
+
+.dashboard-shell-v2 .v2-connect-card-head .v2-kicker { margin-bottom: 0.45rem; }
+.dashboard-shell-v2 .v2-connect-card-head h2 { margin: 0; color: #10251c; font-size: clamp(1.5rem, 3vw, 2.15rem); letter-spacing: -0.05em; }
+.dashboard-shell-v2 .v2-connect-secure { padding: 0.45rem 0.7rem; border: 1px solid #bcd7c4; border-radius: 999px; background: #eef7ef; color: #167448; font-size: 0.74rem; font-weight: 800; white-space: nowrap; }
+
+.dashboard-shell-v2 .v2-connect-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(14rem, 0.55fr);
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: start;
+}
+
+.dashboard-shell-v2 .v2-connect-help { padding-left: clamp(1.25rem, 3vw, 2.5rem); border-left: 1px solid #d9e4db; }
+.dashboard-shell-v2 .v2-connect-help ol { display: grid; gap: 1.1rem; margin: 1rem 0 1.5rem; padding: 0; list-style: none; }
+.dashboard-shell-v2 .v2-connect-help li { display: grid; grid-template-columns: 1.8rem 1fr; gap: 0.65rem; color: #6e7f76; }
+.dashboard-shell-v2 .v2-connect-help li > span { display: grid; width: 1.8rem; height: 1.8rem; place-items: center; border: 1px solid #c8d8cc; border-radius: 50%; font-size: 0.72rem; font-weight: 800; }
+.dashboard-shell-v2 .v2-connect-help li.current, .dashboard-shell-v2 .v2-connect-help li.complete { color: #173126; }
+.dashboard-shell-v2 .v2-connect-help li.current > span { border-color: #167448; background: #167448; color: #fff; }
+.dashboard-shell-v2 .v2-connect-help li.complete > span { border-color: #75b995; color: #167448; }
+.dashboard-shell-v2 .v2-connect-help strong, .dashboard-shell-v2 .v2-connect-help small { display: block; }
+.dashboard-shell-v2 .v2-connect-help strong { font-size: 0.84rem; }
+.dashboard-shell-v2 .v2-connect-help small, .dashboard-shell-v2 .v2-connect-help-note { margin-top: 0.2rem; color: #71887c; font-size: 0.76rem; line-height: 1.45; }
+.dashboard-shell-v2 .v2-connect-help-note { padding-top: 1rem; border-top: 1px solid #e0e9e2; }
+
+.v2-dashboard-loading p {
+  margin: 0;
+  color: #526258;
+}
+
+.v2-skeleton {
+  display: block;
+  min-height: 0.9rem;
+  border-radius: 0.45rem;
+  background: linear-gradient(90deg, #e2ece5 25%, #f5faf6 50%, #e2ece5 75%);
+  background-size: 200% 100%;
+  animation: v2-skeleton-shimmer 1.2s linear infinite;
+}
+
+.v2-skeleton-title { width: min(18rem, 70%); height: 2rem; }
+.v2-skeleton-kicker { width: 6rem; height: 0.75rem; margin-bottom: 0.65rem; }
+.v2-skeleton-chip { width: 4.8rem; height: 1.8rem; border-radius: 999px; }
+.v2-skeleton-line { width: 100%; }
+.v2-skeleton-input { width: 100%; height: 2.5rem; }
+.v2-skeleton-button { width: 8rem; height: 2rem; }
+.v2-skeleton-table-head { height: 2.75rem; border-radius: 0.75rem 0.75rem 0 0; }
+.v2-skeleton-table-row { height: 4.5rem; border-radius: 0; }
+.v2-overview-skeleton-heading { width: min(30rem, 70%); height: clamp(3rem, 5vw, 5rem); }
+
+.v2-prompt-log-skeleton .v2-panel-head > div {
+  display: grid;
+}
+
+.v2-prompt-table-skeleton {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid #c8d8cc;
+  border-radius: 0.8rem;
+}
+
+.v2-overview-skeleton,
+.v2-overview-skeleton-distributions {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.v2-overview-skeleton-distributions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.v2-projects-skeleton-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.v2-skeleton-form > div:first-child { display: grid; }
+.v2-project-featured-skeleton { min-height: 13rem; }
+.v2-project-featured-skeleton .v2-skeleton { background: linear-gradient(90deg, #234838 25%, #335f4b 50%, #234838 75%); }
+.v2-project-featured-title { width: 12rem; height: 2.5rem; }
+.v2-project-featured-copy { width: 9rem; height: 1rem; }
+.v2-projects-skeleton-row { height: 3.85rem; border-radius: 0; }
+.v2-projects-skeleton-pagination { width: 7rem; height: 2rem; justify-self: end; }
+.v2-connect-skeleton { display: grid; gap: 1.2rem; align-content: center; min-height: 24rem; }
+.v2-connect-skeleton-code { width: min(32rem, 100%); height: 4rem; }
+
+/* Projects loading follows the same restrained content column as Project control. */
+.dashboard-shell-v2 .v2-dashboard-loading:has(.v2-projects-skeleton) {
+  width: min(100%, 60rem);
+  margin-inline: auto;
+  gap: 1rem;
+}
+
+.dashboard-shell-v2 .v2-dashboard-loading:has(.v2-projects-skeleton) .v2-dashboard-loading-header {
+  min-height: 6rem;
+  padding-bottom: 1rem;
+}
+
+.dashboard-shell-v2 .v2-projects-skeleton {
+  width: 100%;
+  gap: 1rem;
+}
+
+.dashboard-shell-v2 .v2-projects-skeleton .v2-project-create {
+  min-height: 4.5rem;
+  margin: 0;
+}
+
+.dashboard-shell-v2 .v2-projects-skeleton-list {
+  gap: 0;
+  padding-top: 0.65rem;
+  border-top: 1px solid #d4dfd7;
+}
+
+.dashboard-shell-v2 .v2-projects-skeleton-row {
+  margin-top: 0;
+  border-bottom: 1px solid #dce7df;
+  background: linear-gradient(90deg, #eef4ee 25%, #f7faf7 50%, #eef4ee 75%);
+}
+
+@keyframes v2-skeleton-shimmer {
+  to { background-position: -200% 0; }
 }
 
 .v2-dashboard-loading-header {
@@ -6406,6 +6476,11 @@ body:has(.auth-shell) {
 }
 
 /* Loading states keep the page rhythm instead of collapsing into tiny bars. */
+.dashboard-shell-v2 .v2-main:has(> .v2-dashboard-loading) {
+  width: 100%;
+  margin-inline: 0;
+}
+
 .dashboard-shell-v2 .v2-dashboard-loading {
   gap: 1.8rem;
 }
@@ -6417,6 +6492,90 @@ body:has(.auth-shell) {
 
 .dashboard-shell-v2 .v2-dashboard-loading-panel {
   min-height: 24rem;
+}
+
+/* Overview loading mirrors the score, KPI, trend, insight, and activity regions. */
+.dashboard-shell-v2 .v2-overview-skeleton {
+  margin-top: 0;
+}
+
+.dashboard-shell-v2 .v2-overview-skeleton .v2-analytics-score-copy {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.dashboard-shell-v2 .v2-overview-skeleton-score-title,
+.dashboard-shell-v2 .v2-overview-skeleton-panel-title {
+  display: block;
+  width: 8.5rem;
+  height: 2rem;
+}
+
+.dashboard-shell-v2 .v2-overview-skeleton-score {
+  display: block;
+  width: clamp(8rem, 22vw, 13rem);
+  height: clamp(3.5rem, 7vw, 5.6rem);
+}
+
+.dashboard-shell-v2 .v2-overview-skeleton-score-bar {
+  display: block;
+  width: 100%;
+  height: 0.65rem;
+  border-radius: 999px;
+}
+
+.dashboard-shell-v2 .v2-overview-skeleton-kpi-value {
+  display: block;
+  width: 58%;
+  height: clamp(2.6rem, 4vw, 3.6rem);
+  margin-top: 0.85rem;
+}
+
+.dashboard-shell-v2 .v2-overview-skeleton-chart {
+  display: flex;
+  align-items: end;
+  gap: clamp(0.25rem, 1vw, 0.6rem);
+  height: 14rem;
+  padding: 1rem 0 0.25rem;
+}
+
+.dashboard-shell-v2 .v2-overview-skeleton-chart .v2-skeleton {
+  flex: 1;
+  min-width: 0;
+  border-radius: 0.35rem 0.35rem 0 0;
+}
+
+.dashboard-shell-v2 .v2-overview-skeleton-insight {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+  min-height: 12rem;
+}
+
+.dashboard-shell-v2 .v2-overview-skeleton-insight > div {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.dashboard-shell-v2 .v2-overview-skeleton-activity {
+  margin-top: 1rem;
+}
+
+.dashboard-shell-v2 .v2-overview-skeleton-activity .v2-session-card > div {
+  display: grid;
+  gap: 0.7rem;
+}
+
+@media (max-width: 560px) {
+  .dashboard-shell-v2 .v2-overview-skeleton-chart {
+    height: 11rem;
+    gap: 0.2rem;
+  }
+
+  .dashboard-shell-v2 .v2-overview-skeleton-activity .v2-session-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .dashboard-shell-v2 .v2-dashboard-loading-score,
@@ -6747,6 +6906,104 @@ body:has(.auth-shell) {
   min-height: 7rem;
   width: 100%;
   resize: vertical;
+}
+
+.dashboard-shell-v2 .v2-analysis {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+  margin-top: 0.75rem;
+  padding: 1.25rem;
+  border: 1px solid #c8dfcd;
+  border-radius: 0.85rem;
+  background: #edf5ef;
+}
+
+.dashboard-shell-v2 .v2-analysis > section {
+  min-width: 0;
+  min-height: 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid #d5e4d8;
+  border-radius: 0.7rem;
+  background: #fffdf8;
+}
+
+.dashboard-shell-v2 .v2-analysis > section h3 {
+  margin: 0 0 0.8rem;
+  color: #14231b;
+  font-size: 1.05rem;
+}
+
+.dashboard-shell-v2 .v2-lucide-icon {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.45rem;
+  vertical-align: -0.14em;
+  color: #167448;
+}
+
+.dashboard-shell-v2 .v2-analysis li > .v2-lucide-icon {
+  flex: 0 0 auto;
+}
+
+.dashboard-shell-v2 .v2-analysis h3 .v2-lucide-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.dashboard-shell-v2 .v2-analysis > section > ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.dashboard-shell-v2 .v2-analysis > section > ul li {
+  line-height: 1.45;
+}
+
+.dashboard-shell-v2 .v2-analysis .v2-suggestions .v2-section-title {
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.dashboard-shell-v2 .v2-analysis .v2-suggestions .v2-section-title h3 {
+  margin-bottom: 0;
+}
+
+.dashboard-shell-v2 .v2-analysis .v2-suggestions ul {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.dashboard-shell-v2 .v2-analysis .v2-suggestions li {
+  margin: 0;
+  line-height: 1.35;
+}
+
+.dashboard-shell-v2 .v2-analysis pre {
+  max-width: 100%;
+  margin: 0 0 0.9rem;
+  padding: 0.85rem;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  border: 1px solid #d5e4d8;
+  border-radius: 0.55rem;
+  background: #f3f8f3;
+  color: #304238;
+  font: 0.82rem/1.55 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.dashboard-shell-v2 .v2-analysis > section:last-child .v2-action {
+  margin: 0.15rem 0.35rem 0 0;
+}
+
+@media (max-width: 860px) {
+  .dashboard-shell-v2 .v2-analysis {
+    grid-template-columns: 1fr;
+    padding: 0.85rem;
+  }
 }
 
 @media (min-width: 901px) {

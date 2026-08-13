@@ -5564,11 +5564,12 @@ body:has(.auth-shell) {
 .dashboard-shell-v2 .v2-connect-panel {
   max-width: 64rem;
   margin: 0 auto;
-  padding: clamp(1.25rem, 3vw, 2.25rem);
-  border: 1px solid #cadbd0;
-  border-radius: 1.25rem;
-  background: #fffdf8;
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+  border: 1px solid #c5d9ca;
+  border-radius: 1.5rem;
+  background: linear-gradient(135deg, #fffdf8 0%, #fffdf8 68%, #f2f8f2 100%);
   color: #10251c;
+  box-shadow: 0 1.5rem 3.5rem rgba(19, 48, 35, 0.08);
 }
 
 .dashboard-shell-v2 .v2-connect-progress {
@@ -5576,16 +5577,19 @@ body:has(.auth-shell) {
   grid-template-columns: 1fr 4rem 1fr;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 2.4rem;
+  max-width: 34rem;
+  margin: 1.6rem 0 2.7rem;
 }
 
 .dashboard-shell-v2 .v2-connect-progress > div { display: grid; grid-template-columns: auto 1fr; gap: 0.55rem; align-items: center; color: #70877b; }
 .dashboard-shell-v2 .v2-connect-progress > div.active,
 .dashboard-shell-v2 .v2-connect-progress > div.complete { color: #117d4b; }
-.dashboard-shell-v2 .v2-connect-progress span { display: grid; width: 2rem; height: 2rem; place-items: center; border: 1px solid #bfd3c5; border-radius: 50%; font-size: 0.7rem; font-weight: 800; }
-.dashboard-shell-v2 .v2-connect-progress .active span { border-color: #117d4b; background: #117d4b; color: #fff; }
-.dashboard-shell-v2 .v2-connect-progress strong { font-size: 0.78rem; }
-.dashboard-shell-v2 .v2-connect-progress i { height: 1px; background: #cadbd0; }
+.dashboard-shell-v2 .v2-connect-progress span { position: relative; display: grid; width: 2.15rem; height: 2.15rem; place-items: center; border: 1px solid #bfd3c5; border-radius: 50%; background: #fffdf8; font-size: 0.68rem; font-weight: 900; }
+.dashboard-shell-v2 .v2-connect-progress .active span { border-color: #117d4b; background: #117d4b; color: #fff; box-shadow: 0 0 0 0.3rem #e4f2e6; }
+.dashboard-shell-v2 .v2-connect-progress .complete span { border-color: #117d4b; background: #e4f2e6; color: transparent; }
+.dashboard-shell-v2 .v2-connect-progress .complete span::after { position: absolute; color: #117d4b; content: '\2713'; font-size: 0.9rem; }
+.dashboard-shell-v2 .v2-connect-progress strong { font-size: 0.78rem; letter-spacing: -0.01em; }
+.dashboard-shell-v2 .v2-connect-progress i { height: 2px; background: #cadbd0; }
 
 .dashboard-shell-v2 .v2-connect-step { max-width: 36rem; }
 .dashboard-shell-v2 .v2-connect-step h2,
@@ -5594,11 +5598,11 @@ body:has(.auth-shell) {
 .dashboard-shell-v2 .v2-connect-field { display: grid; gap: 0.45rem; margin-bottom: 1.25rem; color: #173126; font-weight: 750; }
 .dashboard-shell-v2 .v2-connect-field small { color: #71887c; font-size: 0.76rem; font-weight: 500; }
 .dashboard-shell-v2 .v2-connect-field input,
-.dashboard-shell-v2 .v2-connect-field select { width: 100%; min-height: 3.35rem; border: 1px solid #bcd1c2; border-radius: 0.7rem; padding: 0 1rem; background: #fffdf8; color: #10251c; font: inherit; }
-.dashboard-shell-v2 .v2-connect-field input { font-size: 1.15rem; letter-spacing: 0.08em; }
+.dashboard-shell-v2 .v2-connect-field select { width: 100%; min-height: 3.5rem; border: 1px solid #bcd1c2; border-radius: 0.85rem; padding: 0 1rem; background: rgba(255, 255, 252, 0.86); color: #10251c; font: inherit; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9); }
+.dashboard-shell-v2 .v2-connect-field input { font-size: 1.15rem; font-weight: 800; letter-spacing: 0.1em; }
 .dashboard-shell-v2 .v2-connect-field input:focus,
 .dashboard-shell-v2 .v2-connect-field select:focus { outline: 3px solid rgba(17, 125, 75, 0.18); border-color: #117d4b; }
-.dashboard-shell-v2 .v2-connect-summary { display: flex; justify-content: space-between; gap: 1rem; margin: 0 0 1.3rem; padding: 0.85rem 1rem; border: 1px solid #d5e2d8; border-radius: 0.7rem; background: #eef6ef; color: #61786c; font-size: 0.8rem; }
+.dashboard-shell-v2 .v2-connect-summary { display: flex; justify-content: space-between; gap: 1rem; margin: 0 0 1.3rem; padding: 0.95rem 1rem; border: 1px solid #cde1d2; border-radius: 0.85rem; background: #eef7ef; color: #61786c; font-size: 0.8rem; }
 .dashboard-shell-v2 .v2-connect-summary strong { color: #10251c; letter-spacing: 0.08em; }
 .dashboard-shell-v2 .v2-connect-actions { display: flex; align-items: center; gap: 0.75rem; margin-top: 1.75rem; }
 .dashboard-shell-v2 .v2-connect-panel .v2-primary-action,
@@ -5607,15 +5611,14 @@ body:has(.auth-shell) {
 .dashboard-shell-v2 .v2-connect-panel button:disabled { cursor: not-allowed; opacity: 0.55; }
 .dashboard-shell-v2 .v2-connect-status { margin: 1rem 0 0; padding: 0.8rem 0.9rem; border: 1px solid #e4c9b6; border-radius: 0.65rem; background: #fff6ef; color: #8b4d2d; line-height: 1.45; }
 .dashboard-shell-v2 .v2-connect-status a { color: #0d7446; font-weight: 800; }
-.dashboard-shell-v2 .v2-connect-success { text-align: center; }
+.dashboard-shell-v2 .v2-connect-success { max-width: 42rem; padding-block: clamp(2.5rem, 7vw, 5rem); text-align: center; }
 .dashboard-shell-v2 .v2-connect-success p:not(.v2-kicker) { margin: 0 auto 1.5rem; max-width: 32rem; color: #607a6d; line-height: 1.55; }
-.dashboard-shell-v2 .v2-connect-success-mark { display: grid; width: 3.5rem; height: 3.5rem; margin: 0 auto 1rem; place-items: center; border-radius: 50%; background: #117d4b; color: #fff; font-size: 1.7rem; font-weight: 900; }
+.dashboard-shell-v2 .v2-connect-success-mark { display: grid; width: 4rem; height: 4rem; margin: 0 auto 1.25rem; place-items: center; border: 0.5rem solid #e4f2e6; border-radius: 50%; background: #117d4b; color: #fff; font-size: 1.7rem; font-weight: 900; }
 
 @media (max-width: 560px) {
   .dashboard-shell-v2 .v2-connect-card-head { align-items: stretch; flex-direction: column; }
   .dashboard-shell-v2 .v2-connect-secure { align-self: flex-start; }
   .dashboard-shell-v2 .v2-connect-body { grid-template-columns: 1fr; }
-  .dashboard-shell-v2 .v2-connect-help { padding: 1.25rem 0 0; border-top: 1px solid #d9e4db; border-left: 0; }
   .dashboard-shell-v2 .v2-connect-progress { grid-template-columns: 1fr 2rem 1fr; gap: 0.35rem; }
   .dashboard-shell-v2 .v2-connect-progress strong { font-size: 0.68rem; }
   .dashboard-shell-v2 .v2-connect-actions { align-items: stretch; flex-direction: column-reverse; }
@@ -6158,24 +6161,16 @@ body:has(.auth-shell) {
 .dashboard-shell-v2 .v2-connect-card-head h2 { margin: 0; color: #10251c; font-size: clamp(1.5rem, 3vw, 2.15rem); letter-spacing: -0.05em; }
 .dashboard-shell-v2 .v2-connect-secure { padding: 0.45rem 0.7rem; border: 1px solid #bcd7c4; border-radius: 999px; background: #eef7ef; color: #167448; font-size: 0.74rem; font-weight: 800; white-space: nowrap; }
 
+.dashboard-shell-v2 .v2-connect-panel { align-self: start; }
+
 .dashboard-shell-v2 .v2-connect-body {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(14rem, 0.55fr);
-  gap: clamp(1.5rem, 4vw, 3.5rem);
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
   align-items: start;
 }
 
-.dashboard-shell-v2 .v2-connect-help { padding-left: clamp(1.25rem, 3vw, 2.5rem); border-left: 1px solid #d9e4db; }
-.dashboard-shell-v2 .v2-connect-help ol { display: grid; gap: 1.1rem; margin: 1rem 0 1.5rem; padding: 0; list-style: none; }
-.dashboard-shell-v2 .v2-connect-help li { display: grid; grid-template-columns: 1.8rem 1fr; gap: 0.65rem; color: #6e7f76; }
-.dashboard-shell-v2 .v2-connect-help li > span { display: grid; width: 1.8rem; height: 1.8rem; place-items: center; border: 1px solid #c8d8cc; border-radius: 50%; font-size: 0.72rem; font-weight: 800; }
-.dashboard-shell-v2 .v2-connect-help li.current, .dashboard-shell-v2 .v2-connect-help li.complete { color: #173126; }
-.dashboard-shell-v2 .v2-connect-help li.current > span { border-color: #167448; background: #167448; color: #fff; }
-.dashboard-shell-v2 .v2-connect-help li.complete > span { border-color: #75b995; color: #167448; }
-.dashboard-shell-v2 .v2-connect-help strong, .dashboard-shell-v2 .v2-connect-help small { display: block; }
-.dashboard-shell-v2 .v2-connect-help strong { font-size: 0.84rem; }
-.dashboard-shell-v2 .v2-connect-help small, .dashboard-shell-v2 .v2-connect-help-note { margin-top: 0.2rem; color: #71887c; font-size: 0.76rem; line-height: 1.45; }
-.dashboard-shell-v2 .v2-connect-help-note { padding-top: 1rem; border-top: 1px solid #e0e9e2; }
+.dashboard-shell-v2 .v2-connect-step { max-width: 38rem; }
 
 .v2-dashboard-loading p {
   margin: 0;
@@ -6232,8 +6227,20 @@ body:has(.auth-shell) {
 .v2-project-featured-skeleton .v2-skeleton { background: linear-gradient(90deg, #234838 25%, #335f4b 50%, #234838 75%); }
 .v2-project-featured-title { width: 12rem; height: 2.5rem; }
 .v2-project-featured-copy { width: 9rem; height: 1rem; }
-.v2-projects-skeleton-row { height: 3.85rem; border-radius: 0; }
-.v2-projects-skeleton-pagination { width: 7rem; height: 2rem; justify-self: end; }
+.v2-projects-skeleton-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4rem 4.8rem;
+  gap: 1rem;
+  align-items: center;
+  min-height: 3.85rem;
+}
+.v2-projects-skeleton-row > div { display: grid; gap: 0.4rem; }
+.v2-projects-skeleton-row-title { width: min(12rem, 70%); height: 0.9rem; }
+.v2-projects-skeleton-row-copy { width: min(8rem, 55%); height: 0.65rem; }
+.v2-projects-skeleton-status { width: 3.75rem; height: 1.25rem; border-radius: 999px; }
+.v2-projects-skeleton-action { width: 4.8rem; height: 2rem; }
+.v2-projects-skeleton-pagination { display: flex; gap: 0.35rem; justify-self: end; margin-top: 0.8rem; }
+.v2-projects-skeleton-pagination .v2-skeleton { width: 2rem; height: 2rem; }
 .v2-connect-skeleton { display: grid; gap: 1.2rem; align-content: center; min-height: 24rem; }
 .v2-connect-skeleton-code { width: min(32rem, 100%); height: 4rem; }
 
@@ -6268,7 +6275,11 @@ body:has(.auth-shell) {
 .dashboard-shell-v2 .v2-projects-skeleton-row {
   margin-top: 0;
   border-bottom: 1px solid #dce7df;
-  background: linear-gradient(90deg, #eef4ee 25%, #f7faf7 50%, #eef4ee 75%);
+}
+
+@media (max-width: 760px) {
+  .v2-projects-skeleton-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .v2-projects-skeleton-action { grid-column: 2; }
 }
 
 @keyframes v2-skeleton-shimmer {
@@ -6459,6 +6470,13 @@ body:has(.auth-shell) {
 .dashboard-shell-v2 .v2-dashboard-loading:has(.v2-project-workspace) .v2-project-workspace {
   width: 100%;
   max-width: none;
+}
+
+/* Projects loading uses the same centered column as the loaded Projects page. */
+.dashboard-shell-v2 .v2-dashboard-loading.v2-projects-loading {
+  width: min(100%, 60rem);
+  max-width: 60rem;
+  margin-inline: auto;
 }
 
 .dashboard-shell-v2 .v2-project-workspace:has(.v2-project-list-skeleton) {

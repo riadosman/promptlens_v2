@@ -153,14 +153,6 @@ export function ConnectDevice() {
           </div>
         </div>
       )}
-        <aside className="v2-connect-help">
-          <p className="v2-kicker">How it works</p>
-          <ol>
-            <li className={step === 1 ? 'current' : 'complete'}><span>1</span><div><strong>Verify your device</strong><small>Enter the temporary code from your AI tool.</small></div></li>
-            <li className={step === 2 ? 'current' : ''}><span>2</span><div><strong>Choose a workspace</strong><small>Set where this tool&apos;s prompts are stored.</small></div></li>
-          </ol>
-          <p className="v2-connect-help-note">You can revoke this device at any time from Administration.</p>
-        </aside>
       </div>
     </form>
   );

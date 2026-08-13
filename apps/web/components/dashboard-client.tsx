@@ -19,6 +19,8 @@ type ActorContext = {
   isInstanceAdmin: boolean;
 };
 
+let cachedActorRole = '';
+
 type AdminMember = {
   user: {
     id: string;
@@ -386,16 +388,18 @@ export function DashboardClient() {
     projectPage * projectsPerPage,
   );
   const [prompts, setPrompts] = useState<PromptListResponse['items']>([]);
+  const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [promptPage, setPromptPage] = useState(1);
   const promptsPerPage = 8;
-  const promptPageCount = Math.max(1, Math.ceil(prompts.length / promptsPerPage));
-  const visiblePrompts = prompts.slice(
+  const filteredPrompts = prompts.filter((prompt) =>
+    !debouncedQuery.trim() || prompt.content.toLowerCase().includes(debouncedQuery.trim().toLowerCase()),
+  );
+  const promptPageCount = Math.max(1, Math.ceil(filteredPrompts.length / promptsPerPage));
+  const visiblePrompts = filteredPrompts.slice(
     (promptPage - 1) * promptsPerPage,
     promptPage * promptsPerPage,
   );
-  const [query, setQuery] = useState('');
-  const [submittedQuery, setSubmittedQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [projectFilter, setProjectFilter] = useState('');
   const [platformFilter, setPlatformFilter] = useState('');
   const [modelFilter, setModelFilter] = useState('');
@@ -423,9 +427,12 @@ export function DashboardClient() {
   );
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedQuery(submittedQuery), 300);
+    const timer = window.setTimeout(() => {
+      setPromptPage(1);
+      setDebouncedQuery(query);
+    }, 300);
     return () => window.clearTimeout(timer);
-  }, [submittedQuery]);
+  }, [query]);
 
   useEffect(() => {
     setSessionsPage((page) => Math.min(page, sessionsPageCount));
@@ -445,6 +452,7 @@ export function DashboardClient() {
       void apiRequest<ActorContext>('/auth/session')
         .then((nextActor) => {
           if (!active) return;
+          cachedActorRole = nextActor.role;
           setActor(nextActor);
         })
         .catch(() => {
@@ -456,6 +464,7 @@ export function DashboardClient() {
       };
     }
 
+    cachedActorRole = mockConfig.actor.role;
     setActor(mockConfig.actor);
     setError(null);
     setSectionLoading(false);
@@ -467,7 +476,6 @@ export function DashboardClient() {
     if (!actor) return parameters;
 
     const tenantAdmin = isTenantAdmin(actor.role);
-    if (debouncedQuery) parameters.set('q', debouncedQuery);
     if (projectFilter) parameters.set('projectId', projectFilter);
     if (platformFilter) parameters.set('platform', platformFilter);
     if (modelFilter) parameters.set('model', modelFilter);
@@ -475,7 +483,7 @@ export function DashboardClient() {
     if (!tenantAdmin) parameters.set('mine', 'true');
     if (tenantAdmin && memberFilter) parameters.set('userId', memberFilter);
     return parameters;
-  }, [actor, debouncedQuery, projectFilter, platformFilter, modelFilter, minScoreFilter, memberFilter]);
+  }, [actor, projectFilter, platformFilter, modelFilter, minScoreFilter, memberFilter]);
 
   const mockRows = useCallback(() => {
     if (!demoMode || !actor) return [];
@@ -491,14 +499,14 @@ export function DashboardClient() {
           projectFilter,
           platformFilter,
           modelFilter,
-          query,
+          query: debouncedQuery,
           minScoreFilter,
           memberFilter,
         }),
       )
       .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
       .map(stripMockPromptOwner);
-  }, [actor, demoMode, modelFilter, minScoreFilter, memberFilter, projectFilter, query]);
+  }, [actor, debouncedQuery, demoMode, modelFilter, minScoreFilter, memberFilter, projectFilter]);
 
   useEffect(() => {
     if (!demoMode || !actor) return;
@@ -517,12 +525,6 @@ export function DashboardClient() {
     const startedAt = Date.now();
     try {
       if (demoMode) {
-        const rows = mockRows();
-        setStats(buildMockStats(rows));
-        setProjects(mockProjects);
-        setPrompts(rows);
-        setSessions(mockSessions);
-        setTenantMembers(mockConfig.tenantMembers);
         setError(null);
       } else {
         const tenantAdmin = isTenantAdmin(actor.role);
@@ -576,7 +578,6 @@ export function DashboardClient() {
     actor,
     demoMode,
     mockConfig.tenantMembers,
-    mockRows,
     promptParameters,
     router,
     section,
@@ -619,7 +620,6 @@ export function DashboardClient() {
   function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPromptPage(1);
-    setSubmittedQuery(query);
   }
 
   async function toggleProject(projectId: string, archived: boolean) {
@@ -739,7 +739,7 @@ export function DashboardClient() {
     else await load();
   }
 
-  const actorRole = actor?.role ?? '';
+  const actorRole = actor?.role ?? cachedActorRole;
   const adminLinksVisible = isTenantAdmin(actorRole);
   const navLinkClass = (target: string) =>
     target === '/dashboard/overview' && pathname === '/dashboard'
@@ -1307,7 +1307,7 @@ function DashboardLoadingShell({ section }: { section: DashboardSection }) {
     prompts: 'prompt log',
   }[section];
   return (
-    <section className="v2-dashboard-loading" aria-busy="true" aria-live="polite" aria-label={`Loading ${label}`}>
+    <section className={`v2-dashboard-loading ${section === 'projects' ? 'v2-projects-loading' : ''}`} aria-busy="true" aria-live="polite" aria-label={`Loading ${label}`}>
       <LoadingHeader />
       {section === 'overview' ? <OverviewPanelSkeleton /> : null}
       {section === 'prompts' ? <PromptsPanelSkeleton /> : null}
@@ -1385,8 +1385,16 @@ function ProjectsPanelSkeleton() {
       </article>
       <div className="v2-project-list v2-projects-skeleton-list">
         <div className="v2-section-title"><div><span className="v2-skeleton v2-skeleton-kicker" /><span className="v2-skeleton v2-skeleton-title" /></div><span className="v2-skeleton v2-skeleton-chip" /></div>
-        {Array.from({ length: 4 }, (_, index) => <div className="v2-skeleton v2-projects-skeleton-row" key={index} />)}
-        <span className="v2-skeleton v2-projects-skeleton-pagination" />
+        {Array.from({ length: 4 }, (_, index) => (
+          <div className="v2-projects-skeleton-row" key={index}>
+            <div><span className="v2-skeleton v2-projects-skeleton-row-title" /><span className="v2-skeleton v2-projects-skeleton-row-copy" /></div>
+            <span className="v2-skeleton v2-projects-skeleton-status" />
+            <span className="v2-skeleton v2-projects-skeleton-action" />
+          </div>
+        ))}
+        <div className="v2-projects-skeleton-pagination" aria-hidden="true">
+          <span className="v2-skeleton" /><span className="v2-skeleton" /><span className="v2-skeleton" />
+        </div>
       </div>
     </section>
   );

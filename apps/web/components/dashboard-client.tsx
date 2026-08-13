@@ -766,7 +766,7 @@ export function DashboardClient() {
             </Link>
           ) : null}
         </nav>
-        <button className="v2-ghost" onClick={() => void logout()}>
+        <button className="v2-ghost v2-primary-action" onClick={() => void logout()}>
           Sign out
         </button>
       </aside>
@@ -988,10 +988,10 @@ export function DashboardClient() {
                 </button>
               </form>
               <div className="v2-export-strip">
-                <button className="v2-ghost" type="button" onClick={() => void download('json')}>
+                <button className="v2-ghost v2-primary-action" type="button" onClick={() => void download('json')}>
                   Export JSON
                 </button>
-                <button className="v2-ghost" type="button" onClick={() => void download('csv')}>
+                <button className="v2-ghost v2-primary-action" type="button" onClick={() => void download('csv')}>
                   Export CSV
                 </button>
               </div>

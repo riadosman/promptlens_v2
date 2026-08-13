@@ -1094,7 +1094,7 @@ function Pagination({
 }) {
   const items = adminPaginationItems(page, pageCount);
   return (
-    <nav className="control-center-pagination" aria-label="Pagination">
+    <nav className="control-center-pagination v2-pagination" aria-label="Pagination">
       <div className="v2-pagination-pages">
         {items.map((item, index) => item === 'ellipsis' ? (
           <span className="v2-pagination-ellipsis" key={`ellipsis-${index}`} aria-hidden="true">â€¦</span>
@@ -1106,7 +1106,7 @@ function Pagination({
       </div>
       <button
         type="button"
-        className="quiet"
+        className="v2-pagination-arrow-button"
         aria-label="Previous page"
         disabled={page === 1}
         onClick={() => onChange(page - 1)}
@@ -1115,7 +1115,7 @@ function Pagination({
       </button>
       <button
         type="button"
-        className="quiet"
+        className="v2-pagination-arrow-button"
         aria-label="Next page"
         disabled={page === pageCount}
         onClick={() => onChange(page + 1)}

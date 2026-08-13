@@ -2205,6 +2205,34 @@ select optgroup {
     max-width: none;
     overflow: visible;
   }
+
+  .control-center.admin-main .data-list article {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 0.65rem;
+  }
+
+  .control-center.admin-main .data-list article > div {
+    grid-column: 1 / -1;
+  }
+
+  .control-center.admin-main .data-list article > select,
+  .control-center.admin-main .data-list article > button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .control-center.admin-main .control-center-audit-list article {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .control-center.admin-main .control-center-audit-list article > span,
+  .control-center.admin-main .control-center-audit-list article > b {
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
 }
 
 .dashboard-shell-v2 .v2-filter-bar select,
@@ -2443,7 +2471,23 @@ body:has(.landing-shell) {
   .workflow-grid { grid-template-columns:repeat(2,1fr); }
 }
 
-@media (max-width:560px) {
+@media (max-width:700px) {
+  .landing-nav {
+    display: flex;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .landing-nav-actions {
+    width: 100%;
+  }
+
+  .landing-nav-actions .button-link {
+    width: 100%;
+    text-align: center;
+  }
+
   .landing-nav-anchor,
   .landing-nav-divider { display:none; }
   .landing-nav-links { gap:.75rem; }
@@ -3686,6 +3730,54 @@ body:has(.auth-shell) {
 .control-center-pagination button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+.control-center-pagination.v2-pagination {
+  align-items: center;
+  justify-content: flex-end;
+  width: max-content;
+  margin-left: auto;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #d4dfd7;
+}
+
+.control-center-pagination.v2-pagination > div {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  order: 2;
+  gap: 0.25rem;
+}
+
+.control-center-pagination.v2-pagination .v2-pagination-page,
+.control-center-pagination.v2-pagination .v2-pagination-ellipsis {
+  padding: 0;
+  line-height: 1;
+  text-align: center;
+  width: 1.75rem;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  font-size: 0.7rem;
+}
+
+.control-center-pagination.v2-pagination > .v2-pagination-arrow-button {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  padding: 0;
+  line-height: 1;
+  text-align: center;
+  order: 1;
+  border: 1px solid #d4dfd7;
+  border-radius: 0.5rem;
+  background: #fffdf8;
+  color: #14231b;
+}
+
+.control-center-pagination.v2-pagination > .v2-pagination-arrow-button:last-child {
+  order: 3;
 }
 
 /* Dashboard concept preview */
@@ -6601,4 +6693,24 @@ body:has(.auth-shell) {
     overflow-x: auto;
     overscroll-behavior-x: contain;
   }
+}
+
+.control-center input[type='number'] {
+  appearance: textfield;
+}
+
+.control-center input[type='number']::-webkit-inner-spin-button,
+.control-center input[type='number']::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.dashboard-shell-v2 .v2-rail .v2-primary-action {
+  color: #fffdf8 !important;
+  -webkit-text-fill-color: #fffdf8 !important;
+}
+
+.dashboard-shell-v2 .v2-export-strip .v2-primary-action {
+  color: #fffdf8 !important;
+  -webkit-text-fill-color: #fffdf8 !important;
 }

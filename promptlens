@@ -107,6 +107,7 @@ install_connectors() {
     command -v corepack >/dev/null 2>&1 || { echo 'Corepack or pnpm is required to install a source connector.' >&2; exit 1; }
   fi
   run_pnpm install --frozen-lockfile
+  run_pnpm --filter '@promptlens/connector-sdk' build
   CONNECTOR_API_URL=$(sed -n 's/^PUBLIC_API_URL=//p' "$ENV_FILE" | tail -n 1)
   [ -n "$CONNECTOR_API_URL" ] || CONNECTOR_API_URL='http://localhost:4000/v1'
   for CONNECTOR in $SELECTED_CONNECTORS; do

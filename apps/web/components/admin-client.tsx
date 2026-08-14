@@ -774,15 +774,28 @@ export function AdminClient({ section = 'overview' }: { readonly section?: Admin
             </div>
             {supportModalOpen ? (
               <div className="v2-modal-backdrop" role="presentation" onMouseDown={() => setSupportModalOpen(false)}>
-                <section className="v2-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="support-reason-title" onMouseDown={(event) => event.stopPropagation()}>
-                  <p className="v2-kicker">Support access</p>
-                  <h2 id="support-reason-title">Why is support access needed?</h2>
-                  <form onSubmit={requestSupport}>
+                <section className="v2-confirm-modal v2-support-request-modal" role="dialog" aria-modal="true" aria-labelledby="support-reason-title" onMouseDown={(event) => event.stopPropagation()}>
+                  <div className="v2-support-request-heading">
+                    <span className="v2-support-request-mark" aria-hidden="true" style={{ display: 'grid', width: '2.5rem', height: '2.5rem', flex: '0 0 auto', placeItems: 'center', borderRadius: '0.8rem', background: '#e1f1e5', color: '#167448' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '1.25rem', height: '1.25rem' }}>
+                        <path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6l-7-3Z" />
+                        <path d="m9.5 12 1.7 1.7 3.6-3.6" />
+                      </svg>
+                    </span>
+                    <div>
+                      <p className="v2-kicker">Support access</p>
+                      <h2 id="support-reason-title">Why is support access needed?</h2>
+                      <p>Describe the issue briefly. The workspace owner will review your request.</p>
+                    </div>
+                  </div>
+                  <form className="v2-support-request-form" onSubmit={requestSupport}>
                     <input type="hidden" name="tenantId" value={supportTenantId} />
-                    <textarea name="reason" placeholder="Support reason (minimum 10 characters)" minLength={10} required autoFocus />
+                    <label htmlFor="support-reason" style={{ marginBottom: '0.45rem' }}>What do you need help with?</label>
+                    <textarea id="support-reason" name="reason" placeholder="For example, investigate a failed connector sync..." minLength={10} required autoFocus aria-describedby="support-reason-hint" />
+                    <p id="support-reason-hint" className="v2-support-request-hint">Minimum 10 characters · Access is limited to one hour.</p>
                     <div className="v2-modal-actions">
                       <button className="v2-secondary-action" type="button" onClick={() => setSupportModalOpen(false)}>Cancel</button>
-                      <button className="v2-primary-action" type="submit">Submit request</button>
+                      <button className="v2-primary-action" type="submit" style={{ background: '#c95c54', boxShadow: '0 0.7rem 1.4rem rgba(201, 92, 84, 0.24)' }}>Submit request</button>
                     </div>
                   </form>
                 </section>

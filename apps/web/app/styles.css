@@ -5699,6 +5699,7 @@ body:has(.auth-shell) {
 .dashboard-shell-v2 .v2-connect-progress .active span { border-color: #117d4b; background: #117d4b; color: #fff; box-shadow: 0 0 0 0.3rem #e4f2e6; }
 .dashboard-shell-v2 .v2-connect-progress .complete span { border-color: #117d4b; background: #e4f2e6; color: transparent; }
 .dashboard-shell-v2 .v2-connect-progress .complete span::after { position: absolute; color: #117d4b; content: '\2713'; font-size: 0.9rem; }
+.dashboard-shell-v2 .v2-connect-progress .active span { color: #fff !important; -webkit-text-fill-color: #fff !important; }
 .dashboard-shell-v2 .v2-connect-progress strong { font-size: 0.78rem; letter-spacing: -0.01em; }
 .dashboard-shell-v2 .v2-connect-progress i { height: 2px; background: #cadbd0; }
 

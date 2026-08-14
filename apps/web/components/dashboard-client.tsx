@@ -1003,12 +1003,6 @@ export function DashboardClient() {
                   value={minScoreFilter}
                   onChange={(event) => setMinScoreFilter(event.target.value)}
                 />
-                <button className="v2-chip v2-search-button" type="submit" aria-label="Search prompts" title="Search prompts">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
-                    <circle cx="10.8" cy="10.8" r="5.8" stroke="currentColor" strokeWidth="1.8" />
-                    <path d="m15.2 15.2 4.3 4.3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  </svg>
-                </button>
               </form>
               <div className="v2-export-strip">
                 <button className="v2-ghost v2-primary-action" type="button" onClick={() => void download('json')}>
@@ -1212,7 +1206,7 @@ export function DashboardClient() {
                   ) : null}
                   {projects.length > 1 ? (
                     <div className="v2-project-list">
-                      <div className="v2-section-title"><div><p className="v2-kicker">Workspace projects</p><h3>All projects</h3></div><span className="v2-chip v2-project-more-chip">{projects.length - 1} more</span></div>
+                      <div className="v2-section-title" style={{ paddingTop: '1rem' }}><div><p className="v2-kicker">Workspace projects</p><h3>All projects</h3></div><span className="v2-chip v2-project-more-chip">{projects.length - 1} more</span></div>
                       {visibleProjectItems.map((project) => (
                         <article className="v2-project-list-row" key={project.id}>
                           <div><h3>{project.name}</h3><p>{project.description ?? 'No description'}</p></div>
